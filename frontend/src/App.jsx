@@ -95,7 +95,7 @@ function MainContent() {
       return <Admin />;
     }
 
-    if (activePage === 'login') {
+    if (!isLoggedIn || activePage === 'login') {
       return <Login />;
     }
 

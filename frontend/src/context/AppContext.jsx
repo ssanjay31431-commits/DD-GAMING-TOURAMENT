@@ -45,15 +45,10 @@ import {
 const AppContext = createContext();
 
 export function AppProvider({ children }) {
-  // Authentication State (Default to logged in for seamless access unless explicitly logged out)
+  // Authentication State (Requires logging in before accessing main web page content)
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     const saved = localStorage.getItem('dd_logged_in');
-    if (saved === 'false') return false;
-    if (saved === null) {
-      localStorage.setItem('dd_logged_in', 'true');
-      return true;
-    }
-    return true;
+    return saved === 'true';
   });
 
   // Navigation State (Persist active page across reloads)
@@ -305,6 +300,7 @@ function processTournamentsWithAutoOpen(dataList) {
   const handleAuthSuccess = async (user, isNewRegistration = false) => {
     setUserProfile(user);
     setIsLoggedIn(true);
+    localStorage.setItem('dd_logged_in', 'true');
     setActivePage('home');
 
     // Load ONLY this user's registrations from backend
