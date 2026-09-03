@@ -5,7 +5,7 @@ import { useApp } from '../context/AppContext';
 import { getGameBanner } from '../utils/gameBanners';
 
 export default function Tournaments() {
-  const { tournaments, openTournamentDetail, openRegistrationModal, navigateTo } = useApp();
+  const { tournaments, openTournamentDetail, openRegistrationModal, navigateTo, isAlreadyRegisteredForTournament } = useApp();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGame, setSelectedGame] = useState('all');
@@ -250,37 +250,48 @@ export default function Tournaments() {
                     </button>
                   )}
 
-                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.95 }}
-                    disabled={trn.status === 'Completed' || trn.status === 'Expired' || trn.status === 'Registration Closed'}
-                    onClick={() => {
-                      if (trn.status === 'Upcoming') {
-                        openTournamentDetail(trn);
-                      } else if (trn.status === 'Result Pending') {
-                        navigateTo('winners');
-                      } else {
-                        openRegistrationModal(trn);
-                      }
-                    }}
-                    className={`w-full py-3 rounded-xl font-heading font-extrabold text-xs uppercase tracking-wider transition-all shadow-lg ${
-                      trn.status === 'Completed' || trn.status === 'Expired'
-                        ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
-                        : trn.status === 'Upcoming'
-                        ? 'bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 border border-purple-500/40 text-purple-200 cursor-pointer'
-                        : trn.status === 'Result Pending'
-                        ? 'bg-gradient-to-r from-amber-600 to-purple-600 hover:from-amber-500 text-white cursor-pointer'
-                        : trn.status === 'Registration Closed'
-                        ? 'bg-slate-800 text-slate-400 cursor-not-allowed border border-slate-700'
-                        : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-purple-500/25'
-                    }`}
-                  >
-                    {trn.status === 'Completed' || trn.status === 'Expired' ? '🏆 Tournament Ended (Expired)' :
-                     trn.status === 'Upcoming' ? `🗓️ Reg Starts ${trn.registrationStartDate || trn.date}` :
-                     trn.status === 'Result Pending' ? '⏳ Wait for Result' :
-                     trn.status === 'Registration Closed' ? 'Registration Closed' :
-                     'Join Tournament'}
-                  </motion.button>
+                  {isAlreadyRegisteredForTournament(trn.id) ? (
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => navigateTo('my-tournaments')}
+                      className="w-full py-3 rounded-xl font-heading font-extrabold text-xs uppercase tracking-wider transition-all shadow-lg bg-slate-900 border-2 border-emerald-500/60 text-emerald-300 hover:bg-slate-800 cursor-pointer shadow-emerald-500/20 flex items-center justify-center gap-1.5"
+                    >
+                      ✅ ALREADY REGISTERED (VIEW TICKET)
+                    </motion.button>
+                  ) : (
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.95 }}
+                      disabled={trn.status === 'Completed' || trn.status === 'Expired' || trn.status === 'Registration Closed'}
+                      onClick={() => {
+                        if (trn.status === 'Upcoming') {
+                          openTournamentDetail(trn);
+                        } else if (trn.status === 'Result Pending') {
+                          navigateTo('winners');
+                        } else {
+                          openRegistrationModal(trn);
+                        }
+                      }}
+                      className={`w-full py-3 rounded-xl font-heading font-extrabold text-xs uppercase tracking-wider transition-all shadow-lg ${
+                        trn.status === 'Completed' || trn.status === 'Expired'
+                          ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
+                          : trn.status === 'Upcoming'
+                          ? 'bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 border border-purple-500/40 text-purple-200 cursor-pointer'
+                          : trn.status === 'Result Pending'
+                          ? 'bg-gradient-to-r from-amber-600 to-purple-600 hover:from-amber-500 text-white cursor-pointer'
+                          : trn.status === 'Registration Closed'
+                          ? 'bg-slate-800 text-slate-400 cursor-not-allowed border border-slate-700'
+                          : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-purple-500/25'
+                      }`}
+                    >
+                      {trn.status === 'Completed' || trn.status === 'Expired' ? '🏆 Tournament Ended (Expired)' :
+                       trn.status === 'Upcoming' ? `🗓️ Reg Starts ${trn.registrationStartDate || trn.date}` :
+                       trn.status === 'Result Pending' ? '⏳ Wait for Result' :
+                       trn.status === 'Registration Closed' ? 'Registration Closed' :
+                       'Join Tournament'}
+                    </motion.button>
+                  )}
 
                   <button
                     onClick={() => openTournamentDetail(trn)}

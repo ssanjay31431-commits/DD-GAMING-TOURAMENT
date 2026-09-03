@@ -253,7 +253,16 @@ function processTournamentsWithAutoOpen(dataList) {
   // Toast Notification
   const [toast, setToast] = useState(null);
 
-  // FEATURE 4 & 6: Sync current authenticated user data securely from backend on mount / session start
+  const isAlreadyRegisteredForTournament = (tournamentId) => {
+    if (!isLoggedIn || !userProfile?.email || !tournamentId) return false;
+    const targetIdStr = String(tournamentId);
+    return (registrations || []).some(r =>
+      (String(r.tournamentId) === targetIdStr || String(r.tournament?.id) === targetIdStr) &&
+      ((r.email && r.email.toLowerCase().trim() === userProfile.email.toLowerCase().trim()) || r.userId === userProfile.id)
+    );
+  };
+
+  // FEATURE 4 & 6: Real-time background auto-sync for current user profile & registrations
   useEffect(() => {
     async function syncUserData() {
       if (isLoggedIn && userProfile?.email) {
@@ -263,11 +272,23 @@ function processTournamentsWithAutoOpen(dataList) {
         }
         const freshRegs = await fetchMyRegistrationsAPI(userProfile.email);
         if (freshRegs && Array.isArray(freshRegs)) {
-          setRegistrations(freshRegs);
+          setRegistrations(prev => {
+            // Check for real-time status update from Pending Verification -> Confirmed
+            freshRegs.forEach(newReg => {
+              const oldReg = (prev || []).find(p => p.id === newReg.id || p._id === newReg._id);
+              if (oldReg && oldReg.status === 'Pending Verification' && newReg.status === 'Confirmed') {
+                showToast(`🎉 PAYMENT VERIFIED & CONFIRMED! Your ticket for "${newReg.tournamentTitle || 'Tournament'}" is active!`, 'success');
+                playSuccessChimeSound();
+              }
+            });
+            return freshRegs;
+          });
         }
       }
     }
     syncUserData();
+    const interval = setInterval(syncUserData, 3000);
+    return () => clearInterval(interval);
   }, [isLoggedIn, userProfile?.email]);
 
   // Sync to LocalStorage
@@ -483,6 +504,13 @@ function processTournamentsWithAutoOpen(dataList) {
       navigateTo('login');
       return;
     }
+    if (tournament && isAlreadyRegisteredForTournament(tournament.id)) {
+      showToast(`You have ALREADY registered for "${tournament.title || 'this game'}"! Opening your tickets...`, 'info');
+      setSelectedTournamentRegister(null);
+      setSelectedTournamentDetail(null);
+      navigateTo('my-tournaments');
+      return;
+    }
     if (tournament?.status === 'Upcoming') {
       showToast(`Registration for "${tournament.title || 'this tournament'}" has NOT opened yet!`, 'warning');
       return;
@@ -525,7 +553,7 @@ function processTournamentsWithAutoOpen(dataList) {
       createdAt: new Date().toLocaleString()
     };
 
-    setRegistrations(prev => [regObj, ...prev]);
+    setRegistrations(prev => [regObj, ...(prev || [])]);
 
     // Update User Profile state
     setUserProfile(prev => ({
@@ -542,11 +570,19 @@ function processTournamentsWithAutoOpen(dataList) {
           status: regObj.status,
           paymentTxnId: regObj.txnId
         },
-        ...prev.registeredTournaments
+        ...(prev.registeredTournaments || [])
       ]
     }));
 
-    showToast(`Successfully registered for ${registrationData.tournament.title}!`, 'success');
+    showToast(`Successfully submitted payment for ${registrationData.tournament.title}! Redirecting to My Tournaments...`, 'success');
+
+    // Auto-navigate to My Tournaments without page refresh
+    setTimeout(() => {
+      closeRegistrationModal();
+      navigateTo('my-tournaments');
+    }, 1200);
+
+    return regObj;
   };
 
   const updateUserProfile = async (updatedData) => {
@@ -764,7 +800,8 @@ function processTournamentsWithAutoOpen(dataList) {
         adminDeleteAllData,
         isAdminAuth,
         adminLogin,
-        adminLogout
+        adminLogout,
+        isAlreadyRegisteredForTournament
       }}
     >
       {children}
@@ -783,6 +820,7 @@ export function useApp() {
       tournaments: [],
       notifications: [],
       unreadNotificationCount: 0,
+      isAlreadyRegisteredForTournament: () => false,
       navigateTo: () => {},
       showToast: () => {},
       markNotificationRead: () => {},

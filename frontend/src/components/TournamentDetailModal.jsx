@@ -5,12 +5,13 @@ import { useApp } from '../context/AppContext';
 import { getGameBanner } from '../utils/gameBanners';
 
 export default function TournamentDetailModal() {
-  const { selectedTournamentDetail, closeTournamentDetail, openRegistrationModal } = useApp();
+  const { selectedTournamentDetail, closeTournamentDetail, openRegistrationModal, isAlreadyRegisteredForTournament, navigateTo } = useApp();
 
   if (!selectedTournamentDetail) return null;
 
   const trn = selectedTournamentDetail;
   const fillPercentage = Math.min(100, Math.round((trn.registeredSlots / trn.totalSlots) * 100));
+  const isRegistered = isAlreadyRegisteredForTournament(trn.id);
 
   return (
     <AnimatePresence>
@@ -220,27 +221,40 @@ export default function TournamentDetailModal() {
                     </span>
                   </div>
 
-                  <button
-                    disabled={trn.status === 'Registration Closed' || trn.status === 'Completed' || trn.status === 'Upcoming'}
-                    onClick={() => {
-                      if (trn.status === 'Upcoming') return;
-                      closeTournamentDetail();
-                      openRegistrationModal(trn);
-                    }}
-                    className={`w-full py-3.5 px-6 rounded-xl font-heading font-extrabold text-xs tracking-wider uppercase shadow-lg flex items-center justify-center gap-2 transition-all ${
-                      trn.status === 'Registration Closed' || trn.status === 'Completed'
-                        ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
-                        : trn.status === 'Upcoming'
-                        ? 'bg-slate-850 text-amber-300/80 cursor-not-allowed border border-amber-500/30 font-mono shadow-inner'
-                        : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white border border-purple-400/50 shadow-purple-500/30 hover:scale-[1.02]'
-                    }`}
-                  >
-                    {trn.status === 'Registration Closed' ? 'Registration Closed' :
-                     trn.status === 'Completed' ? 'Tournament Ended' :
-                     trn.status === 'Upcoming' ? `🗓️ REGISTRATION HAS NOT OPENED YET` :
-                     'Join Tournament Now'}
-                    <ChevronRight className="w-5 h-5" />
-                  </button>
+                  {isRegistered ? (
+                    <button
+                      onClick={() => {
+                        closeTournamentDetail();
+                        navigateTo('my-tournaments');
+                      }}
+                      className="w-full py-3.5 px-6 rounded-xl font-heading font-extrabold text-xs tracking-wider uppercase shadow-lg flex items-center justify-center gap-2 transition-all bg-slate-900 border-2 border-emerald-500/60 text-emerald-300 hover:bg-slate-800 cursor-pointer shadow-emerald-500/20"
+                    >
+                      ✅ ALREADY REGISTERED (VIEW TICKET)
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
+                  ) : (
+                    <button
+                      disabled={trn.status === 'Registration Closed' || trn.status === 'Completed' || trn.status === 'Upcoming'}
+                      onClick={() => {
+                        if (trn.status === 'Upcoming') return;
+                        closeTournamentDetail();
+                        openRegistrationModal(trn);
+                      }}
+                      className={`w-full py-3.5 px-6 rounded-xl font-heading font-extrabold text-xs tracking-wider uppercase shadow-lg flex items-center justify-center gap-2 transition-all ${
+                        trn.status === 'Registration Closed' || trn.status === 'Completed'
+                          ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
+                          : trn.status === 'Upcoming'
+                          ? 'bg-slate-850 text-amber-300/80 cursor-not-allowed border border-amber-500/30 font-mono shadow-inner'
+                          : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white border border-purple-400/50 shadow-purple-500/30 hover:scale-[1.02]'
+                      }`}
+                    >
+                      {trn.status === 'Registration Closed' ? 'Registration Closed' :
+                       trn.status === 'Completed' ? 'Tournament Ended' :
+                       trn.status === 'Upcoming' ? `🗓️ REGISTRATION HAS NOT OPENED YET` :
+                       'Join Tournament Now'}
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
+                  )}
                 </div>
 
               </div>

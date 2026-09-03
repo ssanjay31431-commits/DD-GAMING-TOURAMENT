@@ -5,7 +5,7 @@ import { useApp } from '../context/AppContext';
 import { getGameBanner } from '../utils/gameBanners';
 
 export default function Home() {
-  const { tournaments, navigateTo, openTournamentDetail, openRegistrationModal, faqs } = useApp();
+  const { tournaments, navigateTo, openTournamentDetail, openRegistrationModal, faqs, isAlreadyRegisteredForTournament } = useApp();
 
   const upcomingTrn = tournaments.find(t => t.status === 'Upcoming');
   const poolSpecial = tournaments.find(t => t.is8BallSpecial && t.status === 'Registration Open') || tournaments[0];
@@ -254,14 +254,25 @@ export default function Home() {
                       <span className="text-emerald-400 font-bold">Registration Open</span>
                     </div>
                     
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => openRegistrationModal(poolSpecial)}
-                      className="w-full py-3.5 rounded-xl bg-gradient-to-r from-purple-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white font-heading font-extrabold text-xs uppercase tracking-wider shadow-lg shadow-purple-500/25 transition-all cursor-pointer"
-                    >
-                      JOIN EVENT ({poolSpecial.entryFee === 0 ? 'FREE' : `₹${poolSpecial.entryFee}`} ENTRY)
-                    </motion.button>
+                    {isAlreadyRegisteredForTournament(poolSpecial.id) ? (
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => navigateTo('my-tournaments')}
+                        className="w-full py-3.5 rounded-xl bg-slate-900 border-2 border-emerald-500/60 text-emerald-300 hover:bg-slate-800 font-heading font-extrabold text-xs uppercase tracking-wider shadow-lg shadow-emerald-500/20 transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                      >
+                        ✅ ALREADY REGISTERED (VIEW TICKET)
+                      </motion.button>
+                    ) : (
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => openRegistrationModal(poolSpecial)}
+                        className="w-full py-3.5 rounded-xl bg-gradient-to-r from-purple-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white font-heading font-extrabold text-xs uppercase tracking-wider shadow-lg shadow-purple-500/25 transition-all cursor-pointer"
+                      >
+                        JOIN EVENT ({poolSpecial.entryFee === 0 ? 'FREE' : `₹${poolSpecial.entryFee}`} ENTRY)
+                      </motion.button>
+                    )}
                   </div>
 
                 </div>
