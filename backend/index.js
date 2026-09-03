@@ -28,6 +28,33 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
+// Lightweight In-Memory Rate Limiter for Abuse Protection & High Concurrency Stability
+const rateLimitMap = new Map();
+function rateLimiter({ windowMs = 60 * 1000, maxRequests = 50, message = 'Too many requests, please try again shortly.' } = {}) {
+  return (req, res, next) => {
+    const clientIp = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown';
+    const key = `${req.path}_${clientIp}`;
+    const now = Date.now();
+
+    const record = rateLimitMap.get(key) || { count: 0, startTime: now };
+
+    if (now - record.startTime > windowMs) {
+      record.count = 1;
+      record.startTime = now;
+    } else {
+      record.count += 1;
+    }
+
+    rateLimitMap.set(key, record);
+
+    if (record.count > maxRequests) {
+      return res.status(429).json({ success: false, message });
+    }
+
+    next();
+  };
+}
+
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // In-Memory Stores
@@ -677,13 +704,52 @@ app.get('/api/registrations', async (req, res) => {
 });
 
 // SUBMIT Registration (Player registration form submit)
-app.post('/api/registrations', async (req, res) => {
+app.post('/api/registrations', rateLimiter({ windowMs: 60 * 1000, maxRequests: 20 }), async (req, res) => {
   try {
     const { tournament, fullName, gamingId, phone, email, txnId, paymentScreenshot } = req.body;
+    if (!tournament || !tournament.id || !fullName || !gamingId || !email) {
+      return res.status(400).json({ success: false, message: 'Missing required registration fields.' });
+    }
     const regId = `REG-DD-${Math.floor(1000 + Math.random() * 9000)}`;
     const normalizedEmail = email ? email.toLowerCase().trim() : '';
 
     if (isDbConnected && mongoose.connection.readyState === 1) {
+      // 1. Check for duplicate registration to prevent race conditions
+      const existingReg = await Registration.findOne({
+        tournamentId: tournament.id,
+        $or: [{ email: normalizedEmail }, { gamingId: gamingId }]
+      });
+
+      if (existingReg) {
+        return res.status(409).json({
+          success: false,
+          message: 'You have already registered for this tournament!'
+        });
+      }
+
+      // 2. Atomic slot incrementation to prevent overbooking
+      const updatedTournament = await Tournament.findOneAndUpdate(
+        { id: tournament.id, registeredSlots: { $lt: tournament.totalSlots || 100 } },
+        { $inc: { registeredSlots: 1 } },
+        { new: true }
+      );
+
+      if (!updatedTournament) {
+        return res.status(400).json({
+          success: false,
+          message: 'Tournament registration slots are completely full!'
+        });
+      }
+
+      // Auto update status if full or almost full
+      if (updatedTournament.registeredSlots >= updatedTournament.totalSlots) {
+        updatedTournament.status = 'Registration Closed';
+        await updatedTournament.save();
+      } else if (updatedTournament.totalSlots - updatedTournament.registeredSlots <= 3) {
+        updatedTournament.status = 'Almost Full';
+        await updatedTournament.save();
+      }
+
       const user = await User.findOne({ email: normalizedEmail });
       const newReg = new Registration({
         id: regId,
@@ -700,17 +766,6 @@ app.post('/api/registrations', async (req, res) => {
         status: tournament.entryFee === 0 ? 'Confirmed' : 'Pending Verification'
       });
       await newReg.save();
-
-      const targetTournament = await Tournament.findOne({ id: tournament.id });
-      if (targetTournament) {
-        targetTournament.registeredSlots += 1;
-        if (targetTournament.registeredSlots >= targetTournament.totalSlots) {
-          targetTournament.status = 'Registration Closed';
-        } else if (targetTournament.totalSlots - targetTournament.registeredSlots <= 3) {
-          targetTournament.status = 'Almost Full';
-        }
-        await targetTournament.save();
-      }
 
       if (user) {
         user.name = fullName || user.name;

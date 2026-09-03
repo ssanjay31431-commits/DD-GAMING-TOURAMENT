@@ -66,7 +66,7 @@ export function AdminProvider({ children }) {
 
   useEffect(() => {
     loadAllData();
-    const interval = setInterval(loadAllData, 3000);
+    const interval = setInterval(loadAllData, 5000);
     return () => clearInterval(interval);
   }, []);
 

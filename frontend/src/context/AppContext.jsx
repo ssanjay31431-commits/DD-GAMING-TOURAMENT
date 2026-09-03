@@ -122,7 +122,7 @@ export function AppProvider({ children }) {
       }
     }
     loadNotifications();
-    const interval = setInterval(loadNotifications, 4000);
+    const interval = setInterval(loadNotifications, 6000);
     return () => clearInterval(interval);
   }, [isLoggedIn, userProfile?.email]);
 
@@ -217,7 +217,7 @@ function processTournamentsWithAutoOpen(dataList) {
       }
     }
     loadTournaments();
-    const interval = setInterval(loadTournaments, 3000);
+    const interval = setInterval(loadTournaments, 5000);
     return () => clearInterval(interval);
   }, []);
 

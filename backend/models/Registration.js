@@ -27,7 +27,11 @@ const registrationSchema = new mongoose.Schema({
   kills: { type: Number, default: 0 },
   placement: { type: Number, default: 0 },
   totalPoints: { type: Number, default: 0 },
-  createdAt: { type: String, default: () => new Date().toLocaleString() }
 }, { timestamps: true });
+
+registrationSchema.index({ tournamentId: 1, email: 1 });
+registrationSchema.index({ tournamentId: 1, gamingId: 1 });
+registrationSchema.index({ tournamentId: 1, status: 1 });
+registrationSchema.index({ userId: 1 });
 
 export default mongoose.model('Registration', registrationSchema);
