@@ -56,29 +56,29 @@ export default function Navbar() {
 
           {/* Desktop Navigation Links - ONLY VISIBLE AFTER LOGGING IN */}
           {isLoggedIn && (
-            <nav className="hidden md:flex items-center gap-1 lg:gap-2">
+            <nav className="hidden lg:flex items-center gap-0.5 xl:gap-1.5 overflow-hidden">
               {navLinks.map((link) => {
                 const isActive = activePage === link.id;
                 return (
                   <button
                     key={link.id}
                     onClick={() => navigateTo(link.id)}
-                    className={`relative px-3.5 py-2 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center gap-1.5 ${
+                    className={`relative px-2 xl:px-3.5 py-1.5 xl:py-2 rounded-lg text-xs xl:text-sm font-semibold transition-all duration-200 flex items-center gap-1 shrink-0 ${
                       isActive
                         ? 'text-white font-bold'
                         : 'text-slate-300 hover:text-white hover:bg-white/5'
                     }`}
                   >
-                    {link.label}
+                    <span>{link.label}</span>
                     {link.badge && (
-                      <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-purple-500/30 text-purple-300 border border-purple-500/40">
+                      <span className="hidden xl:inline-block px-1.5 py-0.5 rounded-full text-[9px] xl:text-[10px] bg-purple-500/30 text-purple-300 border border-purple-500/40">
                         {link.badge}
                       </span>
                     )}
                     {isActive && (
                       <motion.div
                         layoutId="activeNavIndicator"
-                        className="absolute bottom-0 left-2 right-2 h-0.5 bg-gradient-to-r from-purple-500 to-cyan-400 rounded-full"
+                        className="absolute bottom-0 left-1 right-1 h-0.5 bg-gradient-to-r from-purple-500 to-cyan-400 rounded-full"
                         transition={{ type: 'spring', stiffness: 380, damping: 30 }}
                       />
                     )}
@@ -204,28 +204,28 @@ export default function Navbar() {
 
             {/* Profile / Logout CTA - VISIBLE WHEN LOGGED IN */}
             {isLoggedIn ? (
-              <div className="hidden sm:flex items-center gap-2">
+              <div className="hidden sm:flex items-center gap-2 shrink-0">
                 <button
                   onClick={() => navigateTo('profile')}
-                  className={`flex items-center gap-2.5 px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-lg border ${
+                  className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-lg border max-w-[130px] sm:max-w-[170px] ${
                     activePage === 'profile'
                       ? 'bg-purple-600 border-purple-400 text-white shadow-purple-500/30'
                       : 'bg-slate-900/90 border-purple-500/30 text-white hover:border-purple-500/60 hover:bg-slate-800'
                   }`}
                 >
-                  <div className="w-6 h-6 rounded-full overflow-hidden border border-purple-400 shrink-0">
+                  <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full overflow-hidden border border-purple-400 shrink-0">
                     <img
                       src={userProfile?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150'}
                       alt={userProfile?.name || 'Player'}
                       className="w-full h-full object-cover"
                     />
                   </div>
-                  <span>{(userProfile?.name || 'Player').split(' ')[0]}</span>
+                  <span className="truncate">{(userProfile?.name || 'Player').split(' ')[0]}</span>
                 </button>
 
                 <button
                   onClick={logout}
-                  className="p-2 rounded-xl bg-slate-900 border border-slate-800 hover:border-rose-500/40 text-slate-400 hover:text-rose-300 transition-all"
+                  className="p-2 rounded-xl bg-slate-900 border border-slate-800 hover:border-rose-500/40 text-slate-400 hover:text-rose-300 transition-all shrink-0"
                   title="Logout"
                 >
                   <LogOut className="w-4 h-4" />
@@ -235,15 +235,15 @@ export default function Navbar() {
 
             {/* Mobile Hamburger Button - ONLY VISIBLE WHEN LOGGED IN */}
             {isLoggedIn && (
-              <div className="flex md:hidden items-center gap-2">
+              <div className="flex lg:hidden items-center gap-2 shrink-0">
                 <button
                   onClick={() => {
                     playClickSound();
                     setMobileMenuOpen(!mobileMenuOpen);
                   }}
-                  className="p-2.5 rounded-xl bg-slate-900 border border-white/10 text-slate-200 focus:outline-none"
+                  className="p-2 rounded-xl bg-slate-900 border border-white/10 text-slate-200 focus:outline-none"
                 >
-                  {mobileMenuOpen ? <X className="w-6 h-6 text-purple-400" /> : <Menu className="w-6 h-6" />}
+                  {mobileMenuOpen ? <X className="w-5 h-5 sm:w-6 sm:h-6 text-purple-400" /> : <Menu className="w-5 h-5 sm:w-6 sm:h-6" />}
                 </button>
               </div>
             )}

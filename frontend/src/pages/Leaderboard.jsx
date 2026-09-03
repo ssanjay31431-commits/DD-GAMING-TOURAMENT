@@ -150,7 +150,7 @@ export default function Leaderboard() {
               </div>
 
               {/* FULL RANKINGS TABLE */}
-              <div className="rounded-2xl glass-panel border border-slate-800 overflow-hidden shadow-xl">
+              <div className="rounded-2xl glass-panel border border-slate-800 overflow-x-auto shadow-xl">
                 <table className="w-full text-left text-sm">
                   <thead className="bg-slate-950 text-slate-400 font-bold uppercase text-[11px] border-b border-slate-800">
                     <tr>

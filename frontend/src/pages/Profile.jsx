@@ -138,14 +138,14 @@ export default function Profile({ initialTab = 'overview' }) {
       />
 
       {/* Profile Header Dashboard Banner */}
-      <div className="p-8 rounded-3xl bg-gradient-to-r from-purple-950 via-slate-900 to-indigo-950 border border-purple-500/30 glass-panel relative overflow-hidden shadow-2xl">
-        <div className="flex flex-col md:flex-row items-center md:items-start justify-between gap-6 relative z-10">
+      <div className="p-4 sm:p-6 lg:p-8 rounded-3xl bg-gradient-to-r from-purple-950 via-slate-900 to-indigo-950 border border-purple-500/30 glass-panel relative overflow-hidden shadow-2xl">
+        <div className="flex flex-col xl:flex-row items-center justify-between gap-6 relative z-10">
           
-          <div className="flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left">
+          <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-5 text-center sm:text-left w-full xl:w-auto">
             
             {/* Profile Avatar with Camera Edit Overlay */}
             <div className="relative group shrink-0">
-              <div className="w-24 h-24 rounded-full p-1 bg-gradient-to-tr from-purple-500 to-cyan-400 shadow-xl overflow-hidden">
+              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full p-1 bg-gradient-to-tr from-purple-500 to-cyan-400 shadow-xl overflow-hidden">
                 <img
                   src={userProfile.avatar || defaultAvatarFallback}
                   alt={userProfile.name}
@@ -163,33 +163,33 @@ export default function Profile({ initialTab = 'overview' }) {
                 className="absolute inset-0 rounded-full bg-slate-950/75 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white transition-all duration-200 cursor-pointer backdrop-blur-xs"
                 title="Upload Photo from Device"
               >
-                <Camera className="w-6 h-6 text-purple-300" />
-                <span className="text-[10px] font-bold uppercase mt-0.5">Edit Photo</span>
+                <Camera className="w-5 h-5 sm:w-6 sm:h-6 text-purple-300" />
+                <span className="text-[9px] sm:text-[10px] font-bold uppercase mt-0.5">Edit Photo</span>
               </button>
 
-              <div className="absolute -bottom-1 -right-1 bg-purple-600 text-white px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase shadow pointer-events-none">
+              <div className="absolute -bottom-1 -right-1 bg-purple-600 text-white px-2 sm:px-2.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-black uppercase shadow pointer-events-none">
                 {userProfile.rank}
               </div>
             </div>
 
-            <div>
-              <div className="flex items-center justify-center sm:justify-start gap-2">
-                <h1 className="font-heading font-black text-2xl sm:text-3xl text-white">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                <h1 className="font-heading font-black text-xl sm:text-2xl lg:text-3xl text-white truncate max-w-xs sm:max-w-md">
                   {userProfile.name}
                 </h1>
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-purple-500/20 text-purple-300 border border-purple-500/30 shrink-0">
                   {userProfile.rank}
                 </span>
               </div>
 
-              <p className="text-xs text-purple-300 font-mono font-bold mt-1">
+              <p className="text-xs text-purple-300 font-mono font-bold mt-1 truncate">
                 8 Ball Pool ID: <span className="text-white">{userProfile.gamingUsername || 'Not Configured'}</span>
               </p>
               <p className="text-[11px] text-slate-400 mt-0.5">Player Tag: {userProfile.playerId}</p>
 
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="mt-2 text-xs text-cyan-400 hover:text-cyan-300 font-bold inline-flex items-center gap-1.5 underline underline-offset-4"
+                className="mt-2 text-xs text-cyan-400 hover:text-cyan-300 font-bold inline-flex items-center gap-1.5 underline underline-offset-4 cursor-pointer"
               >
                 <Camera className="w-3.5 h-3.5" />
                 Change Profile Photo
@@ -198,22 +198,22 @@ export default function Profile({ initialTab = 'overview' }) {
           </div>
 
           {/* Clean Player Metrics */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full md:w-auto">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 w-full xl:w-auto">
             <div className="bg-slate-950/80 p-3 rounded-2xl border border-white/10 text-center">
               <span className="text-[10px] font-bold text-slate-400 uppercase">DD Points</span>
-              <p className="font-mono font-black text-xl text-purple-400 mt-0.5">{userProfile.ddPoints}</p>
+              <p className="font-mono font-black text-lg sm:text-xl text-purple-400 mt-0.5">{userProfile.ddPoints}</p>
             </div>
             <div className="bg-slate-950/80 p-3 rounded-2xl border border-white/10 text-center">
               <span className="text-[10px] font-bold text-slate-400 uppercase">Wins / Losses</span>
-              <p className="font-mono font-black text-xl text-emerald-400 mt-0.5">{userProfile.wins}W / {userProfile.losses}L</p>
+              <p className="font-mono font-black text-lg sm:text-xl text-emerald-400 mt-0.5">{userProfile.wins}W / {userProfile.losses}L</p>
             </div>
             <div className="bg-slate-950/80 p-3 rounded-2xl border border-white/10 text-center">
               <span className="text-[10px] font-bold text-slate-400 uppercase">Tournaments</span>
-              <p className="font-mono font-black text-xl text-cyan-400 mt-0.5">{userProfile.totalTournamentsPlayed}</p>
+              <p className="font-mono font-black text-lg sm:text-xl text-cyan-400 mt-0.5">{userProfile.totalTournamentsPlayed}</p>
             </div>
             <div className="bg-slate-950/80 p-3 rounded-2xl border border-white/10 text-center">
               <span className="text-[10px] font-bold text-slate-400 uppercase">Total Winnings</span>
-              <p className="font-mono font-black text-xl text-amber-400 mt-0.5">₹{userProfile.totalWinnings}</p>
+              <p className="font-mono font-black text-lg sm:text-xl text-amber-400 mt-0.5">₹{userProfile.totalWinnings}</p>
             </div>
           </div>
 
