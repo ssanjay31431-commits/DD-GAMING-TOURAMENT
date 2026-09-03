@@ -7,23 +7,62 @@ import { getGameBanner } from '../utils/gameBanners';
 export default function Home() {
   const { tournaments, navigateTo, openTournamentDetail, openRegistrationModal, faqs } = useApp();
 
+  const upcomingTrn = tournaments.find(t => t.status === 'Upcoming');
   const poolSpecial = tournaments.find(t => t.is8BallSpecial && t.status === 'Registration Open') || tournaments[0];
   const featuredTournaments = tournaments.slice(0, 3);
 
-  // Countdown timer state
-  const [timeLeft, setTimeLeft] = useState({ hours: 14, minutes: 32, seconds: 45 });
+  // Live Countdown Timer for Upcoming Event
+  const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev.seconds > 0) return { ...prev, seconds: prev.seconds - 1 };
-        if (prev.minutes > 0) return { ...prev, minutes: prev.minutes - 1, seconds: 59 };
-        if (prev.hours > 0) return { hours: prev.hours - 1, minutes: 59, seconds: 59 };
-        return { hours: 12, minutes: 0, seconds: 0 };
+    const targetTrn = upcomingTrn || poolSpecial;
+    if (!targetTrn) return;
+
+    const parseTargetDate = () => {
+      const dateStr = targetTrn.registrationStartDate || targetTrn.date;
+      const timeStr = targetTrn.registrationStartTime || targetTrn.time;
+      if (!dateStr) return new Date(Date.now() + 24 * 3600 * 1000);
+
+      const parts = String(dateStr).split('T')[0].split('-').map(Number);
+      if (parts.length === 3 && !isNaN(parts[0])) {
+        let hrs = 12, mins = 0;
+        if (timeStr) {
+          const match = String(timeStr).match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+          if (match) {
+            hrs = parseInt(match[1], 10);
+            mins = parseInt(match[2], 10);
+            const ampm = match[3] ? match[3].toUpperCase() : null;
+            if (ampm === 'PM' && hrs < 12) hrs += 12;
+            if (ampm === 'AM' && hrs === 12) hrs = 0;
+          }
+        }
+        return new Date(parts[0], parts[1] - 1, parts[2], hrs, mins, 0);
+      }
+      return new Date(Date.now() + 18 * 3600 * 1000);
+    };
+
+    const updateTimer = () => {
+      const target = parseTargetDate();
+      const now = new Date();
+      const diff = target.getTime() - now.getTime();
+
+      if (diff <= 0) {
+        setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+        return;
+      }
+
+      setCountdown({
+        days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
+        minutes: Math.floor((diff / 1000 / 60) % 60),
+        seconds: Math.floor((diff / 1000) % 60)
       });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
+    };
+
+    updateTimer();
+    const timerId = setInterval(updateTimer, 1000);
+    return () => clearInterval(timerId);
+  }, [upcomingTrn, poolSpecial]);
 
   const [openFaqIndex, setOpenFaqIndex] = useState(0);
 
@@ -101,63 +140,132 @@ export default function Home() {
               </div>
             </motion.div>
 
-            {/* Right Interactive 3D 8-Ball Hero Visual */}
+            {/* Right Interactive 3D / Upcoming Event Visual */}
             <motion.div
               initial={{ opacity: 0, scale: 0.85 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8, delay: 0.3 }}
               className="lg:col-span-5 relative flex justify-center items-center"
             >
-              <div className="absolute w-80 h-80 sm:w-96 sm:h-96 rounded-full bg-gradient-to-tr from-purple-600/30 via-cyan-500/20 to-pink-500/30 blur-2xl animate-pulse-glow" />
+              <div className="absolute w-80 h-80 sm:w-96 sm:h-96 rounded-full bg-gradient-to-tr from-amber-500/30 via-purple-600/30 to-cyan-500/20 blur-2xl animate-pulse-glow" />
 
-              {/* Central Floating 3D Card Visual */}
-              <div className="relative w-full max-w-sm glass-panel p-6 rounded-3xl border border-purple-500/40 shadow-2xl space-y-6 animate-float-3d">
-                
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl">🎱</span>
-                    <span className="font-heading font-extrabold text-white text-lg">
-                      8 BALL POOL 1v1
+              {upcomingTrn ? (
+                /* UPCOMING EVENT DYNAMIC HERO CARD WITH LIVE COUNTDOWN ANIMATION */
+                <div className="relative w-full max-w-sm glass-panel p-6 rounded-3xl border-2 border-amber-500/50 shadow-2xl shadow-amber-500/20 space-y-5 animate-float-3d">
+                  
+                  {/* Badge & Title */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 truncate">
+                      <span className="text-2xl">{upcomingTrn.gameIcon || '⚡'}</span>
+                      <span className="font-heading font-extrabold text-white text-base truncate">
+                        {upcomingTrn.title}
+                      </span>
+                    </div>
+                    <span className="px-3 py-1 rounded-full text-[10px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse flex items-center gap-1.5 shrink-0 shadow">
+                      <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                      ⏳ UPCOMING
                     </span>
                   </div>
-                  <span className="px-3 py-1 rounded-full text-[11px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 animate-pulse">
-                    ● MAIN GAME
-                  </span>
-                </div>
 
-                {/* Simulated 3D Ball Graphic */}
-                <div className="relative h-44 w-full rounded-2xl bg-gradient-to-br from-slate-950 to-purple-950/80 border border-purple-500/30 flex items-center justify-center overflow-hidden">
-                  <div className="w-28 h-28 rounded-full bg-slate-950 border-4 border-slate-800 shadow-2xl flex items-center justify-center relative">
-                    <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-inner">
-                      <span className="font-heading font-black text-2xl text-slate-950">8</span>
+                  {/* HIGH-TECH LIVE COUNTDOWN BOXES */}
+                  <div className="p-4 rounded-2xl bg-gradient-to-br from-slate-950 via-amber-950/40 to-slate-950 border border-amber-500/40 shadow-inner space-y-2">
+                    <div className="flex items-center justify-center gap-1.5 text-xs font-extrabold text-amber-300 uppercase tracking-widest">
+                      <Clock className="w-4 h-4 text-amber-400 animate-spin" style={{ animationDuration: '6s' }} />
+                      EVENT STARTS IN
+                    </div>
+
+                    <div className="grid grid-cols-4 gap-2 text-center pt-1">
+                      <div className="p-2 rounded-xl bg-slate-900/90 border border-amber-500/30 shadow">
+                        <span className="font-mono font-black text-xl text-amber-400 block">{String(countdown.days).padStart(2, '0')}</span>
+                        <span className="text-[9px] font-bold text-slate-400 block uppercase">DAYS</span>
+                      </div>
+                      <div className="p-2 rounded-xl bg-slate-900/90 border border-amber-500/30 shadow">
+                        <span className="font-mono font-black text-xl text-amber-400 block">{String(countdown.hours).padStart(2, '0')}</span>
+                        <span className="text-[9px] font-bold text-slate-400 block uppercase">HRS</span>
+                      </div>
+                      <div className="p-2 rounded-xl bg-slate-900/90 border border-amber-500/30 shadow">
+                        <span className="font-mono font-black text-xl text-amber-400 block">{String(countdown.minutes).padStart(2, '0')}</span>
+                        <span className="text-[9px] font-bold text-slate-400 block uppercase">MINS</span>
+                      </div>
+                      <div className="p-2 rounded-xl bg-slate-900/90 border border-amber-500/40 shadow animate-pulse">
+                        <span className="font-mono font-black text-xl text-rose-400 block">{String(countdown.seconds).padStart(2, '0')}</span>
+                        <span className="text-[9px] font-bold text-slate-400 block uppercase">SECS</span>
+                      </div>
                     </div>
                   </div>
-                  
-                  <div className="absolute top-3 left-3 bg-purple-900/80 backdrop-blur-md px-3 py-1 rounded-lg border border-purple-400/40 text-[10px] font-bold text-purple-200">
-                    Prize: ₹2,500
-                  </div>
-                  <div className="absolute bottom-3 right-3 bg-cyan-900/80 backdrop-blur-md px-3 py-1 rounded-lg border border-cyan-400/40 text-[10px] font-bold text-cyan-200">
-                    Entry: ₹100
-                  </div>
-                </div>
 
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between text-xs font-semibold text-slate-300">
-                    <span>1v1 • 32 Fixed Slots</span>
-                    <span className="text-emerald-400 font-bold">Registration Open</span>
+                  {/* Tournament Quick Stats */}
+                  <div className="flex items-center justify-between text-xs font-bold text-slate-300 px-1">
+                    <span className="flex items-center gap-1">
+                      🏆 Prize: <strong className="text-amber-400 font-mono text-sm">₹{upcomingTrn.prizePool || 0}</strong>
+                    </span>
+                    <span className="flex items-center gap-1">
+                      🎟️ Entry: <strong className="text-cyan-400 font-mono text-sm">{upcomingTrn.entryFee === 0 ? 'FREE' : `₹${upcomingTrn.entryFee}`}</strong>
+                    </span>
                   </div>
-                  
+
+                  {/* Action CTA Button */}
                   <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => openRegistrationModal(poolSpecial)}
-                    className="w-full py-3.5 rounded-xl bg-gradient-to-r from-purple-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white font-heading font-extrabold text-sm uppercase tracking-wider shadow-lg shadow-purple-500/25 transition-all"
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={() => openTournamentDetail(upcomingTrn)}
+                    className="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-500 via-rose-600 to-purple-600 hover:from-amber-400 hover:to-purple-500 text-white font-heading font-black text-xs uppercase tracking-wider shadow-xl shadow-amber-500/25 flex items-center justify-center gap-2 border border-amber-400/30 transition-all cursor-pointer"
                   >
-                    Join 1v1 Event (₹100 Entry)
+                    <Sparkles className="w-4 h-4 text-amber-200" />
+                    VIEW UPCOMING EVENT DETAILS
                   </motion.button>
-                </div>
 
-              </div>
+                </div>
+              ) : (
+                /* DEFAULT FEATURED CARD VISUAL */
+                <div className="relative w-full max-w-sm glass-panel p-6 rounded-3xl border border-purple-500/40 shadow-2xl space-y-6 animate-float-3d">
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl">🎱</span>
+                      <span className="font-heading font-extrabold text-white text-lg">
+                        8 BALL POOL 1v1
+                      </span>
+                    </div>
+                    <span className="px-3 py-1 rounded-full text-[11px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 animate-pulse">
+                      ● MAIN GAME
+                    </span>
+                  </div>
+
+                  {/* Simulated 3D Ball Graphic */}
+                  <div className="relative h-44 w-full rounded-2xl bg-gradient-to-br from-slate-950 to-purple-950/80 border border-purple-500/30 flex items-center justify-center overflow-hidden">
+                    <div className="w-28 h-28 rounded-full bg-slate-950 border-4 border-slate-800 shadow-2xl flex items-center justify-center relative">
+                      <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-inner">
+                        <span className="font-heading font-black text-2xl text-slate-950">8</span>
+                      </div>
+                    </div>
+                    
+                    <div className="absolute top-3 left-3 bg-purple-900/80 backdrop-blur-md px-3 py-1 rounded-lg border border-purple-400/40 text-[10px] font-bold text-purple-200">
+                      Prize: ₹2,500
+                    </div>
+                    <div className="absolute bottom-3 right-3 bg-cyan-900/80 backdrop-blur-md px-3 py-1 rounded-lg border border-cyan-400/40 text-[10px] font-bold text-cyan-200">
+                      Entry: ₹100
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between text-xs font-semibold text-slate-300">
+                      <span>1v1 • 32 Fixed Slots</span>
+                      <span className="text-emerald-400 font-bold">Registration Open</span>
+                    </div>
+                    
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => openRegistrationModal(poolSpecial)}
+                      className="w-full py-3.5 rounded-xl bg-gradient-to-r from-purple-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white font-heading font-extrabold text-sm uppercase tracking-wider shadow-lg shadow-purple-500/25 transition-all"
+                    >
+                      Join 1v1 Event (₹100 Entry)
+                    </motion.button>
+                  </div>
+
+                </div>
+              )}
             </motion.div>
 
           </div>
