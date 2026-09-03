@@ -356,21 +356,21 @@ export default function Home() {
                 <div className="flex items-center gap-3">
                   <div className="bg-slate-950 px-3.5 py-2 rounded-xl border border-purple-500/30 text-center">
                     <span className="font-mono font-black text-xl text-purple-400">
-                      {String(timeLeft.hours).padStart(2, '0')}
+                      {String(countdown.hours).padStart(2, '0')}
                     </span>
                     <span className="block text-[9px] text-slate-500 uppercase font-bold">Hours</span>
                   </div>
                   <span className="text-lg font-bold text-purple-500">:</span>
                   <div className="bg-slate-950 px-3.5 py-2 rounded-xl border border-purple-500/30 text-center">
                     <span className="font-mono font-black text-xl text-cyan-400">
-                      {String(timeLeft.minutes).padStart(2, '0')}
+                      {String(countdown.minutes).padStart(2, '0')}
                     </span>
                     <span className="block text-[9px] text-slate-500 uppercase font-bold">Mins</span>
                   </div>
                   <span className="text-lg font-bold text-cyan-500">:</span>
                   <div className="bg-slate-950 px-3.5 py-2 rounded-xl border border-purple-500/30 text-center">
                     <span className="font-mono font-black text-xl text-pink-400">
-                      {String(timeLeft.seconds).padStart(2, '0')}
+                      {String(countdown.seconds).padStart(2, '0')}
                     </span>
                     <span className="block text-[9px] text-slate-500 uppercase font-bold">Secs</span>
                   </div>
