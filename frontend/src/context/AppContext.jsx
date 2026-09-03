@@ -47,6 +47,17 @@ const AppContext = createContext();
 export function AppProvider({ children }) {
   // Authentication State (Requires logging in before accessing main web page content)
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
+    const savedProfile = localStorage.getItem('dd_user_profile_v4');
+    if (savedProfile) {
+      try {
+        const parsed = JSON.parse(savedProfile);
+        if (parsed.email === 'player.google@gmail.com' || parsed.name === 'Google Player' || parsed.gamingUsername === 'Google_8Ball_Pro') {
+          localStorage.removeItem('dd_user_profile_v4');
+          localStorage.removeItem('dd_logged_in');
+          return false;
+        }
+      } catch (e) {}
+    }
     const saved = localStorage.getItem('dd_logged_in');
     return saved === 'true';
   });
@@ -121,11 +132,15 @@ export function AppProvider({ children }) {
   const [userProfile, setUserProfile] = useState(() => {
     const saved = localStorage.getItem('dd_user_profile_v4');
     if (saved) {
-      const parsed = JSON.parse(saved);
-      if (parsed.email) {
-        return parsed;
-      }
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed.email && parsed.email !== 'player.google@gmail.com' && parsed.name !== 'Google Player' && parsed.gamingUsername !== 'Google_8Ball_Pro') {
+          return parsed;
+        }
+      } catch (err) {}
     }
+    localStorage.removeItem('dd_user_profile_v4');
+    localStorage.removeItem('dd_logged_in');
     return DEFAULT_USER_PROFILE;
   });
 
@@ -439,7 +454,6 @@ function processTournamentsWithAutoOpen(dataList) {
 
   // OFFICIAL GOOGLE AUTHENTICATION HANDLER
   const googleLogin = async (authPayload) => {
-    playSuccessChimeSound();
     let payload = {};
     if (typeof authPayload === 'string') {
       payload = { credential: authPayload };
@@ -454,16 +468,16 @@ function processTournamentsWithAutoOpen(dataList) {
     const apiResult = await googleLoginAPI(payload);
     let googleUser;
 
-    if (apiResult && apiResult.user) {
+    if (apiResult && apiResult.user && apiResult.user.email) {
       googleUser = apiResult.user;
-    } else {
+    } else if (authPayload && typeof authPayload === 'object' && authPayload.email && authPayload.email !== 'player.google@gmail.com') {
       googleUser = {
-        name: authPayload?.name || 'Google Player',
-        gamingUsername: 'Google_8Ball_Pro',
+        name: authPayload.name || 'Google User',
+        gamingUsername: authPayload.gamingUsername || authPayload.email.split('@')[0],
         playerId: `DD-8B-${Math.floor(1000 + Math.random() * 9000)}`,
-        email: authPayload?.email || 'player.google@gmail.com',
-        phone: '',
-        avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
+        email: authPayload.email,
+        phone: authPayload.phone || '',
+        avatar: authPayload.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
         rank: 'UNRANKED',
         ddPoints: 50,
         totalTournamentsPlayed: 0,
@@ -474,9 +488,15 @@ function processTournamentsWithAutoOpen(dataList) {
         hasSeenWelcome: false,
         registeredTournaments: []
       };
+    } else {
+      playErrorSound();
+      showToast('Google Sign-In was cancelled or failed. Please try signing in again.', 'error');
+      return { success: false };
     }
 
+    playSuccessChimeSound();
     await handleAuthSuccess(googleUser, false);
+    return { success: true };
   };
 
   const openTournamentDetail = (tournament) => {
