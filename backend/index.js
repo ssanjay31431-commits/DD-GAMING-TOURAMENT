@@ -1278,34 +1278,46 @@ app.get('/api/tournaments/:id/live-access', async (req, res) => {
       return res.status(404).json({ hasAccess: false, reason: 'NOT_FOUND', message: 'Tournament not found' });
     }
 
-    if (!tournament.liveEmbedUrl && !tournament.youtubeVideoId) {
-      return res.json({
-        hasAccess: false,
-        reason: 'NO_LIVE_LINK',
-        message: 'No live stream configured for this tournament yet.',
-        isLiveStreaming: Boolean(tournament.isLiveStreaming)
-      });
-    }
-
     // Check if user is registered or paid
     let isRegisteredOrPaid = false;
     if (email) {
       if (isDbConnected && mongoose.connection.readyState === 1) {
-        const reg = await Registration.findOne({ tournamentId: tournament.id, email });
+        const reg = await Registration.findOne({
+          $or: [
+            { tournamentId: tournament.id, email },
+            { tournamentId: String(tournament.id), email },
+            { tournamentId: tournament._id, email }
+          ]
+        });
         if (reg) isRegisteredOrPaid = true;
       } else {
-        const memReg = memoryRegistrations.find(r => r.tournamentId === tournament.id && r.email === email);
+        const memReg = memoryRegistrations.find(r => (r.tournamentId === tournament.id || String(r.tournamentId) === String(tournament.id)) && r.email === email);
         if (memReg) isRegisteredOrPaid = true;
       }
     }
 
     if (isRegisteredOrPaid) {
+      const defaultEmbed = tournament.liveEmbedUrl || (tournament.youtubeVideoId ? `https://www.youtube.com/embed/${tournament.youtubeVideoId}?autoplay=1&rel=0` : `https://www.youtube.com/embed/live_stream?channel=UC_DD_GAMING`);
       return res.json({
         hasAccess: true,
-        embedUrl: tournament.liveEmbedUrl || `https://www.youtube.com/embed/${tournament.youtubeVideoId}?autoplay=1&rel=0`,
-        videoId: tournament.youtubeVideoId,
+        embedUrl: defaultEmbed,
+        youtubeChannelUrl: tournament.youtubeChannelUrl || 'https://www.youtube.com/@ddgaming',
+        videoId: tournament.youtubeVideoId || '',
         tournamentTitle: tournament.title,
+        date: tournament.date,
+        time: tournament.time,
         isLiveStreaming: Boolean(tournament.isLiveStreaming)
+      });
+    }
+
+    if (!tournament.liveEmbedUrl && !tournament.youtubeVideoId) {
+      return res.json({
+        hasAccess: false,
+        reason: 'NO_LIVE_LINK',
+        message: 'No live stream configured for this tournament yet.',
+        isLiveStreaming: Boolean(tournament.isLiveStreaming),
+        date: tournament.date,
+        time: tournament.time
       });
     }
 
@@ -1313,7 +1325,9 @@ app.get('/api/tournaments/:id/live-access', async (req, res) => {
       hasAccess: false,
       reason: 'RESTRICTED',
       message: '🔒 Live Match Access Restricted. Only registered participants or users who have paid the entry fee can watch this live match.',
-      isLiveStreaming: Boolean(tournament.isLiveStreaming)
+      isLiveStreaming: Boolean(tournament.isLiveStreaming),
+      date: tournament.date,
+      time: tournament.time
     });
   } catch (err) {
     res.status(500).json({ hasAccess: false, error: err.message });
