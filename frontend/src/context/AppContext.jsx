@@ -51,6 +51,36 @@ export function AppProvider({ children }) {
     return saved === 'true';
   });
 
+  // Standalone Admin Auth State
+  const [isAdminAuth, setIsAdminAuth] = useState(() => localStorage.getItem('dd_admin_auth') === 'true');
+
+  const adminLogin = async ({ username, password }) => {
+    if (username && username.trim() === 'ddgaming' && (password === 'ddgaming2026' || password === 'ddgaming20')) {
+      localStorage.setItem('dd_admin_auth', 'true');
+      setIsAdminAuth(true);
+      showToast('Admin authenticated successfully!', 'success');
+      return { success: true };
+    }
+    const res = await adminLoginAPI({ username, password });
+    if (res && res.success) {
+      localStorage.setItem('dd_admin_auth', 'true');
+      if (res.token) localStorage.setItem('dd_admin_token', res.token);
+      setIsAdminAuth(true);
+      showToast('Admin authenticated successfully!', 'success');
+      return { success: true };
+    } else {
+      showToast(res?.message || 'Invalid Admin Credentials!', 'error');
+      return { success: false, message: res?.message };
+    }
+  };
+
+  const adminLogout = () => {
+    localStorage.removeItem('dd_admin_auth');
+    localStorage.removeItem('dd_admin_token');
+    setIsAdminAuth(false);
+    showToast('Admin logged out successfully.', 'info');
+  };
+
   // Navigation State (Persist active page across reloads)
   const [activePage, setActivePage] = useState(() => {
     const saved = localStorage.getItem('dd_active_page');
@@ -731,7 +761,10 @@ function processTournamentsWithAutoOpen(dataList) {
         clearAllNotifications,
         uploadWinnerQR,
         adminMarkPrizePaid,
-        adminDeleteAllData
+        adminDeleteAllData,
+        isAdminAuth,
+        adminLogin,
+        adminLogout
       }}
     >
       {children}

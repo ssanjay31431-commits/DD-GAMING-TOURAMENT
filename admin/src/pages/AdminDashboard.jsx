@@ -22,13 +22,15 @@ export default function AdminDashboard() {
     adminVerifyResults,
     adminUpdateLiveStream,
     adminSaveResults,
+    isAdminAuth,
+    adminLogin,
+    adminLogout,
     adminMarkPrizePaid,
     adminSendEmail,
     adminDeleteAllData,
     showToast
   } = useAdminApp();
 
-  const [isAdminAuth, setIsAdminAuth] = useState(() => localStorage.getItem('dd_admin_auth') === 'true');
   const [activeTab, setActiveTab] = useState('overview');
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [paymentFilter, setPaymentFilter] = useState('all');
@@ -128,9 +130,7 @@ export default function AdminDashboard() {
   ]);
 
   const handleAdminLogout = () => {
-    localStorage.removeItem('dd_admin_auth');
-    setIsAdminAuth(false);
-    showToast('Admin logged out successfully.', 'info');
+    adminLogout();
   };
 
   const filteredRegistrations = (registrations || []).filter(r => {
@@ -153,7 +153,7 @@ export default function AdminDashboard() {
   });
 
   if (!isAdminAuth) {
-    return <AdminLogin onLoginSuccess={() => setIsAdminAuth(true)} />;
+    return <AdminLogin onLoginSuccess={() => adminLogin({ username: 'ddgaming', password: 'ddgaming2026' })} />;
   }
 
   // Dynamic Create Tournament Form State

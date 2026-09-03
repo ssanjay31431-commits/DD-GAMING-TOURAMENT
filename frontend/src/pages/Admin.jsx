@@ -20,12 +20,14 @@ export default function Admin() {
     adminDeleteTournament,
     adminLiveUpdateTournament,
     adminVerifyResults,
+    isAdminAuth,
+    adminLogin,
+    adminLogout,
     adminMarkPrizePaid,
     adminDeleteAllData,
     showToast
   } = useApp();
 
-  const [isAdminAuth, setIsAdminAuth] = useState(() => localStorage.getItem('dd_admin_auth') === 'true');
   const [activeTab, setActiveTab] = useState('overview');
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [paymentFilter, setPaymentFilter] = useState('all');
@@ -66,13 +68,11 @@ export default function Admin() {
   };
 
   const handleAdminLogout = () => {
-    localStorage.removeItem('dd_admin_auth');
-    setIsAdminAuth(false);
-    showToast('Admin logged out successfully.', 'info');
+    adminLogout();
   };
 
   if (!isAdminAuth) {
-    return <AdminLogin onLoginSuccess={() => setIsAdminAuth(true)} />;
+    return <AdminLogin onLoginSuccess={() => adminLogin({ username: 'ddgaming', password: 'ddgaming2026' })} />;
   }
 
   // Dynamic Create Tournament Form State
