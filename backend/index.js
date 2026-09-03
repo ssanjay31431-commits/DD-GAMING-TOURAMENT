@@ -716,6 +716,23 @@ app.post('/api/registrations', rateLimiter({ windowMs: 60 * 1000, maxRequests: 2
     const normalizedEmail = email ? email.toLowerCase().trim() : '';
 
     if (isDbConnected && mongoose.connection.readyState === 1) {
+      // 0. Verify tournament registration status strictly
+      const targetTrn = await Tournament.findOne({ id: tournament.id });
+      if (targetTrn) {
+        if (targetTrn.status === 'Upcoming') {
+          return res.status(400).json({
+            success: false,
+            message: `Registration for "${targetTrn.title}" has NOT opened yet! Check start date & time.`
+          });
+        }
+        if (targetTrn.status === 'Registration Closed' || targetTrn.status === 'Completed') {
+          return res.status(400).json({
+            success: false,
+            message: `Registration is currently closed for "${targetTrn.title}".`
+          });
+        }
+      }
+
       // 1. Check for duplicate registration to prevent race conditions
       const existingReg = await Registration.findOne({
         tournamentId: tournament.id,

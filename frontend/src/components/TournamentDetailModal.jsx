@@ -221,22 +221,23 @@ export default function TournamentDetailModal() {
                   </div>
 
                   <button
-                    disabled={trn.status === 'Registration Closed' || trn.status === 'Completed'}
+                    disabled={trn.status === 'Registration Closed' || trn.status === 'Completed' || trn.status === 'Upcoming'}
                     onClick={() => {
+                      if (trn.status === 'Upcoming') return;
                       closeTournamentDetail();
                       openRegistrationModal(trn);
                     }}
-                    className={`w-full py-3.5 px-6 rounded-xl font-heading font-extrabold text-base tracking-wider uppercase shadow-lg flex items-center justify-center gap-2 transition-all ${
+                    className={`w-full py-3.5 px-6 rounded-xl font-heading font-extrabold text-xs tracking-wider uppercase shadow-lg flex items-center justify-center gap-2 transition-all ${
                       trn.status === 'Registration Closed' || trn.status === 'Completed'
                         ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
                         : trn.status === 'Upcoming'
-                        ? 'bg-gradient-to-r from-purple-800 to-indigo-900 hover:from-purple-700 text-purple-200 border border-purple-400/50 shadow-purple-500/30'
+                        ? 'bg-slate-850 text-amber-300/80 cursor-not-allowed border border-amber-500/30 font-mono shadow-inner'
                         : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white border border-purple-400/50 shadow-purple-500/30 hover:scale-[1.02]'
                     }`}
                   >
                     {trn.status === 'Registration Closed' ? 'Registration Closed' :
                      trn.status === 'Completed' ? 'Tournament Ended' :
-                     trn.status === 'Upcoming' ? `🗓️ Reg Starts ${trn.registrationStartDate || trn.date}` :
+                     trn.status === 'Upcoming' ? `🗓️ REGISTRATION HAS NOT OPENED YET` :
                      'Join Tournament Now'}
                     <ChevronRight className="w-5 h-5" />
                   </button>

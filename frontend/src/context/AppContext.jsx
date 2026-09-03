@@ -453,6 +453,14 @@ function processTournamentsWithAutoOpen(dataList) {
       navigateTo('login');
       return;
     }
+    if (tournament?.status === 'Upcoming') {
+      showToast(`Registration for "${tournament.title || 'this tournament'}" has NOT opened yet!`, 'warning');
+      return;
+    }
+    if (tournament?.status === 'Registration Closed' || tournament?.status === 'Completed') {
+      showToast(`Registration is closed for "${tournament.title || 'this tournament'}".`, 'info');
+      return;
+    }
     if (tournament?.gameCode === '8ball' || tournament?.is8BallSpecial) {
       playPoolCueHitSound();
     } else {
