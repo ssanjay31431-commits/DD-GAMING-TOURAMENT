@@ -321,3 +321,21 @@ export async function fetchAuditLogsAPI() {
     return [];
   }
 }
+
+export async function adminDeleteAllDataAPI(password) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/admin/delete-all-data`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      return { success: false, message: data.message || 'Failed to delete data' };
+    }
+    return { success: true, message: data.message || 'All system data deleted successfully' };
+  } catch (err) {
+    return { success: false, message: err.message || 'Network error deleting system data' };
+  }
+}
+

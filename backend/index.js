@@ -1475,6 +1475,59 @@ app.delete('/api/admin/tournaments/:id', async (req, res) => {
   }
 });
 
+// DELETE ALL SYSTEM DATA (Requires Admin Password)
+app.post('/api/admin/delete-all-data', async (req, res) => {
+  try {
+    const { password } = req.body;
+    const validPassword = process.env.ADMIN_PASSWORD || 'ddgaming20';
+
+    if (!password || password.trim() !== validPassword.trim()) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid Admin Password! Permission denied to delete system data.'
+      });
+    }
+
+    console.log(`==================================================`);
+    console.log(`🗑️ [DELETE ALL DATA] Admin password verified. Erasing all system data...`);
+
+    // 1. Wipe MongoDB collections if DB is connected
+    if (isDbConnected && mongoose.connection.readyState === 1) {
+      try {
+        await Tournament.deleteMany({});
+        await Registration.deleteMany({});
+        await Notification.deleteMany({});
+        await User.updateMany({}, { registeredTournaments: [], totalTournamentsPlayed: 0 });
+        console.log('✅ [DELETE ALL DATA] MongoDB collections cleared successfully.');
+      } catch (dbErr) {
+        console.error('❌ [DELETE ALL DATA] DB Error:', dbErr.message);
+      }
+    }
+
+    // 2. Wipe In-Memory Stores
+    INITIAL_TOURNAMENTS.length = 0;
+    memoryRegistrations.length = 0;
+    memoryNotifications.length = 0;
+    memoryAuditLogs.length = 0;
+
+    addAuditLog('DELETE_ALL_DATA', 'All tournament data, registrations, notifications, and logs were permanently deleted by Admin.', 'Super Admin');
+
+    console.log(`✅ [DELETE ALL DATA] Memory stores cleared.`);
+    console.log(`==================================================\n`);
+
+    return res.json({
+      success: true,
+      message: 'All system data has been permanently deleted successfully.'
+    });
+  } catch (err) {
+    console.error('❌ [DELETE ALL DATA ERROR]:', err.message);
+    return res.status(500).json({
+      success: false,
+      message: 'Server error while deleting data: ' + err.message
+    });
+  }
+});
+
 // LIVE TOURNAMENT UPDATE (Brackets / Kills / Score Updates)
 app.put('/api/admin/tournaments/:id/live-update', async (req, res) => {
   try {

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   ShieldAlert, Plus, CheckCircle2, XCircle, Trash2, Edit3, Users, DollarSign,
   Trophy, Sparkles, Filter, RefreshCw, Eye, QrCode, AlertTriangle, Layers,
-  Activity, Play, CheckSquare, Clock, History, Settings, Award, Crosshair, LogOut
+  Activity, Play, CheckSquare, Clock, History, Settings, Award, Crosshair, LogOut, Lock, AlertCircle
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { getGameBanner } from '../utils/gameBanners';
@@ -21,6 +21,7 @@ export default function Admin() {
     adminLiveUpdateTournament,
     adminVerifyResults,
     adminMarkPrizePaid,
+    adminDeleteAllData,
     showToast
   } = useApp();
 
@@ -33,6 +34,34 @@ export default function Admin() {
   const [editingTrn, setEditingTrn] = useState(null);
   const [confirmDeleteTrn, setConfirmDeleteTrn] = useState(null);
   const [prizeTxnInputs, setPrizeTxnInputs] = useState({});
+
+  // Delete All System Data State
+  const [isDeleteAllModalOpen, setIsDeleteAllModalOpen] = useState(false);
+  const [deleteAllPassword, setDeleteAllPassword] = useState('');
+  const [deleteAllError, setDeleteAllError] = useState('');
+  const [isDeletingAll, setIsDeletingAll] = useState(false);
+
+  const handleConfirmDeleteAllData = async (e) => {
+    if (e) e.preventDefault();
+    setDeleteAllError('');
+
+    if (!deleteAllPassword || !deleteAllPassword.trim()) {
+      setDeleteAllError('Please enter admin password.');
+      return;
+    }
+
+    setIsDeletingAll(true);
+    const res = await adminDeleteAllData(deleteAllPassword);
+    setIsDeletingAll(false);
+
+    if (res && res.success) {
+      setIsDeleteAllModalOpen(false);
+      setDeleteAllPassword('');
+      setDeleteAllError('');
+    } else {
+      setDeleteAllError(res?.message || 'Invalid Admin Password or failed to delete data.');
+    }
+  };
 
   const handleAdminLogout = () => {
     localStorage.removeItem('dd_admin_auth');
@@ -229,6 +258,17 @@ export default function Admin() {
           </div>
 
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => {
+                setDeleteAllPassword('');
+                setDeleteAllError('');
+                setIsDeleteAllModalOpen(true);
+              }}
+              className="px-4 py-3 rounded-2xl bg-gradient-to-r from-red-700 to-rose-700 hover:from-red-600 hover:to-rose-600 text-white font-heading font-bold text-xs uppercase tracking-wider shadow-lg shadow-red-950/40 flex items-center justify-center gap-2 border border-red-500/40 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+            >
+              <Trash2 className="w-4 h-4 text-red-200" />
+              <span>Delete All Data</span>
+            </button>
             <button
               onClick={() => setActiveTab('create')}
               className="px-6 py-3 rounded-2xl bg-gradient-to-r from-rose-600 to-purple-600 hover:from-rose-500 hover:to-purple-500 text-white font-heading font-black text-xs uppercase tracking-wider shadow-lg shadow-rose-500/25 flex items-center justify-center gap-2"
@@ -1088,6 +1128,80 @@ export default function Admin() {
                 Delete Tournament
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete All System Data Confirmation Modal */}
+      {isDeleteAllModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+          <div className="w-full max-w-md p-6 rounded-3xl bg-slate-900 border-2 border-red-500/60 shadow-2xl space-y-5 relative overflow-hidden">
+            <div className="flex items-center gap-3 border-b border-red-500/30 pb-4">
+              <div className="w-12 h-12 rounded-2xl bg-red-500/20 border border-red-500/40 flex items-center justify-center text-red-400 shrink-0">
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-heading font-black text-lg text-white uppercase tracking-wide">DELETE ALL SYSTEM DATA</h3>
+                <p className="text-xs text-red-300 font-semibold">Dangerous Action • Password Required</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-300 leading-relaxed">
+              ⚠️ Warning: This will <strong className="text-red-400">permanently delete ALL tournaments, player registrations, match results, notifications, and audit logs</strong>. This action cannot be undone!
+            </p>
+
+            {deleteAllError && (
+              <div className="p-3.5 rounded-xl bg-red-950/90 border border-red-500/60 text-red-200 text-xs font-semibold flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+                <span>{deleteAllError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleConfirmDeleteAllData} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                  Enter Admin Password *
+                </label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                  <input
+                    type="password"
+                    required
+                    value={deleteAllPassword}
+                    onChange={(e) => setDeleteAllPassword(e.target.value)}
+                    placeholder="Enter admin password (e.g. ddgaming20)"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl glass-input text-sm font-semibold border-red-500/30 focus:border-red-500"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsDeleteAllModalOpen(false)}
+                  className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold uppercase cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isDeletingAll || !deleteAllPassword.trim()}
+                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 disabled:opacity-50 text-white text-xs font-heading font-black uppercase tracking-wider shadow-lg shadow-red-950/50 flex items-center gap-2 cursor-pointer"
+                >
+                  {isDeletingAll ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>Deleting All...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="w-4 h-4" />
+                      <span>Confirm Delete All Data</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

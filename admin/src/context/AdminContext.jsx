@@ -12,7 +12,8 @@ import {
   adminSaveResultsAPI,
   adminMarkPrizePaidAPI,
   fetchAuditLogsAPI,
-  adminSendEmailAPI
+  adminSendEmailAPI,
+  adminDeleteAllDataAPI
 } from '../utils/api';
 
 const AdminContext = createContext();
@@ -181,6 +182,18 @@ export function AdminProvider({ children }) {
     }
   };
 
+  const adminDeleteAllData = async (password) => {
+    const res = await adminDeleteAllDataAPI(password);
+    if (res && res.success) {
+      await loadAllData();
+      showToast(res.message || 'All system data deleted successfully!', 'success');
+      return { success: true, message: res.message };
+    } else {
+      showToast(res?.message || 'Failed to delete system data.', 'error');
+      return { success: false, message: res?.message };
+    }
+  };
+
   return (
     <AdminContext.Provider
       value={{
@@ -201,7 +214,8 @@ export function AdminProvider({ children }) {
         adminUpdateLiveStream,
         adminSaveResults,
         adminMarkPrizePaid,
-        adminSendEmail
+        adminSendEmail,
+        adminDeleteAllData
       }}
     >
       {children}

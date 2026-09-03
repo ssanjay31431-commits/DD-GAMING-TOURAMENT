@@ -38,7 +38,8 @@ import {
   adminVerifyResultsAPI,
   uploadWinnerQRAPI,
   adminMarkPrizePaidAPI,
-  fetchAuditLogsAPI
+  fetchAuditLogsAPI,
+  adminDeleteAllDataAPI
 } from '../utils/api';
 
 const AppContext = createContext();
@@ -670,6 +671,19 @@ function processTournamentsWithAutoOpen(dataList) {
     showToast(`Prize payment marked as PAID (Txn: ${prizeTxnId || 'N/A'})!`, 'success');
   };
 
+  const adminDeleteAllData = async (password) => {
+    const res = await adminDeleteAllDataAPI(password);
+    if (res && res.success) {
+      await fetchTournaments();
+      await fetchRegistrations();
+      showToast(res.message || 'All system data deleted successfully!', 'success');
+      return { success: true, message: res.message };
+    } else {
+      showToast(res?.message || 'Failed to delete system data.', 'error');
+      return { success: false, message: res?.message };
+    }
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -721,7 +735,8 @@ function processTournamentsWithAutoOpen(dataList) {
         markNotificationRead,
         clearAllNotifications,
         uploadWinnerQR,
-        adminMarkPrizePaid
+        adminMarkPrizePaid,
+        adminDeleteAllData
       }}
     >
       {children}
