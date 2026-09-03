@@ -3,7 +3,7 @@ import {
   ShieldAlert, Plus, CheckCircle2, XCircle, Trash2, Edit3, Users, DollarSign,
   Trophy, Sparkles, Filter, RefreshCw, Eye, QrCode, AlertTriangle, Layers,
   Activity, Play, CheckSquare, Clock, History, Settings, Award, Crosshair, LogOut, ArrowLeft,
-  Mail, Send, MessageSquare, Lock, AlertCircle, EyeOff
+  Mail, Send, MessageSquare, Lock, AlertCircle, EyeOff, Menu, X
 } from 'lucide-react';
 import { useAdminApp } from '../context/AdminContext';
 import AdminLogin from '../components/AdminLogin';
@@ -30,6 +30,7 @@ export default function AdminDashboard() {
 
   const [isAdminAuth, setIsAdminAuth] = useState(() => localStorage.getItem('dd_admin_auth') === 'true');
   const [activeTab, setActiveTab] = useState('overview');
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [paymentFilter, setPaymentFilter] = useState('all');
   const [tournamentFilter, setTournamentFilter] = useState('all');
   const [viewQrModalReg, setViewQrModalReg] = useState(null);
@@ -341,21 +342,58 @@ export default function AdminDashboard() {
   const winnerClaimCount = registrations.filter(r => r.qrCodeUrl && r.prizePaymentStatus === 'Pending').length;
 
   return (
-    <div className="flex min-h-screen bg-[#090713] text-white selection:bg-purple-600 selection:text-white font-sans">
+    <div className="flex flex-col md:flex-row min-h-screen bg-[#090713] text-white selection:bg-purple-600 selection:text-white font-sans relative overflow-x-hidden">
       
-      {/* LEFT SIDEBAR NAVIGATION (Matching DD Mystery Box Admin layout from Image 1) */}
-      <aside className="w-64 min-h-screen bg-[#080611] border-r border-[#1e1933] flex flex-col justify-between p-5 sticky top-0 h-screen overflow-y-auto shrink-0 z-30">
+      {/* Mobile Top Navigation Header */}
+      <div className="md:hidden sticky top-0 z-30 bg-[#080611] border-b border-[#1e1933] px-4 py-3 flex items-center justify-between shadow-lg">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-500 to-rose-600 border border-amber-400/40 flex items-center justify-center shadow-lg shrink-0">
+            <ShieldAlert className="w-4 h-4 text-white" />
+          </div>
+          <div>
+            <h2 className="font-heading font-black text-xs text-white uppercase tracking-wider leading-none">ADMIN CONTROL</h2>
+            <span className="text-[9px] font-bold text-purple-400 block mt-0.5">DD GAMING MASTER</span>
+          </div>
+        </div>
+        <button
+          onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+          className="p-2 rounded-xl bg-[#141026] border border-purple-500/30 text-purple-300 focus:outline-none"
+        >
+          {isMobileSidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+        </button>
+      </div>
+
+      {/* Mobile Backdrop Overlay */}
+      {isMobileSidebarOpen && (
+        <div
+          onClick={() => setIsMobileSidebarOpen(false)}
+          className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm md:hidden transition-opacity"
+        />
+      )}
+
+      {/* LEFT SIDEBAR NAVIGATION (Desktop Sticky + Mobile Drawer) */}
+      <aside className={`fixed md:sticky top-0 z-50 h-screen w-64 bg-[#080611] border-r border-[#1e1933] flex flex-col justify-between p-5 overflow-y-auto shrink-0 transition-transform duration-300 ${
+        isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+      }`}>
         
         <div className="space-y-6">
           {/* Top Shield Branding Header */}
-          <div className="flex items-center gap-3 border-b border-[#1e1933] pb-4">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-500 to-rose-600 border border-amber-400/40 flex items-center justify-center shadow-lg shadow-amber-500/20 shrink-0">
-              <ShieldAlert className="w-5 h-5 text-white" />
+          <div className="flex items-center justify-between border-b border-[#1e1933] pb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-500 to-rose-600 border border-amber-400/40 flex items-center justify-center shadow-lg shadow-amber-500/20 shrink-0">
+                <ShieldAlert className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h2 className="font-heading font-black text-sm text-white uppercase tracking-wider leading-none">ADMIN CONTROL</h2>
+                <span className="text-[10px] font-bold text-purple-400 tracking-wider block mt-1">DD GAMING MASTER</span>
+              </div>
             </div>
-            <div>
-              <h2 className="font-heading font-black text-sm text-white uppercase tracking-wider leading-none">ADMIN CONTROL</h2>
-              <span className="text-[10px] font-bold text-purple-400 tracking-wider block mt-1">DD GAMING MASTER</span>
-            </div>
+            <button
+              onClick={() => setIsMobileSidebarOpen(false)}
+              className="md:hidden p-1.5 rounded-lg bg-[#141026] border border-slate-700 text-slate-400"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
 
           {/* Left Navigation Links List */}
@@ -377,7 +415,10 @@ export default function AdminDashboard() {
               return (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                    setIsMobileSidebarOpen(false);
+                  }}
                   className={`w-full px-3.5 py-3 rounded-xl font-heading text-xs transition-all flex items-center justify-between text-left ${
                     isActive
                       ? 'bg-[#1c1438] border border-purple-500/40 text-white font-black shadow-lg shadow-purple-950/50'

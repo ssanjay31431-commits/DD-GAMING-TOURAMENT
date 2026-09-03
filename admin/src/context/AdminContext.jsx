@@ -13,12 +13,14 @@ import {
   adminMarkPrizePaidAPI,
   fetchAuditLogsAPI,
   adminSendEmailAPI,
-  adminDeleteAllDataAPI
+  adminDeleteAllDataAPI,
+  adminLoginAPI
 } from '../utils/api';
 
 const AdminContext = createContext();
 
 export function AdminProvider({ children }) {
+  const [isAdminAuth, setIsAdminAuth] = useState(() => localStorage.getItem('dd_admin_auth') === 'true');
   const [tournaments, setTournaments] = useState([]);
   const [registrations, setRegistrations] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
@@ -38,6 +40,28 @@ export function AdminProvider({ children }) {
 
     const logs = await fetchAuditLogsAPI();
     if (logs && Array.isArray(logs)) setAuditLogs(logs);
+  };
+
+  const adminLogin = async ({ username, password }) => {
+    const res = await adminLoginAPI({ username, password });
+    if (res && res.success) {
+      localStorage.setItem('dd_admin_auth', 'true');
+      if (res.token) localStorage.setItem('dd_admin_token', res.token);
+      setIsAdminAuth(true);
+      await loadAllData();
+      showToast('Admin authenticated successfully!', 'success');
+      return { success: true };
+    } else {
+      showToast(res?.message || 'Invalid Admin Credentials!', 'error');
+      return { success: false, message: res?.message };
+    }
+  };
+
+  const adminLogout = () => {
+    localStorage.removeItem('dd_admin_auth');
+    localStorage.removeItem('dd_admin_token');
+    setIsAdminAuth(false);
+    showToast('Admin logged out successfully.', 'info');
   };
 
   useEffect(() => {
@@ -197,6 +221,9 @@ export function AdminProvider({ children }) {
   return (
     <AdminContext.Provider
       value={{
+        isAdminAuth,
+        adminLogin,
+        adminLogout,
         tournaments,
         registrations,
         auditLogs,

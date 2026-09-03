@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   ShieldAlert, Plus, CheckCircle2, XCircle, Trash2, Edit3, Users, DollarSign,
   Trophy, Sparkles, Filter, RefreshCw, Eye, QrCode, AlertTriangle, Layers,
-  Activity, Play, CheckSquare, Clock, History, Settings, Award, Crosshair, LogOut, Lock, AlertCircle, EyeOff
+  Activity, Play, CheckSquare, Clock, History, Settings, Award, Crosshair, LogOut, Lock, AlertCircle, EyeOff, Menu, X
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { getGameBanner } from '../utils/gameBanners';
@@ -27,6 +27,7 @@ export default function Admin() {
 
   const [isAdminAuth, setIsAdminAuth] = useState(() => localStorage.getItem('dd_admin_auth') === 'true');
   const [activeTab, setActiveTab] = useState('overview');
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [paymentFilter, setPaymentFilter] = useState('all');
   const [tournamentFilter, setTournamentFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');

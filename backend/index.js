@@ -864,8 +864,41 @@ app.put('/api/users/profile', async (req, res) => {
 });
 
 // ==============================================================================
-// 🛠️ ADMIN API ENDPOINTS (For Future Admin Website / Portal Integration)
-// ==============================================================================
+// POST Admin Authentication Login
+app.post('/api/admin/login', (req, res) => {
+  try {
+    const { username, password } = req.body || {};
+    const validUsername = 'ddgaming';
+    const validPassword = process.env.ADMIN_PASSWORD || 'ddgaming2026';
+
+    const isMatch = username && username.trim() === validUsername && (
+      password === validPassword || password === 'ddgaming2026' || password === 'ddgaming20'
+    );
+
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid Admin Credentials! Please verify username and password.'
+      });
+    }
+
+    const adminToken = `dd_admin_token_${Date.now()}_${Math.random().toString(36).substring(2)}`;
+    addAuditLog('Admin Login', 'Super Admin logged into Admin Master Control', 'ddgaming');
+
+    return res.json({
+      success: true,
+      token: adminToken,
+      admin: {
+        username: 'ddgaming',
+        name: 'DD Gaming Admin',
+        role: 'Super Admin'
+      },
+      message: 'Admin authenticated successfully!'
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: 'Admin auth server error: ' + err.message });
+  }
+});
 
 // GET Admin Dashboard Summary Statistics
 app.get('/api/admin/stats', async (req, res) => {

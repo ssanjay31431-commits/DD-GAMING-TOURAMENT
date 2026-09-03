@@ -341,3 +341,21 @@ export async function adminDeleteAllDataAPI(password) {
   }
 }
 
+export async function adminLoginAPI({ username, password }) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/admin/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      return { success: false, message: data.message || 'Invalid admin credentials' };
+    }
+    return { success: true, ...data };
+  } catch (err) {
+    return { success: false, message: err.message || 'Network error authenticating admin' };
+  }
+}
+
+

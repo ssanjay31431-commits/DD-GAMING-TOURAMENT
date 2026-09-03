@@ -12,17 +12,14 @@ export default function AdminLogin({ onLoginSuccess }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     setError('');
-    setIsSubmitting(true);
 
-    setTimeout(() => {
-      if (username.trim() === 'ddgaming' && password === 'ddgaming2026') {
-        localStorage.setItem('dd_admin_auth', 'true');
-        onLoginSuccess();
-      } else {
-        setError('Invalid Admin Credentials! Please verify username and password.');
-        setIsSubmitting(false);
-      }
-    }, 400);
+    if (username.trim() === 'ddgaming' && (password === 'ddgaming2026' || password === 'ddgaming20')) {
+      localStorage.setItem('dd_admin_auth', 'true');
+      if (onLoginSuccess) onLoginSuccess();
+    } else {
+      setError('Invalid Admin Credentials! Please verify username and password.');
+      setIsSubmitting(false);
+    }
   };
 
   return (
