@@ -1169,7 +1169,7 @@ export default function Admin() {
                     required
                     value={deleteAllPassword}
                     onChange={(e) => setDeleteAllPassword(e.target.value)}
-                    placeholder="Enter admin password (e.g. ddgaming20)"
+                    placeholder="Enter admin password (e.g. ddgaming2026)"
                     className="w-full pl-10 pr-4 py-2.5 rounded-xl glass-input text-sm font-semibold border-red-500/30 focus:border-red-500"
                   />
                 </div>

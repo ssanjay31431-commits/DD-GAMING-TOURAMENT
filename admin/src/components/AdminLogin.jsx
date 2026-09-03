@@ -14,7 +14,7 @@ export default function AdminLogin({ onLoginSuccess }) {
     setIsSubmitting(true);
 
     setTimeout(() => {
-      if (username.trim() === 'ddgaming' && password === 'ddgaming20') {
+      if (username.trim() === 'ddgaming' && password === 'ddgaming2026') {
         localStorage.setItem('dd_admin_auth', 'true');
         onLoginSuccess();
       } else {

@@ -1479,7 +1479,7 @@ app.delete('/api/admin/tournaments/:id', async (req, res) => {
 app.post('/api/admin/delete-all-data', async (req, res) => {
   try {
     const { password } = req.body;
-    const validPassword = process.env.ADMIN_PASSWORD || 'ddgaming20';
+    const validPassword = process.env.ADMIN_PASSWORD || 'ddgaming2026';
 
     if (!password || password.trim() !== validPassword.trim()) {
       return res.status(401).json({
