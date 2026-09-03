@@ -191,16 +191,7 @@ function getRegistrationStartDateTime(startDate, startTime) {
 
 function processTournamentsWithAutoOpen(dataList) {
   if (!Array.isArray(dataList)) return [];
-  const now = new Date();
-  return dataList.map(t => {
-    if (t.status === 'Upcoming' && t.registrationStartDate) {
-      const startAt = t.registrationStartAt ? new Date(t.registrationStartAt) : getRegistrationStartDateTime(t.registrationStartDate, t.registrationStartTime);
-      if (startAt && startAt <= now) {
-        return { ...t, status: 'Registration Open' };
-      }
-    }
-    return t;
-  });
+  return dataList;
 }
 
   // Fetch & Auto-Sync Tournaments from MongoDB backend

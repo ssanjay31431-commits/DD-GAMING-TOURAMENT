@@ -83,12 +83,7 @@ export function AdminProvider({ children }) {
   };
 
   const adminUpdateTournamentStatus = async (id, status) => {
-    const trn = tournaments.find(t => t.id === id || t._id === id || String(t.id) === String(id) || String(t._id) === String(id));
     const payload = { status };
-    if (status === 'Upcoming' && trn) {
-      payload.registrationStartDate = trn.registrationStartDate || trn.date;
-      payload.registrationStartTime = trn.registrationStartTime || trn.time;
-    }
     setTournaments(prev => prev.map(t => (t.id === id || t._id === id || String(t.id) === String(id) || String(t._id) === String(id)) ? { ...t, ...payload } : t));
     const res = await adminUpdateTournamentAPI(id, payload);
     if (res && res.title) {

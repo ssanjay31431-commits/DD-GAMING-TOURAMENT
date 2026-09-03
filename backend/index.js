@@ -285,8 +285,8 @@ async function autoCheckUpcomingTournaments() {
   }
 }
 
-// Run periodic background check every 10 seconds
-setInterval(autoCheckUpcomingTournaments, 10000);
+// Status is 100% managed by Admin Control Panel
+// setInterval(autoCheckUpcomingTournaments, 10000);
 
 // GET all tournaments
 app.get('/api/tournaments', async (req, res) => {
