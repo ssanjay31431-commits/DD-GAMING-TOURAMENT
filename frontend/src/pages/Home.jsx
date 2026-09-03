@@ -150,7 +150,7 @@ export default function Home() {
               <div className="absolute w-80 h-80 sm:w-96 sm:h-96 rounded-full bg-gradient-to-tr from-amber-500/30 via-purple-600/30 to-cyan-500/20 blur-2xl animate-pulse-glow" />
 
               {upcomingTrn ? (
-                /* UPCOMING EVENT DYNAMIC HERO CARD WITH LIVE COUNTDOWN ANIMATION */
+                /* 1. UPCOMING EVENT DYNAMIC HERO CARD WITH LIVE COUNTDOWN ANIMATION */
                 <div className="relative w-full max-w-sm glass-panel p-6 rounded-3xl border-2 border-amber-500/50 shadow-2xl shadow-amber-500/20 space-y-5 animate-float-3d">
                   
                   {/* Badge & Title */}
@@ -216,23 +216,23 @@ export default function Home() {
                   </motion.button>
 
                 </div>
-              ) : (
-                /* DEFAULT FEATURED CARD VISUAL */
+              ) : poolSpecial ? (
+                /* 2. ACTIVE OPEN GAME FEATURED PROMOTION CARD */
                 <div className="relative w-full max-w-sm glass-panel p-6 rounded-3xl border border-purple-500/40 shadow-2xl space-y-6 animate-float-3d">
                   
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-2xl">🎱</span>
-                      <span className="font-heading font-extrabold text-white text-lg">
-                        8 BALL POOL 1v1
+                    <div className="flex items-center gap-2 truncate">
+                      <span className="text-2xl">{poolSpecial.gameIcon || '🎱'}</span>
+                      <span className="font-heading font-extrabold text-white text-base truncate">
+                        {poolSpecial.title}
                       </span>
                     </div>
-                    <span className="px-3 py-1 rounded-full text-[11px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 animate-pulse">
+                    <span className="px-3 py-1 rounded-full text-[10px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 animate-pulse shrink-0">
                       ● MAIN GAME
                     </span>
                   </div>
 
-                  {/* Simulated 3D Ball Graphic */}
+                  {/* Simulated 3D Graphic */}
                   <div className="relative h-44 w-full rounded-2xl bg-gradient-to-br from-slate-950 to-purple-950/80 border border-purple-500/30 flex items-center justify-center overflow-hidden">
                     <div className="w-28 h-28 rounded-full bg-slate-950 border-4 border-slate-800 shadow-2xl flex items-center justify-center relative">
                       <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-inner">
@@ -241,16 +241,16 @@ export default function Home() {
                     </div>
                     
                     <div className="absolute top-3 left-3 bg-purple-900/80 backdrop-blur-md px-3 py-1 rounded-lg border border-purple-400/40 text-[10px] font-bold text-purple-200">
-                      Prize: ₹2,500
+                      Prize: ₹{poolSpecial.prizePool || 2500}
                     </div>
                     <div className="absolute bottom-3 right-3 bg-cyan-900/80 backdrop-blur-md px-3 py-1 rounded-lg border border-cyan-400/40 text-[10px] font-bold text-cyan-200">
-                      Entry: ₹100
+                      Entry: {poolSpecial.entryFee === 0 ? 'FREE' : `₹${poolSpecial.entryFee}`}
                     </div>
                   </div>
 
                   <div className="space-y-3">
                     <div className="flex items-center justify-between text-xs font-semibold text-slate-300">
-                      <span>1v1 • 32 Fixed Slots</span>
+                      <span>{poolSpecial.format || '1v1 • Fixed Slots'}</span>
                       <span className="text-emerald-400 font-bold">Registration Open</span>
                     </div>
                     
@@ -258,11 +258,38 @@ export default function Home() {
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={() => openRegistrationModal(poolSpecial)}
-                      className="w-full py-3.5 rounded-xl bg-gradient-to-r from-purple-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white font-heading font-extrabold text-sm uppercase tracking-wider shadow-lg shadow-purple-500/25 transition-all"
+                      className="w-full py-3.5 rounded-xl bg-gradient-to-r from-purple-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white font-heading font-extrabold text-xs uppercase tracking-wider shadow-lg shadow-purple-500/25 transition-all cursor-pointer"
                     >
-                      Join 1v1 Event (₹100 Entry)
+                      JOIN EVENT ({poolSpecial.entryFee === 0 ? 'FREE' : `₹${poolSpecial.entryFee}`} ENTRY)
                     </motion.button>
                   </div>
+
+                </div>
+              ) : (
+                /* 3. NEXT GAME PROMOTION DEMO FALLBACK CARD */
+                <div className="relative w-full max-w-sm glass-panel p-6 rounded-3xl border border-purple-500/40 shadow-2xl space-y-6 animate-float-3d text-center">
+                  
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-extrabold bg-purple-500/20 text-purple-300 border border-purple-500/40 animate-pulse">
+                    🎮 NEXT GAME PROMOTION
+                  </div>
+
+                  <div className="space-y-2">
+                    <h3 className="font-heading font-black text-2xl text-white">
+                      DD GAMING ARENA
+                    </h3>
+                    <p className="text-xs text-slate-300 leading-relaxed">
+                      Upcoming competitive esports tournaments launching soon. Stay tuned for registration!
+                    </p>
+                  </div>
+
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => navigateTo('tournaments')}
+                    className="w-full py-3.5 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-500 hover:from-purple-500 text-white font-heading font-extrabold text-xs uppercase tracking-wider shadow-lg shadow-purple-500/25 transition-all cursor-pointer"
+                  >
+                    EXPLORE ALL GAMES
+                  </motion.button>
 
                 </div>
               )}
