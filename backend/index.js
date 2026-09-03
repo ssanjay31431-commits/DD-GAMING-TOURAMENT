@@ -250,8 +250,8 @@ async function autoCheckUpcomingTournaments() {
   const now = new Date();
   // Check memory store
   INITIAL_TOURNAMENTS.forEach(trn => {
-    if (trn.status === 'Upcoming') {
-      const startAt = getRegistrationStartDateTime(trn.registrationStartDate || trn.date, trn.registrationStartTime || trn.time) || (trn.registrationStartAt ? new Date(trn.registrationStartAt) : null);
+    if (trn.status === 'Upcoming' && trn.registrationStartDate) {
+      const startAt = getRegistrationStartDateTime(trn.registrationStartDate, trn.registrationStartTime) || (trn.registrationStartAt ? new Date(trn.registrationStartAt) : null);
       if (startAt && startAt <= now) {
         trn.status = 'Registration Open';
         console.log(`[Auto Open] Memory tournament "${trn.title}" status changed from Upcoming to Registration Open`);
@@ -264,17 +264,19 @@ async function autoCheckUpcomingTournaments() {
     try {
       const upcomingTournaments = await Tournament.find({ status: 'Upcoming' });
       for (const trn of upcomingTournaments) {
-        const startAt = getRegistrationStartDateTime(trn.registrationStartDate || trn.date, trn.registrationStartTime || trn.time) || (trn.registrationStartAt ? new Date(trn.registrationStartAt) : null);
-        if (startAt && startAt <= now) {
-          trn.status = 'Registration Open';
-          await trn.save();
-          console.log(`[Auto Open] DB tournament "${trn.title}" status changed from Upcoming to Registration Open`);
-          await createNotification({
-            title: `🚀 Registration NOW OPEN: ${trn.title}`,
-            message: `Registration has automatically started for ${trn.title}! Lock in your slot now!`,
-            type: 'tournament',
-            tournamentId: trn.id
-          });
+        if (trn.registrationStartDate) {
+          const startAt = getRegistrationStartDateTime(trn.registrationStartDate, trn.registrationStartTime) || (trn.registrationStartAt ? new Date(trn.registrationStartAt) : null);
+          if (startAt && startAt <= now) {
+            trn.status = 'Registration Open';
+            await trn.save();
+            console.log(`[Auto Open] DB tournament "${trn.title}" status changed from Upcoming to Registration Open`);
+            await createNotification({
+              title: `🚀 Registration NOW OPEN: ${trn.title}`,
+              message: `Registration has automatically started for ${trn.title}! Lock in your slot now!`,
+              type: 'tournament',
+              tournamentId: trn.id
+            });
+          }
         }
       }
     } catch (err) {
@@ -1483,12 +1485,8 @@ app.put('/api/admin/tournaments/:id', async (req, res) => {
     delete updateData._id;
     delete updateData.__v;
 
-    const startDate = updateData.registrationStartDate || updateData.date;
-    const startTime = updateData.registrationStartTime || updateData.time;
-    if (startDate) {
-      updateData.registrationStartDate = startDate;
-      updateData.registrationStartTime = startTime;
-      updateData.registrationStartAt = getRegistrationStartDateTime(startDate, startTime);
+    if (updateData.registrationStartDate) {
+      updateData.registrationStartAt = getRegistrationStartDateTime(updateData.registrationStartDate, updateData.registrationStartTime || updateData.time);
     }
 
     addAuditLog('Tournament Updated', `Updated tournament ${id} details/status.`);
