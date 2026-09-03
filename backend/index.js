@@ -1482,6 +1482,7 @@ app.delete('/api/admin/tournaments/:id', async (req, res) => {
 // DELETE ALL SYSTEM DATA (Requires Admin Password)
 app.post('/api/admin/delete-all-data', async (req, res) => {
   try {
+    const password = req.body?.password;
     const inputPass = (password || '').trim();
     const envPass = (process.env.ADMIN_PASSWORD || '').trim();
     

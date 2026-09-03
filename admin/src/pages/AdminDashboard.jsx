@@ -3,7 +3,7 @@ import {
   ShieldAlert, Plus, CheckCircle2, XCircle, Trash2, Edit3, Users, DollarSign,
   Trophy, Sparkles, Filter, RefreshCw, Eye, QrCode, AlertTriangle, Layers,
   Activity, Play, CheckSquare, Clock, History, Settings, Award, Crosshair, LogOut, ArrowLeft,
-  Mail, Send, MessageSquare, Lock, AlertCircle
+  Mail, Send, MessageSquare, Lock, AlertCircle, EyeOff
 } from 'lucide-react';
 import { useAdminApp } from '../context/AdminContext';
 import AdminLogin from '../components/AdminLogin';
@@ -41,6 +41,7 @@ export default function AdminDashboard() {
   // Delete All System Data State
   const [isDeleteAllModalOpen, setIsDeleteAllModalOpen] = useState(false);
   const [deleteAllPassword, setDeleteAllPassword] = useState('');
+  const [showDeleteAllPassword, setShowDeleteAllPassword] = useState(false);
   const [deleteAllError, setDeleteAllError] = useState('');
   const [isDeletingAll, setIsDeletingAll] = useState(false);
 
@@ -1881,13 +1882,21 @@ export default function AdminDashboard() {
                 <div className="relative">
                   <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
                   <input
-                    type="password"
+                    type={showDeleteAllPassword ? "text" : "password"}
                     required
                     value={deleteAllPassword}
                     onChange={(e) => setDeleteAllPassword(e.target.value)}
                     placeholder="Enter admin password (e.g. ddgaming2026)"
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl glass-input text-sm font-semibold border-red-500/30 focus:border-red-500"
+                    className="w-full pl-10 pr-11 py-2.5 rounded-xl glass-input text-sm font-semibold border-red-500/30 focus:border-red-500"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowDeleteAllPassword(!showDeleteAllPassword)}
+                    className="absolute right-3.5 top-3 text-slate-400 hover:text-slate-200 transition-colors focus:outline-none"
+                    title={showDeleteAllPassword ? "Hide Password" : "Show Password"}
+                  >
+                    {showDeleteAllPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
                 </div>
               </div>
 
