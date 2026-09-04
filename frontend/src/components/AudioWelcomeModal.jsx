@@ -22,7 +22,7 @@ export default function AudioWelcomeModal() {
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-hidden">
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 overflow-hidden">
         {/* Darkened Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -66,7 +66,7 @@ export default function AudioWelcomeModal() {
           <div className="space-y-3 pt-2">
             <button
               onClick={handleEnableAudio}
-              className="w-full py-4 rounded-2xl bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white font-heading font-black text-sm uppercase tracking-wider shadow-xl shadow-purple-500/30 transition-all flex items-center justify-center gap-2 group"
+              className="w-full min-h-[44px] py-4 rounded-2xl bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white font-heading font-black text-sm uppercase tracking-wider shadow-xl shadow-purple-500/30 transition-all flex items-center justify-center gap-2 group touch-manipulation cursor-pointer active:scale-95"
             >
               <Volume2 className="w-5 h-5 text-cyan-300 group-hover:scale-110 transition-transform" />
               Enable Sound Effects 🔊
@@ -74,7 +74,7 @@ export default function AudioWelcomeModal() {
 
             <button
               onClick={handleDisableAudio}
-              className="w-full py-3.5 rounded-2xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-slate-200 font-heading font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2"
+              className="w-full min-h-[44px] py-3.5 rounded-2xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-slate-200 font-heading font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 touch-manipulation cursor-pointer active:scale-95"
             >
               <VolumeX className="w-4 h-4 text-slate-500" />
               Continue In Silent Mode 🔇

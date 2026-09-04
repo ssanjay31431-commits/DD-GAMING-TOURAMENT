@@ -24,14 +24,14 @@ export default function WelcomeAnimationModal() {
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-hidden">
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 overflow-hidden">
         {/* Darkened Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={closeWelcomeAnimation}
-          className="fixed inset-0 bg-slate-950/90 backdrop-blur-2xl"
+          className="fixed inset-0 bg-slate-950/90 backdrop-blur-2xl cursor-pointer"
         />
 
         {/* Modal Window */}
@@ -104,7 +104,7 @@ export default function WelcomeAnimationModal() {
                 closeWelcomeAnimation();
                 navigateTo('tournaments');
               }}
-              className="w-full py-4 rounded-2xl bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white font-heading font-black text-sm uppercase tracking-wider shadow-2xl shadow-purple-500/40 flex items-center justify-center gap-2 transition-all"
+              className="w-full py-4 min-h-[48px] rounded-2xl bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white font-heading font-black text-sm uppercase tracking-wider shadow-2xl shadow-purple-500/40 flex items-center justify-center gap-2 transition-all cursor-pointer touch-manipulation active:scale-95"
             >
               Enter Tournament Dashboard 🚀
               <ArrowRight className="w-4 h-4" />

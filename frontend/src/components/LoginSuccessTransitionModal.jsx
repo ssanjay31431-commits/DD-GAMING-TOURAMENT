@@ -69,7 +69,8 @@ export default function LoginSuccessTransitionModal() {
         animate={{ opacity: stage === 5 ? 0 : 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.5, ease: 'easeInOut' }}
-        className="fixed inset-0 z-[100] bg-[#020005] overflow-hidden flex flex-col items-center justify-center pointer-events-auto select-none font-heading"
+        onClick={() => finishAuthTransition()}
+        className="fixed inset-0 z-[100] bg-[#020005] overflow-hidden flex flex-col items-center justify-center pointer-events-auto select-none font-heading cursor-pointer touch-manipulation"
       >
         {/* Background Ambient Radial Energy Glow (Scene 2+) */}
         <motion.div

@@ -48,7 +48,7 @@ export default function ClickRippleEffect() {
   }, []);
 
   return (
-    <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
+    <div className="fixed inset-0 pointer-events-none z-30 overflow-hidden">
       <AnimatePresence>
         {ripples.map((ripple) => (
           <motion.div

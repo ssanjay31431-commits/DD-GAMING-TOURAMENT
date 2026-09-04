@@ -15,7 +15,7 @@ export default function TournamentDetailModal() {
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6 overflow-y-auto">
+      <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-6 overflow-y-auto">
         {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -35,7 +35,7 @@ export default function TournamentDetailModal() {
           {/* Close Button */}
           <button
             onClick={closeTournamentDetail}
-            className="absolute top-4 right-4 z-20 p-2 rounded-full bg-slate-950/80 border border-white/10 text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
+            className="absolute top-4 right-4 z-20 min-w-[44px] min-h-[44px] p-2 rounded-full bg-slate-950/80 border border-white/10 text-slate-300 hover:text-white hover:bg-slate-800 transition-colors flex items-center justify-center touch-manipulation cursor-pointer active:scale-95"
           >
             <X className="w-5 h-5" />
           </button>
@@ -227,7 +227,7 @@ export default function TournamentDetailModal() {
                         closeTournamentDetail();
                         navigateTo('my-tournaments');
                       }}
-                      className="w-full py-3.5 px-6 rounded-xl font-heading font-extrabold text-xs tracking-wider uppercase shadow-lg flex items-center justify-center gap-2 transition-all bg-slate-900 border-2 border-emerald-500/60 text-emerald-300 hover:bg-slate-800 cursor-pointer shadow-emerald-500/20"
+                      className="w-full min-h-[44px] py-3.5 px-6 rounded-xl font-heading font-extrabold text-xs tracking-wider uppercase shadow-lg flex items-center justify-center gap-2 transition-all bg-slate-900 border-2 border-emerald-500/60 text-emerald-300 hover:bg-slate-800 cursor-pointer shadow-emerald-500/20 touch-manipulation active:scale-95"
                     >
                       ✅ ALREADY REGISTERED (VIEW TICKET)
                       <ChevronRight className="w-5 h-5" />
@@ -240,12 +240,12 @@ export default function TournamentDetailModal() {
                         closeTournamentDetail();
                         openRegistrationModal(trn);
                       }}
-                      className={`w-full py-3.5 px-6 rounded-xl font-heading font-extrabold text-xs tracking-wider uppercase shadow-lg flex items-center justify-center gap-2 transition-all ${
+                      className={`w-full min-h-[44px] py-3.5 px-6 rounded-xl font-heading font-extrabold text-xs tracking-wider uppercase shadow-lg flex items-center justify-center gap-2 transition-all touch-manipulation active:scale-95 ${
                         trn.status === 'Registration Closed' || trn.status === 'Completed'
                           ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
                           : trn.status === 'Upcoming'
                           ? 'bg-slate-850 text-amber-300/80 cursor-not-allowed border border-amber-500/30 font-mono shadow-inner'
-                          : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white border border-purple-400/50 shadow-purple-500/30 hover:scale-[1.02]'
+                          : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white border border-purple-400/50 shadow-purple-500/30 hover:scale-[1.02] cursor-pointer'
                       }`}
                     >
                       {trn.status === 'Registration Closed' ? 'Registration Closed' :

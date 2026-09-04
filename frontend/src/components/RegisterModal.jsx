@@ -174,7 +174,7 @@ export default function RegisterModal() {
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6 overflow-y-auto">
+      <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-6 overflow-y-auto">
         {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -206,7 +206,7 @@ export default function RegisterModal() {
             </div>
             <button
               onClick={closeRegistrationModal}
-              className="p-2 rounded-full bg-slate-900 border border-slate-700 text-slate-400 hover:text-white transition-colors"
+              className="min-w-[44px] min-h-[44px] p-2 rounded-full bg-slate-900 border border-slate-700 text-slate-400 hover:text-white transition-colors flex items-center justify-center touch-manipulation cursor-pointer active:scale-95"
             >
               <X className="w-5 h-5" />
             </button>

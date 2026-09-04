@@ -11,8 +11,20 @@
     font-family: var(--font-body);
     background-color: #030712;
     color: #f3f4f6;
-    max-width: 100vw;
+    width: 100%;
+    max-width: 100%;
     overflow-x: hidden;
+  }
+
+  /* Universal Mobile Touch Target Rules */
+  button, a, input, select, textarea, [role="button"] {
+    touch-action: manipulation;
+  }
+
+  .touch-target-min {
+    min-width: 44px;
+    min-height: 44px;
+    touch-action: manipulation;
   }
 
   h1, h2, h3, .font-heading {
