@@ -45,8 +45,11 @@ export default function Navbar() {
     }
   };
 
-  const handleNavClick = (pageId) => {
+  const handleNavClick = (pageId, label = '') => {
+    console.log('MOBILE NAV CLICK:', label || pageId.toUpperCase());
     playClickSound();
+    setMobileMenuOpen(false);
+    setNotifDropdownOpen(false);
     navigateTo(pageId);
   };
 
@@ -62,7 +65,7 @@ export default function Navbar() {
             {/* BRAND LOGO (DESKTOP & MOBILE) */}
             <button
               {...touchProps(() => {
-                if (isLoggedIn) handleNavClick('home');
+                if (isLoggedIn) handleNavClick('home', 'BRAND_LOGO');
               })}
               className="flex items-center gap-2.5 sm:gap-3 group text-left focus:outline-none shrink-0 cursor-pointer touch-manipulation"
             >
@@ -113,7 +116,7 @@ export default function Navbar() {
                   return (
                     <button
                       key={link.id}
-                      {...touchProps(() => handleNavClick(link.id))}
+                      {...touchProps(() => handleNavClick(link.id, link.label))}
                       className={`relative px-2 xl:px-3.5 py-1.5 xl:py-2 rounded-lg text-xs xl:text-sm font-semibold transition-all duration-200 flex items-center gap-1 shrink-0 cursor-pointer touch-manipulation ${
                         isActive
                           ? 'text-white font-bold'
@@ -159,7 +162,10 @@ export default function Navbar() {
               {isLoggedIn && (
                 <div className="relative">
                   <button
-                    {...touchProps(() => setNotifDropdownOpen(!notifDropdownOpen))}
+                    {...touchProps(() => {
+                      console.log('MOBILE NAV CLICK: NOTIFICATIONS_BELL');
+                      setNotifDropdownOpen(!notifDropdownOpen);
+                    })}
                     className={`p-2 rounded-xl border text-xs font-bold transition-all relative cursor-pointer touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center ${
                       unreadNotificationCount > 0
                         ? 'bg-purple-600/30 border-purple-500/50 text-purple-300 animate-pulse'
@@ -167,9 +173,9 @@ export default function Navbar() {
                     }`}
                     title="In-App Notifications"
                   >
-                    <Bell className="w-4 h-4 text-purple-400" />
+                    <Bell className="w-4 h-4 text-purple-400 pointer-events-none" />
                     {unreadNotificationCount > 0 && (
-                      <span className="absolute -top-1.5 -right-1.5 bg-rose-500 text-white font-mono font-black text-[9px] w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center border-2 border-slate-950 shadow">
+                      <span className="absolute -top-1.5 -right-1.5 bg-rose-500 text-white font-mono font-black text-[9px] w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center border-2 border-slate-950 shadow pointer-events-none">
                         {unreadNotificationCount > 9 ? '9+' : unreadNotificationCount}
                       </span>
                     )}
@@ -218,7 +224,7 @@ export default function Navbar() {
                                 {...touchProps(() => {
                                   markNotificationRead(n.id);
                                   if (n.tournamentId) {
-                                    handleNavClick('my-tournaments');
+                                    handleNavClick('my-tournaments', 'NOTIFICATION_ITEM');
                                   }
                                   setNotifDropdownOpen(false);
                                 })}
@@ -251,7 +257,7 @@ export default function Navbar() {
               {isLoggedIn ? (
                 <div className="hidden lg:flex items-center gap-2 shrink-0">
                   <button
-                    {...touchProps(() => handleNavClick('profile'))}
+                    {...touchProps(() => handleNavClick('profile', 'DESKTOP_PROFILE'))}
                     className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-lg border max-w-[170px] cursor-pointer touch-manipulation ${
                       activePage === 'profile'
                         ? 'bg-purple-600 border-purple-400 text-white shadow-purple-500/30'
@@ -278,7 +284,7 @@ export default function Navbar() {
                 </div>
               ) : (
                 <button
-                  {...touchProps(() => handleNavClick('login'))}
+                  {...touchProps(() => handleNavClick('login', 'DESKTOP_LOGIN'))}
                   className="hidden lg:flex px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white font-heading font-black text-xs uppercase tracking-wider shadow-lg shadow-purple-500/30 items-center gap-1.5 border border-purple-400/40 shrink-0 cursor-pointer touch-manipulation"
                 >
                   <LogIn className="w-4 h-4 text-white" />
@@ -290,24 +296,25 @@ export default function Navbar() {
               <div className="lg:hidden flex items-center gap-2 shrink-0">
                 {!isLoggedIn && (
                   <button
-                    {...touchProps(() => handleNavClick('login'))}
+                    {...touchProps(() => handleNavClick('login', 'MOBILE_HEADER_LOGIN'))}
                     className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white font-heading font-black text-xs uppercase tracking-wider shadow-lg shadow-purple-500/30 flex items-center gap-1 border border-purple-400/40 shrink-0 cursor-pointer touch-manipulation active:scale-95"
                   >
-                    <LogIn className="w-3.5 h-3.5 text-white" />
-                    <span>LOGIN</span>
+                    <LogIn className="w-3.5 h-3.5 text-white pointer-events-none" />
+                    <span className="pointer-events-none">LOGIN</span>
                   </button>
                 )}
 
                 <button
                   {...touchProps(() => {
+                    console.log('MOBILE NAV CLICK: HAMBURGER_MENU');
                     playClickSound();
                     setMobileMenuOpen(prev => !prev);
                   })}
-                  className="p-2 rounded-xl bg-slate-900 border border-purple-500/30 text-slate-200 focus:outline-none flex items-center gap-1.5 cursor-pointer touch-manipulation active:scale-95"
+                  className="p-2 rounded-xl bg-slate-900 border border-purple-500/30 text-slate-200 focus:outline-none flex items-center gap-1.5 cursor-pointer touch-manipulation active:scale-95 min-w-[44px] min-h-[44px] justify-center"
                   title="Open Navigation Menu"
                 >
                   {isLoggedIn && (
-                    <div className="w-5 h-5 rounded-full overflow-hidden border border-purple-400 shrink-0">
+                    <div className="w-5 h-5 rounded-full overflow-hidden border border-purple-400 shrink-0 pointer-events-none">
                       <img
                         src={userProfile?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150'}
                         alt={userProfile?.name || 'Player'}
@@ -315,7 +322,7 @@ export default function Navbar() {
                       />
                     </div>
                   )}
-                  <Menu className="w-5 h-5 text-purple-400" />
+                  <Menu className="w-5 h-5 text-purple-400 pointer-events-none" />
                 </button>
               </div>
             </div>
@@ -327,76 +334,77 @@ export default function Navbar() {
       {/* ========================================================= */}
       {/* MOBILE FIXED BOTTOM ESPORTS NAVIGATION BAR (< 1024px) */}
       {/* ========================================================= */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-[100] glass-panel border-t border-purple-500/30 bg-slate-950/95 backdrop-blur-2xl px-2 py-1.5 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] shadow-2xl touch-manipulation">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-[130] glass-panel border-t border-purple-500/30 bg-slate-950/95 backdrop-blur-2xl px-2 py-1.5 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] shadow-2xl touch-manipulation">
         <div className="flex items-center justify-around max-w-md mx-auto">
           
           {/* 1. HOME */}
           <button
-            {...touchProps(() => handleNavClick('home'))}
+            {...touchProps(() => handleNavClick('home', 'HOME'))}
             className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl transition-all relative cursor-pointer touch-manipulation active:scale-95 min-w-[54px] min-h-[46px] ${
               activePage === 'home' ? 'text-purple-400 font-extrabold' : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            <HomeIcon className={`w-5 h-5 transition-transform ${activePage === 'home' ? 'scale-110 text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]' : ''}`} />
-            <span className="text-[10px] tracking-tight mt-0.5 font-bold">Home</span>
+            <HomeIcon className={`w-5 h-5 pointer-events-none transition-transform ${activePage === 'home' ? 'scale-110 text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]' : ''}`} />
+            <span className="text-[10px] tracking-tight mt-0.5 font-bold pointer-events-none">Home</span>
             {activePage === 'home' && (
-              <motion.div layoutId="mobileNavActivePill" className="absolute top-0 w-7 h-1 bg-gradient-to-r from-purple-500 to-cyan-400 rounded-full shadow-[0_0_8px_rgba(168,85,247,0.8)]" />
+              <motion.div layoutId="mobileNavActivePill" className="absolute top-0 w-7 h-1 bg-gradient-to-r from-purple-500 to-cyan-400 rounded-full shadow-[0_0_8px_rgba(168,85,247,0.8)] pointer-events-none" />
             )}
           </button>
 
           {/* 2. TOURNAMENTS */}
           <button
-            {...touchProps(() => handleNavClick('tournaments'))}
+            {...touchProps(() => handleNavClick('tournaments', 'TOURNAMENTS'))}
             className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl transition-all relative cursor-pointer touch-manipulation active:scale-95 min-w-[54px] min-h-[46px] ${
               activePage === 'tournaments' ? 'text-purple-400 font-extrabold' : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            <Trophy className={`w-5 h-5 transition-transform ${activePage === 'tournaments' ? 'scale-110 text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]' : ''}`} />
-            <span className="text-[10px] tracking-tight mt-0.5 font-bold">Tournaments</span>
+            <Trophy className={`w-5 h-5 pointer-events-none transition-transform ${activePage === 'tournaments' ? 'scale-110 text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]' : ''}`} />
+            <span className="text-[10px] tracking-tight mt-0.5 font-bold pointer-events-none">Tournaments</span>
             {activePage === 'tournaments' && (
-              <motion.div layoutId="mobileNavActivePill" className="absolute top-0 w-7 h-1 bg-gradient-to-r from-purple-500 to-cyan-400 rounded-full shadow-[0_0_8px_rgba(168,85,247,0.8)]" />
+              <motion.div layoutId="mobileNavActivePill" className="absolute top-0 w-7 h-1 bg-gradient-to-r from-purple-500 to-cyan-400 rounded-full shadow-[0_0_8px_rgba(168,85,247,0.8)] pointer-events-none" />
             )}
           </button>
 
           {/* 3. MY ARENA OR WATCH LIVE */}
           <button
-            {...touchProps(() => handleNavClick(isLoggedIn ? 'my-tournaments' : 'live'))}
+            {...touchProps(() => handleNavClick(isLoggedIn ? 'my-tournaments' : 'live', isLoggedIn ? 'MY_ARENA' : 'WATCH_LIVE'))}
             className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl transition-all relative cursor-pointer touch-manipulation active:scale-95 min-w-[54px] min-h-[46px] ${
               (activePage === 'my-tournaments' || activePage === 'live') ? 'text-purple-400 font-extrabold' : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             {isLoggedIn ? (
-              <Gamepad2 className={`w-5 h-5 transition-transform ${activePage === 'my-tournaments' ? 'scale-110 text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]' : ''}`} />
+              <Gamepad2 className={`w-5 h-5 pointer-events-none transition-transform ${activePage === 'my-tournaments' ? 'scale-110 text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]' : ''}`} />
             ) : (
-              <Radio className={`w-5 h-5 transition-transform ${activePage === 'live' ? 'scale-110 text-rose-400 drop-shadow-[0_0_8px_rgba(244,63,94,0.8)]' : ''}`} />
+              <Radio className={`w-5 h-5 pointer-events-none transition-transform ${activePage === 'live' ? 'scale-110 text-rose-400 drop-shadow-[0_0_8px_rgba(244,63,94,0.8)]' : ''}`} />
             )}
-            <span className="text-[10px] tracking-tight mt-0.5 font-bold">{isLoggedIn ? 'My Arena' : 'Watch Live'}</span>
+            <span className="text-[10px] tracking-tight mt-0.5 font-bold pointer-events-none">{isLoggedIn ? 'My Arena' : 'Watch Live'}</span>
             {(activePage === 'my-tournaments' || activePage === 'live') && (
-              <motion.div layoutId="mobileNavActivePill" className="absolute top-0 w-7 h-1 bg-gradient-to-r from-purple-500 to-cyan-400 rounded-full shadow-[0_0_8px_rgba(168,85,247,0.8)]" />
+              <motion.div layoutId="mobileNavActivePill" className="absolute top-0 w-7 h-1 bg-gradient-to-r from-purple-500 to-cyan-400 rounded-full shadow-[0_0_8px_rgba(168,85,247,0.8)] pointer-events-none" />
             )}
           </button>
 
           {/* 4. TICKETS OR LOGIN */}
           <button
-            {...touchProps(() => handleNavClick(isLoggedIn ? 'my-tickets' : 'login'))}
+            {...touchProps(() => handleNavClick(isLoggedIn ? 'my-tickets' : 'login', isLoggedIn ? 'TICKETS' : 'LOGIN'))}
             className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl transition-all relative cursor-pointer touch-manipulation active:scale-95 min-w-[54px] min-h-[46px] ${
               (activePage === 'my-tickets' || activePage === 'login') ? 'text-purple-400 font-extrabold' : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             {isLoggedIn ? (
-              <Ticket className={`w-5 h-5 transition-transform ${activePage === 'my-tickets' ? 'scale-110 text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]' : ''}`} />
+              <Ticket className={`w-5 h-5 pointer-events-none transition-transform ${activePage === 'my-tickets' ? 'scale-110 text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]' : ''}`} />
             ) : (
-              <LogIn className={`w-5 h-5 transition-transform ${activePage === 'login' ? 'scale-110 text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]' : ''}`} />
+              <LogIn className={`w-5 h-5 pointer-events-none transition-transform ${activePage === 'login' ? 'scale-110 text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]' : ''}`} />
             )}
-            <span className="text-[10px] tracking-tight mt-0.5 font-bold">{isLoggedIn ? 'Tickets' : 'Login'}</span>
+            <span className="text-[10px] tracking-tight mt-0.5 font-bold pointer-events-none">{isLoggedIn ? 'Tickets' : 'Login'}</span>
             {(activePage === 'my-tickets' || activePage === 'login') && (
-              <motion.div layoutId="mobileNavActivePill" className="absolute top-0 w-7 h-1 bg-gradient-to-r from-purple-500 to-cyan-400 rounded-full shadow-[0_0_8px_rgba(168,85,247,0.8)]" />
+              <motion.div layoutId="mobileNavActivePill" className="absolute top-0 w-7 h-1 bg-gradient-to-r from-purple-500 to-cyan-400 rounded-full shadow-[0_0_8px_rgba(168,85,247,0.8)] pointer-events-none" />
             )}
           </button>
 
           {/* 5. MORE */}
           <button
             {...touchProps(() => {
+              console.log('MOBILE NAV CLICK: MORE');
               playClickSound();
               setMobileMenuOpen(prev => !prev);
             })}
@@ -404,8 +412,8 @@ export default function Navbar() {
               mobileMenuOpen ? 'text-purple-400 font-extrabold' : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            <Menu className="w-5 h-5" />
-            <span className="text-[10px] tracking-tight mt-0.5 font-bold">More</span>
+            <Menu className="w-5 h-5 pointer-events-none" />
+            <span className="text-[10px] tracking-tight mt-0.5 font-bold pointer-events-none">More</span>
           </button>
 
         </div>
