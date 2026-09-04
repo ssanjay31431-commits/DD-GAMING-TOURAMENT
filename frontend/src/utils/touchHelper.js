@@ -17,3 +17,31 @@ export function touchProps(fn) {
     onClick: handleTouchOrClick(fn)
   };
 }
+
+/**
+ * Forensic DOM Hit-Testing Helper
+ * Inspects element sitting directly under a screen coordinate (x, y)
+ */
+export function getElementAtPoint(x, y) {
+  if (typeof window === 'undefined' || !window.document) return null;
+  return window.document.elementFromPoint(x, y);
+}
+
+/**
+ * Forensic Viewport Overflow Diagnostic Audit
+ * Returns all DOM elements whose right boundary extends beyond window.innerWidth
+ */
+export function auditViewportOverflow() {
+  if (typeof window === 'undefined' || !window.document) return [];
+  const viewportWidth = window.innerWidth;
+  const elements = Array.from(window.document.querySelectorAll('*'));
+  const overflowing = elements.filter(el => {
+    const rect = el.getBoundingClientRect();
+    return rect.right > viewportWidth + 1 || rect.left < -1;
+  });
+  return overflowing.map(el => ({
+    tagName: el.tagName,
+    className: el.className,
+    rect: el.getBoundingClientRect()
+  }));
+}

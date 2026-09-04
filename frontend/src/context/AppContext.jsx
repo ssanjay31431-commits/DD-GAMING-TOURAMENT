@@ -333,13 +333,14 @@ function processTournamentsWithAutoOpen(dataList) {
     }, 4000);
   };
 
-  // Protected Navigation Gateway
+  // Navigation Gateway (Allows public showcase page previewing; protects user profile & ticket management)
   const navigateTo = (page, param = null) => {
     playClickSound();
     
-    // Require login for ALL pages
-    if (!isLoggedIn && page !== 'login') {
-      showToast('Please login to access DD Gaming!', 'info');
+    const protectedPages = ['profile', 'my-tournaments', 'my-tickets'];
+    
+    if (!isLoggedIn && protectedPages.includes(page)) {
+      showToast('Please login to access your Player Profile & Tickets!', 'info');
       setActivePage('login');
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;

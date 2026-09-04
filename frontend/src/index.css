@@ -100,8 +100,8 @@
 
 /* 3D Floating Animations */
 @keyframes float3D {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  50% { transform: translateY(-14px) rotate(4deg); }
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
 }
 
 .animate-float-3d {

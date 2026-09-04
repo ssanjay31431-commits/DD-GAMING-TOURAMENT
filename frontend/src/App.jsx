@@ -92,7 +92,7 @@ function MainContent() {
       return <Admin />;
     }
 
-    if (!isLoggedIn || activePage === 'login') {
+    if (activePage === 'login') {
       return <Login />;
     }
 

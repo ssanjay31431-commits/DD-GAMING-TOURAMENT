@@ -99,8 +99,8 @@ export default function Navbar() {
             </button>
 
             {/* MOBILE COMPACT CENTER TITLE (< 1024px) */}
-            <div className="lg:hidden flex items-center justify-center px-1">
-              <span className="font-heading font-extrabold text-xs sm:text-sm text-purple-300 uppercase tracking-wider truncate max-w-[100px] xs:max-w-[150px] sm:max-w-[200px]">
+            <div className="lg:hidden flex-1 min-w-0 flex items-center justify-center px-2 overflow-hidden">
+              <span className="font-heading font-extrabold text-xs sm:text-sm text-purple-300 uppercase tracking-wider truncate block w-full text-center">
                 {getPageTitle(activePage)}
               </span>
             </div>
