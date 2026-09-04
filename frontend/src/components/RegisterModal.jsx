@@ -174,7 +174,7 @@ export default function RegisterModal() {
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6 overflow-y-auto">
         {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -186,10 +186,10 @@ export default function RegisterModal() {
 
         {/* Modal Container */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          initial={{ opacity: 0, scale: 0.95, y: 30 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative w-full max-w-xl bg-slate-900 border border-purple-500/40 rounded-2xl shadow-2xl overflow-hidden z-10 my-8"
+          exit={{ opacity: 0, scale: 0.95, y: 30 }}
+          className="relative w-full max-w-xl bg-slate-900 border-t-2 sm:border border-purple-500/40 rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden z-10 max-h-[92vh] sm:max-h-none flex flex-col my-0 sm:my-8 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-0"
         >
           {/* Header */}
           <div className="p-6 bg-slate-950 border-b border-slate-800 flex items-center justify-between">

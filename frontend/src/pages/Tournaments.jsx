@@ -185,8 +185,8 @@ export default function Tournaments() {
                     </div>
                   </div>
 
-                  <div className="p-6 space-y-4">
-                    <h3 className="font-heading font-bold text-xl text-white">
+                  <div className="p-4 sm:p-6 space-y-3.5">
+                    <h3 className="font-heading font-bold text-lg sm:text-xl text-white">
                       {trn.title}
                     </h3>
                     <p className="text-xs text-purple-300 font-medium">
@@ -195,22 +195,22 @@ export default function Tournaments() {
 
                     {trn.status === 'Upcoming' && (
                       <div className="p-2.5 rounded-xl bg-purple-950/70 border border-purple-500/40 text-purple-200 text-xs font-semibold flex items-center justify-between shadow-inner">
-                        <span>🗓️ Registration Starts:</span>
-                        <span className="font-bold text-amber-300 font-mono">
+                        <span>🗓️ Reg Starts:</span>
+                        <span className="font-bold text-amber-300 font-mono text-[11px] sm:text-xs">
                           {trn.registrationStartDate || trn.date} @ {trn.registrationStartTime || trn.time}
                         </span>
                       </div>
                     )}
 
-                    <div className="grid grid-cols-2 gap-3 text-xs">
+                    <div className="grid grid-cols-2 gap-2.5 text-xs">
                       <div className="bg-slate-950 p-2.5 rounded-xl border border-white/5">
-                        <span className="text-slate-400 block text-[10px] uppercase font-bold">Match Date & Time</span>
-                        <span className="font-bold text-slate-200 mt-0.5 block">{trn.date}</span>
+                        <span className="text-slate-400 block text-[10px] uppercase font-bold">Match Schedule</span>
+                        <span className="font-bold text-slate-200 mt-0.5 block truncate">{trn.date}</span>
                         <span className="text-[10px] text-purple-300 font-mono">{trn.time}</span>
                       </div>
                       <div className="bg-slate-950 p-2.5 rounded-xl border border-white/5">
                         <span className="text-slate-400 block text-[10px] uppercase font-bold">Prize Pool</span>
-                        <span className="font-black text-amber-400 text-base">
+                        <span className="font-black text-amber-400 text-sm sm:text-base">
                           ₹{trn.prizePool.toLocaleString()}
                         </span>
                       </div>
@@ -218,12 +218,12 @@ export default function Tournaments() {
 
                     <div className="space-y-1">
                       <div className="flex items-center justify-between text-xs font-bold">
-                        <span className="text-slate-400">Available Slots</span>
-                        <span className="font-mono text-purple-300">
+                        <span className="text-slate-400">Slots</span>
+                        <span className="font-mono text-purple-300 text-[11px] sm:text-xs">
                           {trn.registeredSlots} / {trn.totalSlots} Slots
                         </span>
                       </div>
-                      <div className="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden">
+                      <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
                         <div
                           className="h-full bg-gradient-to-r from-purple-500 to-cyan-400 rounded-full"
                           style={{ width: `${fillPct}%` }}
@@ -233,10 +233,10 @@ export default function Tournaments() {
                   </div>
                 </div>
 
-                <div className="p-6 pt-0 space-y-2">
-                  <div className="flex items-center justify-between text-sm pb-2">
+                <div className="p-4 sm:p-6 pt-0 space-y-2">
+                  <div className="flex items-center justify-between text-xs sm:text-sm pb-2">
                     <span className="text-slate-400">Entry Fee:</span>
-                    <span className="font-black text-emerald-400 text-lg">
+                    <span className="font-black text-emerald-400 text-base sm:text-lg">
                       {trn.entryFee === 0 ? 'FREE' : `₹${trn.entryFee}`}
                     </span>
                   </div>
