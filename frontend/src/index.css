@@ -1,5 +1,43 @@
 @import "tailwindcss";
 
+@theme {
+  --font-heading: 'Orbitron', sans-serif;
+  --font-subheading: 'Rajdhani', sans-serif;
+  --font-body: 'Plus Jakarta Sans', sans-serif;
+
+  --animate-float-3d: float3D 4s ease-in-out infinite;
+  --animate-pulse-glow: pulseGlow 3.5s ease-in-out infinite;
+  --animate-spin-border: spinBorder 6s linear infinite;
+  --animate-shimmer-sweep: shimmerSweep 1s ease-in-out infinite;
+  --animate-shimmer-text: shimmerText 4s ease infinite;
+
+  @keyframes float3D {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+  }
+
+  @keyframes pulseGlow {
+    0%, 100% { opacity: 0.35; transform: scale(1); }
+    50% { opacity: 0.85; transform: scale(1.08); }
+  }
+
+  @keyframes spinBorder {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  @keyframes shimmerSweep {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(200%); }
+  }
+
+  @keyframes shimmerText {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+}
+
 @layer base {
   *, ::before, ::after {
     box-sizing: border-box;
@@ -42,17 +80,27 @@
   }
 }
 
-/* Custom Shimmer & Spinning Conic Gradient Animations */
-@keyframes shimmerText {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+/* Explicit Animation Utilities for Guaranteed Browser Rendering */
+.animate-float-3d {
+  animation: float3D 4s ease-in-out infinite !important;
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 3.5s ease-in-out infinite !important;
+}
+
+.animate-spin-border {
+  animation: spinBorder 6s linear infinite !important;
+}
+
+.animate-shimmer-text {
+  animation: shimmerText 4s ease infinite !important;
 }
 
 .text-gradient-purple {
   background: linear-gradient(135deg, #c084fc 0%, #8b5cf6 30%, #38bdf8 70%, #ec4899 100%);
   background-size: 200% 200%;
-  animation: shimmerText 4s ease infinite;
+  animation: shimmerText 4s ease infinite !important;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -60,7 +108,7 @@
 .text-gradient-cyan {
   background: linear-gradient(135deg, #67e8f9 0%, #06b6d4 50%, #3b82f6 100%);
   background-size: 200% 200%;
-  animation: shimmerText 5s ease infinite;
+  animation: shimmerText 5s ease infinite !important;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -68,17 +116,12 @@
 .text-gradient-gold {
   background: linear-gradient(135deg, #fde047 0%, #f59e0b 50%, #d97706 100%);
   background-size: 200% 200%;
-  animation: shimmerText 4s ease infinite;
+  animation: shimmerText 4s ease infinite !important;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 /* Card Shimmer Sweep Animation */
-@keyframes shimmerSweep {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(200%); }
-}
-
 .shimmer-sweep {
   position: relative;
   overflow: hidden;
@@ -95,17 +138,7 @@
   pointer-events: none;
 }
 .shimmer-sweep:hover::after {
-  animation: shimmerSweep 1s ease-in-out;
-}
-
-/* 3D Floating Animations */
-@keyframes float3D {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-8px); }
-}
-
-.animate-float-3d {
-  animation: float3D 4s ease-in-out infinite;
+  animation: shimmerSweep 1s ease-in-out !important;
 }
 
 /* Glassmorphism & Glowing Cards */
@@ -139,11 +172,6 @@
 }
 
 /* Spinning Glowing Border Effect */
-@keyframes spinBorder {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
 .glowing-spin-border {
   position: relative;
 }
@@ -153,17 +181,8 @@
   inset: -2px;
   border-radius: 26px;
   background: conic-gradient(from 0deg, #8b5cf6, #06b6d4, #ec4899, #3b82f6, #8b5cf6);
-  animation: spinBorder 6s linear infinite;
+  animation: spinBorder 6s linear infinite !important;
   z-index: -1;
-}
-
-@keyframes pulseGlow {
-  0%, 100% { opacity: 0.35; transform: scale(1); }
-  50% { opacity: 0.85; transform: scale(1.1); }
-}
-
-.animate-pulse-glow {
-  animation: pulseGlow 3.5s ease-in-out infinite;
 }
 
 /* Custom Scrollbar */
@@ -181,3 +200,4 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #8b5cf6;
 }
+
