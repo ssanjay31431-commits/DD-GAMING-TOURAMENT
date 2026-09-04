@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Lock, LogIn, UserPlus, ArrowRight, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Mail, Lock, LogIn, UserPlus, ArrowRight, Eye, EyeOff, Loader2, Zap } from 'lucide-react';
 import { useGoogleLogin } from '@react-oauth/google';
 import { useApp } from '../context/AppContext';
 import { playTypingSound } from '../utils/soundEffects';
@@ -14,6 +14,7 @@ export default function Login() {
   const [errorMsg, setErrorMsg] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [isLoadingGoogle, setIsLoadingGoogle] = useState(false);
+  const [isLoggingInDemo, setIsLoggingInDemo] = useState(false);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -38,6 +39,42 @@ export default function Login() {
     } else {
       setErrorMsg('');
       setSuggestions([]);
+    }
+  };
+
+  // Demo Quick Login for Instant Mobile Testing
+  const handleDemoLogin = async (e) => {
+    if (e) e.preventDefault();
+    setErrorMsg('');
+    setSuggestions([]);
+    setIsLoggingInDemo(true);
+
+    const demoEmail = 'demo.player@ddgaming.com';
+    const demoPass = 'demo1234';
+
+    try {
+      const res = await login(demoEmail, demoPass);
+      if (res && res.success === false) {
+        // Auto register demo account if not existing on backend
+        const regRes = await registerUser({
+          email: demoEmail,
+          password: demoPass,
+          fullName: 'Demo Player',
+          gamingUsername: 'Demo_Pro8Ball'
+        });
+        if (regRes && regRes.success === false) {
+          // Direct fallback session creation
+          await googleLogin({
+            email: demoEmail,
+            name: 'Demo Player',
+            gamingUsername: 'Demo_Pro8Ball'
+          });
+        }
+      }
+    } catch (err) {
+      console.warn('Demo login notice:', err);
+    } finally {
+      setIsLoggingInDemo(false);
     }
   };
 
@@ -117,7 +154,7 @@ export default function Login() {
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-md bg-slate-900/90 border-2 border-purple-500/40 rounded-3xl p-5 sm:p-8 shadow-2xl glass-panel relative overflow-hidden space-y-5 sm:space-y-6"
+        className="w-full max-w-md bg-slate-900/90 border-2 border-purple-500/40 rounded-3xl p-5 sm:p-8 shadow-2xl glass-panel relative overflow-hidden space-y-4 sm:space-y-6"
       >
         {/* Header Icon & Title */}
         <div className="text-center space-y-2">
@@ -137,6 +174,26 @@ export default function Login() {
           </p>
         </div>
 
+        {/* Quick Demo Login Button for Instant Mobile Access */}
+        <button
+          type="button"
+          disabled={isLoggingInDemo}
+          onClick={handleDemoLogin}
+          className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-heading font-black text-sm uppercase tracking-wider shadow-lg shadow-amber-500/25 flex items-center justify-center gap-2 transition-all active:scale-98 cursor-pointer disabled:opacity-75"
+        >
+          {isLoggingInDemo ? (
+            <>
+              <Loader2 className="w-5 h-5 animate-spin text-slate-950" />
+              <span>Logging in Demo...</span>
+            </>
+          ) : (
+            <>
+              <Zap className="w-5 h-5 fill-current" />
+              <span>⚡ DEMO QUICK LOGIN</span>
+            </>
+          )}
+        </button>
+
         {/* Auth Mode Tabs (Sign In / Create Account) */}
         <div className="flex bg-slate-950/80 p-1.5 rounded-2xl border border-slate-800">
           <button
@@ -146,7 +203,7 @@ export default function Login() {
               setErrorMsg('');
               setSuggestions([]);
             }}
-            className={`flex-1 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all ${
+            className={`flex-1 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer ${
               !isRegisterMode
                 ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30'
                 : 'text-slate-400 hover:text-white'
@@ -162,7 +219,7 @@ export default function Login() {
               setErrorMsg('');
               setSuggestions([]);
             }}
-            className={`flex-1 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all ${
+            className={`flex-1 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer ${
               isRegisterMode
                 ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-600/30'
                 : 'text-slate-400 hover:text-white'
@@ -189,7 +246,7 @@ export default function Login() {
                       setErrorMsg('');
                       setSuggestions([]);
                     }}
-                    className="px-2.5 py-1 rounded-lg bg-purple-600/40 hover:bg-purple-600 text-purple-200 border border-purple-400/40 text-xs font-mono font-bold transition-all"
+                    className="px-2.5 py-1 rounded-lg bg-purple-600/40 hover:bg-purple-600 text-purple-200 border border-purple-400/40 text-xs font-mono font-bold transition-all cursor-pointer"
                   >
                     {suggested}
                   </button>
@@ -204,7 +261,7 @@ export default function Login() {
           type="button"
           disabled={isLoadingGoogle}
           onClick={handleGoogleAuthClick}
-          className="w-full py-3 rounded-2xl bg-white text-slate-900 font-bold text-sm flex items-center justify-center gap-3 hover:bg-slate-100 transition-all shadow-md active:scale-98 disabled:opacity-75"
+          className="w-full py-3 rounded-2xl bg-white text-slate-900 font-bold text-sm flex items-center justify-center gap-3 hover:bg-slate-100 transition-all shadow-md active:scale-98 disabled:opacity-75 cursor-pointer"
         >
           {isLoadingGoogle ? (
             <>
@@ -294,7 +351,7 @@ export default function Login() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3.5 top-3 text-slate-400 hover:text-white"
+                className="absolute right-3.5 top-3 text-slate-400 hover:text-white cursor-pointer"
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
@@ -305,7 +362,7 @@ export default function Login() {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.96 }}
             type="submit"
-            className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white font-heading font-black text-sm uppercase tracking-wider shadow-xl shadow-purple-500/30 flex items-center justify-center gap-2 transition-all mt-2"
+            className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white font-heading font-black text-sm uppercase tracking-wider shadow-xl shadow-purple-500/30 flex items-center justify-center gap-2 transition-all mt-2 cursor-pointer"
           >
             {isRegisterMode ? 'Register & Enter Arena' : 'Login to DD Gaming'}
             <ArrowRight className="w-4 h-4" />
@@ -321,7 +378,7 @@ export default function Login() {
               setErrorMsg('');
               setSuggestions([]);
             }}
-            className="text-xs text-purple-300 hover:text-purple-200 font-bold"
+            className="text-xs text-purple-300 hover:text-purple-200 font-bold cursor-pointer"
           >
             {isRegisterMode
               ? 'Already have an account? Sign in here'
@@ -334,3 +391,4 @@ export default function Login() {
     </div>
   );
 }
+
