@@ -7,11 +7,12 @@ import {
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { touchProps, handleTouchOrClick } from '../utils/touchHelper';
+import { playClickSound } from '../utils/soundEffects';
 
 export default function Navbar() {
   const { 
     activePage, navigateTo, isLoggedIn, logout, userProfile, soundActive, toggleSound, 
-    playClickSound, notifications, unreadNotificationCount, markNotificationRead, clearAllNotifications 
+    notifications, unreadNotificationCount, markNotificationRead, clearAllNotifications 
   } = useApp();
   
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -47,7 +48,9 @@ export default function Navbar() {
 
   const handleNavClick = (pageId, label = '') => {
     console.log('MOBILE NAV CLICK:', label || pageId.toUpperCase());
-    playClickSound();
+    try {
+      if (typeof playClickSound === 'function') playClickSound();
+    } catch (_) {}
     setMobileMenuOpen(false);
     setNotifDropdownOpen(false);
     navigateTo(pageId);

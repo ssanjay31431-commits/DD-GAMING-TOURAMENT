@@ -817,12 +817,16 @@ function processTournamentsWithAutoOpen(dataList) {
         markNotificationRead,
         clearAllNotifications,
         uploadWinnerQR,
-        adminMarkPrizePaid,
-        adminDeleteAllData,
         isAdminAuth,
         adminLogin,
         adminLogout,
-        isAlreadyRegisteredForTournament
+        isAlreadyRegisteredForTournament,
+        playClickSound,
+        playPoolCueHitSound,
+        playTabSelectSound,
+        playSuccessChimeSound,
+        playCoinSound,
+        playErrorSound
       }}
     >
       {children}
@@ -845,7 +849,13 @@ export function useApp() {
       navigateTo: () => {},
       showToast: () => {},
       markNotificationRead: () => {},
-      clearAllNotifications: () => {}
+      clearAllNotifications: () => {},
+      playClickSound: () => {},
+      playPoolCueHitSound: () => {},
+      playTabSelectSound: () => {},
+      playSuccessChimeSound: () => {},
+      playCoinSound: () => {},
+      playErrorSound: () => {}
     };
   }
   return context;
