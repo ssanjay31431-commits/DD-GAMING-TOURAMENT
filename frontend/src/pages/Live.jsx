@@ -7,6 +7,23 @@ import { fetchLiveAccessAPI } from '../utils/api';
 export default function Live() {
   const { tournaments, userProfile, registrations, openRegistrationModal, navigateTo } = useApp();
 
+  const TARGET_YT_CHANNEL = 'https://www.youtube.com/@wheelchair_boy_yt';
+  const TARGET_YT_SUB_URL = 'https://www.youtube.com/@wheelchair_boy_yt?sub_confirmation=1';
+
+  const [hasSubscribedChannel, setHasSubscribedChannel] = useState(() => {
+    try {
+      return localStorage.getItem('dd_yt_subscribed_wheelchair_boy') === 'true';
+    } catch (e) {
+      return false;
+    }
+  });
+
+  const handleChannelSubscribeClick = (url = TARGET_YT_SUB_URL) => {
+    window.open(url, '_blank', 'noopener,noreferrer');
+    localStorage.setItem('dd_yt_subscribed_wheelchair_boy', 'true');
+    setHasSubscribedChannel(true);
+  };
+
   // Extract all registered tournament IDs for current user account
   const userRegistrations = registrations || userProfile?.registeredTournaments || [];
   const registeredIdsSet = new Set(
@@ -43,7 +60,7 @@ export default function Live() {
         [trnId]: {
           hasAccess: Boolean(res.hasAccess),
           embedUrl: res.embedUrl || `https://www.youtube.com/embed/live_stream?channel=UC_DD_GAMING`,
-          youtubeChannelUrl: res.youtubeChannelUrl || 'https://www.youtube.com/@ddgaming',
+          youtubeChannelUrl: TARGET_YT_CHANNEL,
           date: res.date,
           time: res.time,
           isLiveStreaming: Boolean(res.isLiveStreaming)
@@ -73,20 +90,18 @@ export default function Live() {
             DD GAMING LIVE BROADCASTS
           </h1>
           <p className="text-xs sm:text-sm text-purple-300 max-w-2xl leading-relaxed">
-            Watch live tournament matches directly inside DD Gaming or on YouTube. Registered participants automatically unlock full HD stream access, start dates & times, and match room IDs!
+            Watch live tournament matches directly inside DD Gaming or on YouTube. Subscribe to <strong>@wheelchair_boy_yt</strong> to unlock full HD live stream broadcasts, match start dates & times!
           </p>
         </div>
 
         {/* Quick Channel Subscribe Badge CTA */}
-        <a
-          href="https://www.youtube.com/@ddgaming"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="px-5 py-3 rounded-2xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-heading font-black text-xs uppercase tracking-wider shadow-xl shadow-red-500/30 flex items-center gap-2 border border-red-400/40 transition-all shrink-0 cursor-pointer"
+        <button
+          onClick={() => handleChannelSubscribeClick(TARGET_YT_SUB_URL)}
+          className="px-5 py-3 rounded-2xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-heading font-black text-xs uppercase tracking-wider shadow-xl shadow-red-500/30 flex items-center gap-2 border border-red-400/40 transition-all shrink-0 cursor-pointer animate-pulse"
         >
           <Play className="w-4 h-4 fill-white" />
-          SUBSCRIBE DD GAMING YOUTUBE
-        </a>
+          SUBSCRIBE @wheelchair_boy_yt YOUTUBE
+        </button>
       </div>
 
       {/* ========================================================= */}
@@ -101,7 +116,7 @@ export default function Live() {
             </h2>
           </div>
           <span className="text-xs text-slate-400 font-semibold">
-            {registeredTournaments.length > 0 ? 'Unlocked Access Active' : 'No Registrations Found'}
+            {registeredTournaments.length > 0 ? (hasSubscribedChannel ? 'Live Stream Unlocked ✅' : 'Subscribe to Unlock Stream 🔒') : 'No Registrations Found'}
           </span>
         </div>
 
@@ -131,13 +146,12 @@ export default function Live() {
               const trnAccess = accessStateMap[trn.id] || {
                 hasAccess: true,
                 embedUrl: trn.liveEmbedUrl || `https://www.youtube.com/embed/live_stream?channel=UC_DD_GAMING`,
-                youtubeChannelUrl: trn.youtubeChannelUrl || 'https://www.youtube.com/@ddgaming',
+                youtubeChannelUrl: TARGET_YT_CHANNEL,
                 date: trn.date,
                 time: trn.time,
                 isLiveStreaming: Boolean(trn.isLiveStreaming)
               };
 
-              const youtubeUrl = trn.youtubeChannelUrl || 'https://www.youtube.com/@ddgaming';
               const matchDateDisplay = trn.date || 'Scheduled Date';
               const matchTimeDisplay = trn.time || 'Scheduled Time';
 
@@ -155,8 +169,13 @@ export default function Live() {
                           {trn.title}
                         </span>
                       </div>
-                      <span className="px-3 py-1 rounded-full text-[10px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 uppercase tracking-wider shrink-0 flex items-center gap-1">
-                        <CheckCircle2 className="w-3.5 h-3.5" /> UNLOCKED ACCESS
+                      <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider shrink-0 flex items-center gap-1 ${
+                        hasSubscribedChannel
+                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                          : 'bg-red-500/20 text-rose-300 border border-red-500/40 animate-pulse'
+                      }`}>
+                        {hasSubscribedChannel ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
+                        {hasSubscribedChannel ? 'STREAM UNLOCKED' : 'SUBSCRIBE REQUIRED'}
                       </span>
                     </div>
 
@@ -172,35 +191,64 @@ export default function Live() {
                         </span>
                       </div>
                       <p className="text-[11px] text-slate-400 leading-relaxed">
-                        Match Room ID & Password will be published here before match start time. Stream starts live on YouTube at match start time!
+                        Match Room ID & Password will be published here before match start time. Stream starts live on YouTube channel <strong>@wheelchair_boy_yt</strong> at match start time!
                       </p>
                     </div>
 
-                    {/* LIVE PLAYER CONTAINER */}
-                    <div className="relative w-full aspect-video rounded-2xl bg-slate-950 border border-purple-500/30 overflow-hidden shadow-inner flex items-center justify-center">
-                      <iframe
-                        src={trnAccess.embedUrl}
-                        title={trn.title}
-                        className="w-full h-full border-0"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                      />
-                    </div>
+                    {/* LIVE PLAYER OR MANDATORY SUBSCRIBE LOCK */}
+                    {!hasSubscribedChannel ? (
+                      /* MANDATORY YOUTUBE CHANNEL SUBSCRIBE LOCK OVERLAY */
+                      <div className="relative w-full aspect-video rounded-2xl bg-gradient-to-b from-slate-950 via-red-950/50 to-slate-950 border-2 border-red-500/60 overflow-hidden p-6 flex flex-col items-center justify-center text-center space-y-4 shadow-2xl">
+                        <div className="w-14 h-14 rounded-full bg-red-600/20 border-2 border-red-500 text-rose-400 flex items-center justify-center animate-bounce shadow-lg">
+                          <Play className="w-7 h-7 fill-rose-500 text-rose-500" />
+                        </div>
+
+                        <div className="space-y-1 max-w-sm">
+                          <span className="px-2.5 py-0.5 rounded bg-red-500/20 text-rose-300 text-[10px] font-black uppercase tracking-widest border border-red-500/30">
+                            🔴 YOUTUBE CHANNEL SUBSCRIPTION REQUIRED
+                          </span>
+                          <h4 className="font-heading font-black text-lg text-white">
+                            Subscribe to @wheelchair_boy_yt
+                          </h4>
+                          <p className="text-[11px] text-slate-300 leading-relaxed">
+                            You must subscribe to official YouTube channel <strong>@wheelchair_boy_yt</strong> to unlock live match broadcasts.
+                          </p>
+                        </div>
+
+                        <button
+                          onClick={() => handleChannelSubscribeClick(TARGET_YT_SUB_URL)}
+                          className="w-full max-w-xs py-3.5 rounded-xl bg-gradient-to-r from-red-600 via-rose-600 to-red-700 hover:from-red-500 hover:to-rose-500 text-white font-heading font-black text-xs uppercase tracking-wider shadow-2xl shadow-red-600/40 flex items-center justify-center gap-2 border border-red-400/50 cursor-pointer animate-pulse transition-all"
+                        >
+                          <Play className="w-4 h-4 fill-white" />
+                          ▶ SUBSCRIBE TO @wheelchair_boy_yt TO UNLOCK
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ) : (
+                      /* UNLOCKED LIVE PLAYER CONTAINER */
+                      <div className="relative w-full aspect-video rounded-2xl bg-slate-950 border border-purple-500/30 overflow-hidden shadow-inner flex items-center justify-center">
+                        <iframe
+                          src={trnAccess.embedUrl}
+                          title={trn.title}
+                          className="w-full h-full border-0"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                        />
+                      </div>
+                    )}
                   </div>
 
                   {/* BOTTOM ACTION BUTTONS */}
                   <div className="space-y-3 pt-2">
                     {/* DIRECT YOUTUBE CHANNEL / SUBSCRIBE BUTTON */}
-                    <a
-                      href={youtubeUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <button
+                      onClick={() => handleChannelSubscribeClick(TARGET_YT_SUB_URL)}
                       className="w-full py-3.5 rounded-xl bg-gradient-to-r from-red-600 via-rose-600 to-red-700 hover:from-red-500 hover:to-rose-500 text-white font-heading font-black text-xs uppercase tracking-wider shadow-lg shadow-red-500/25 flex items-center justify-center gap-2 border border-red-400/40 cursor-pointer transition-all"
                     >
                       <Play className="w-4 h-4 text-white fill-white" />
-                      ▶ WATCH LIVE & SUBSCRIBE ON YOUTUBE CHANNEL
+                      {hasSubscribedChannel ? '▶ WATCH LIVE ON YOUTUBE (@wheelchair_boy_yt)' : '▶ SUBSCRIBE TO @wheelchair_boy_yt ON YOUTUBE'}
                       <ExternalLink className="w-3.5 h-3.5 opacity-80" />
-                    </a>
+                    </button>
 
                     <div className="flex items-center justify-between text-xs font-bold text-slate-400 px-1">
                       <span>Prize Pool: <strong className="text-amber-400 font-mono">₹{trn.prizePool}</strong></span>

@@ -121,7 +121,7 @@ export default function Footer() {
               <a href="#instagram" onClick={(e) => e.preventDefault()} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-300 hover:text-pink-400 hover:border-pink-500/40 transition-all">
                 <Instagram className="w-4 h-4 text-pink-400" /> Instagram
               </a>
-              <a href="#youtube" onClick={(e) => e.preventDefault()} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-300 hover:text-rose-400 hover:border-rose-500/40 transition-all">
+              <a href="https://www.youtube.com/@wheelchair_boy_yt" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-300 hover:text-rose-400 hover:border-rose-500/40 transition-all">
                 <Youtube className="w-4 h-4 text-rose-400" /> YouTube
               </a>
             </div>

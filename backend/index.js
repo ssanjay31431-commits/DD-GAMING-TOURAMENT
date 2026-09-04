@@ -1301,7 +1301,7 @@ app.get('/api/tournaments/:id/live-access', async (req, res) => {
       return res.json({
         hasAccess: true,
         embedUrl: defaultEmbed,
-        youtubeChannelUrl: tournament.youtubeChannelUrl || 'https://www.youtube.com/@ddgaming',
+        youtubeChannelUrl: tournament.youtubeChannelUrl || 'https://www.youtube.com/@wheelchair_boy_yt',
         videoId: tournament.youtubeVideoId || '',
         tournamentTitle: tournament.title,
         date: tournament.date,
