@@ -9,12 +9,13 @@
  * Timestamp deduplication ensures delayed synthetic `onClick` events do not double-trigger.
  */
 
+let globalLastTouchTime = 0;
+
 export function touchProps(fn) {
   if (typeof fn !== 'function') return {};
 
   let touchStartX = null;
   let touchStartY = null;
-  let lastTouchTime = 0;
 
   return {
     onTouchStart: (e) => {
@@ -40,7 +41,7 @@ export function touchProps(fn) {
       touchStartY = null;
 
       if (isCleanTap) {
-        lastTouchTime = Date.now();
+        globalLastTouchTime = Date.now();
         try {
           fn(e);
         } catch (err) {
@@ -49,11 +50,11 @@ export function touchProps(fn) {
       }
     },
     onClick: (e) => {
-      // Prevent double execution if already handled by onTouchEnd within 350ms
-      if (Date.now() - lastTouchTime < 350) {
+      // Prevent double execution if already handled by onTouchEnd within 450ms across re-renders
+      if (Date.now() - globalLastTouchTime < 450) {
         return;
       }
-      lastTouchTime = Date.now();
+      globalLastTouchTime = Date.now();
       try {
         fn(e);
       } catch (err) {

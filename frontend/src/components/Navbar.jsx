@@ -499,14 +499,14 @@ export default function Navbar() {
       {/* ========================================================= */}
       <AnimatePresence>
         {mobileMenuOpen && (
-          <div className="lg:hidden fixed inset-0 z-[110] flex flex-col justify-end">
+          <div className="lg:hidden fixed inset-0 z-[200] flex flex-col justify-end">
             {/* Backdrop Overlay */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               {...touchProps(() => setMobileMenuOpen(false))}
-              className="fixed inset-0 bg-slate-950/80 backdrop-blur-md"
+              className="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[200]"
             />
 
             {/* Bottom Sheet Container */}
@@ -515,7 +515,7 @@ export default function Navbar() {
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="relative w-full max-h-[85vh] overflow-y-auto bg-slate-950 border-t-2 border-purple-500/50 rounded-t-3xl p-5 space-y-4 shadow-2xl z-10 pb-[calc(2rem+env(safe-area-inset-bottom,0px))]"
+              className="relative w-full max-h-[85vh] overflow-y-auto bg-slate-950 border-t-2 border-purple-500/50 rounded-t-3xl p-5 space-y-4 shadow-2xl z-[210] pb-[calc(2rem+env(safe-area-inset-bottom,0px))]"
             >
               {/* Drag Handle Top Bar */}
               <div className="w-12 h-1.5 bg-slate-700/80 rounded-full mx-auto mb-2" />
