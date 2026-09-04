@@ -111,13 +111,13 @@ export default function Login() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 flex items-center justify-center min-h-[75vh] relative">
+    <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-12 flex items-center justify-center min-h-[75vh] relative">
       
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-md bg-slate-900/90 border-2 border-purple-500/40 rounded-3xl p-8 shadow-2xl glass-panel relative overflow-hidden space-y-6"
+        className="w-full max-w-md bg-slate-900/90 border-2 border-purple-500/40 rounded-3xl p-5 sm:p-8 shadow-2xl glass-panel relative overflow-hidden space-y-5 sm:space-y-6"
       >
         {/* Header Icon & Title */}
         <div className="text-center space-y-2">

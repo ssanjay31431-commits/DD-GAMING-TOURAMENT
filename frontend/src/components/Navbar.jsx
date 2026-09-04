@@ -235,7 +235,7 @@ export default function Navbar() {
                 </div>
               )}
 
-              {/* Desktop Player Profile CTA Button */}
+              {/* Desktop Player Profile CTA Button / Login Button */}
               {isLoggedIn ? (
                 <div className="hidden lg:flex items-center gap-2 shrink-0">
                   <button
@@ -264,28 +264,49 @@ export default function Navbar() {
                     <LogOut className="w-4 h-4" />
                   </button>
                 </div>
-              ) : null}
-
-              {/* Mobile Profile / Menu Icon Button (< 1024px) */}
-              {isLoggedIn && (
+              ) : (
                 <button
-                  onClick={() => {
-                    playClickSound();
-                    setMobileMenuOpen(true);
-                  }}
-                  className="lg:hidden p-1.5 rounded-xl bg-slate-900 border border-purple-500/30 text-slate-200 focus:outline-none flex items-center gap-1.5"
-                  title="Open Navigation Menu"
+                  onClick={() => navigateTo('login')}
+                  className="hidden lg:flex px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white font-heading font-black text-xs uppercase tracking-wider shadow-lg shadow-purple-500/30 items-center gap-1.5 border border-purple-400/40 shrink-0 cursor-pointer"
                 >
-                  <div className="w-6 h-6 rounded-full overflow-hidden border border-purple-400 shrink-0">
-                    <img
-                      src={userProfile?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150'}
-                      alt={userProfile?.name || 'Player'}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <Menu className="w-4 h-4 text-purple-400 sm:hidden" />
+                  <LogIn className="w-4 h-4 text-white" />
+                  <span>LOGIN / SIGN IN</span>
                 </button>
               )}
+
+              {/* Mobile Right Action Controls (< 1024px) */}
+              <div className="lg:hidden flex items-center gap-2 shrink-0">
+                {!isLoggedIn && (
+                  <button
+                    onClick={() => navigateTo('login')}
+                    className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white font-heading font-black text-xs uppercase tracking-wider shadow-lg shadow-purple-500/30 flex items-center gap-1 border border-purple-400/40 shrink-0 cursor-pointer"
+                  >
+                    <LogIn className="w-3.5 h-3.5 text-white" />
+                    <span>LOGIN</span>
+                  </button>
+                )}
+
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    playClickSound();
+                    setMobileMenuOpen(prev => !prev);
+                  }}
+                  className="p-2 rounded-xl bg-slate-900 border border-purple-500/30 text-slate-200 focus:outline-none flex items-center gap-1.5 cursor-pointer"
+                  title="Open Navigation Menu"
+                >
+                  {isLoggedIn && (
+                    <div className="w-5 h-5 rounded-full overflow-hidden border border-purple-400 shrink-0">
+                      <img
+                        src={userProfile?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150'}
+                        alt={userProfile?.name || 'Player'}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+                  <Menu className="w-5 h-5 text-purple-400" />
+                </button>
+              </div>
             </div>
 
           </div>
@@ -295,109 +316,119 @@ export default function Navbar() {
       {/* ========================================================= */}
       {/* MOBILE FIXED BOTTOM ESPORTS NAVIGATION BAR (< 1024px) */}
       {/* ========================================================= */}
-      {isLoggedIn && (
-        <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 glass-panel border-t border-purple-500/30 bg-slate-950/95 backdrop-blur-2xl px-2 py-1.5 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] shadow-2xl">
-          <div className="flex items-center justify-around max-w-md mx-auto">
-            
-            {/* 1. HOME */}
-            <button
-              onClick={() => { playClickSound(); navigateTo('home'); }}
-              className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl transition-all relative cursor-pointer min-w-[54px] min-h-[46px] ${
-                activePage === 'home' ? 'text-purple-400 font-extrabold' : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <HomeIcon className={`w-5 h-5 transition-transform ${activePage === 'home' ? 'scale-110 text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]' : ''}`} />
-              <span className="text-[10px] tracking-tight mt-0.5 font-bold">Home</span>
-              {activePage === 'home' && (
-                <motion.div layoutId="mobileNavActivePill" className="absolute top-0 w-7 h-1 bg-gradient-to-r from-purple-500 to-cyan-400 rounded-full shadow-[0_0_8px_rgba(168,85,247,0.8)]" />
-              )}
-            </button>
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 glass-panel border-t border-purple-500/30 bg-slate-950/95 backdrop-blur-2xl px-2 py-1.5 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] shadow-2xl">
+        <div className="flex items-center justify-around max-w-md mx-auto">
+          
+          {/* 1. HOME */}
+          <button
+            onClick={() => { playClickSound(); navigateTo('home'); }}
+            className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl transition-all relative cursor-pointer min-w-[54px] min-h-[46px] ${
+              activePage === 'home' ? 'text-purple-400 font-extrabold' : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <HomeIcon className={`w-5 h-5 transition-transform ${activePage === 'home' ? 'scale-110 text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]' : ''}`} />
+            <span className="text-[10px] tracking-tight mt-0.5 font-bold">Home</span>
+            {activePage === 'home' && (
+              <motion.div layoutId="mobileNavActivePill" className="absolute top-0 w-7 h-1 bg-gradient-to-r from-purple-500 to-cyan-400 rounded-full shadow-[0_0_8px_rgba(168,85,247,0.8)]" />
+            )}
+          </button>
 
-            {/* 2. TOURNAMENTS */}
-            <button
-              onClick={() => { playClickSound(); navigateTo('tournaments'); }}
-              className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl transition-all relative cursor-pointer min-w-[54px] min-h-[46px] ${
-                activePage === 'tournaments' ? 'text-purple-400 font-extrabold' : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <Trophy className={`w-5 h-5 transition-transform ${activePage === 'tournaments' ? 'scale-110 text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]' : ''}`} />
-              <span className="text-[10px] tracking-tight mt-0.5 font-bold">Tournaments</span>
-              {activePage === 'tournaments' && (
-                <motion.div layoutId="mobileNavActivePill" className="absolute top-0 w-7 h-1 bg-gradient-to-r from-purple-500 to-cyan-400 rounded-full shadow-[0_0_8px_rgba(168,85,247,0.8)]" />
-              )}
-            </button>
+          {/* 2. TOURNAMENTS */}
+          <button
+            onClick={() => { playClickSound(); navigateTo('tournaments'); }}
+            className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl transition-all relative cursor-pointer min-w-[54px] min-h-[46px] ${
+              activePage === 'tournaments' ? 'text-purple-400 font-extrabold' : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <Trophy className={`w-5 h-5 transition-transform ${activePage === 'tournaments' ? 'scale-110 text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]' : ''}`} />
+            <span className="text-[10px] tracking-tight mt-0.5 font-bold">Tournaments</span>
+            {activePage === 'tournaments' && (
+              <motion.div layoutId="mobileNavActivePill" className="absolute top-0 w-7 h-1 bg-gradient-to-r from-purple-500 to-cyan-400 rounded-full shadow-[0_0_8px_rgba(168,85,247,0.8)]" />
+            )}
+          </button>
 
-            {/* 3. MY TOURNAMENTS */}
-            <button
-              onClick={() => { playClickSound(); navigateTo('my-tournaments'); }}
-              className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl transition-all relative cursor-pointer min-w-[54px] min-h-[46px] ${
-                activePage === 'my-tournaments' ? 'text-purple-400 font-extrabold' : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
+          {/* 3. MY ARENA OR WATCH LIVE */}
+          <button
+            onClick={() => { playClickSound(); navigateTo(isLoggedIn ? 'my-tournaments' : 'live'); }}
+            className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl transition-all relative cursor-pointer min-w-[54px] min-h-[46px] ${
+              (activePage === 'my-tournaments' || activePage === 'live') ? 'text-purple-400 font-extrabold' : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            {isLoggedIn ? (
               <Gamepad2 className={`w-5 h-5 transition-transform ${activePage === 'my-tournaments' ? 'scale-110 text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]' : ''}`} />
-              <span className="text-[10px] tracking-tight mt-0.5 font-bold">My Arena</span>
-              {activePage === 'my-tournaments' && (
-                <motion.div layoutId="mobileNavActivePill" className="absolute top-0 w-7 h-1 bg-gradient-to-r from-purple-500 to-cyan-400 rounded-full shadow-[0_0_8px_rgba(168,85,247,0.8)]" />
-              )}
-            </button>
+            ) : (
+              <Radio className={`w-5 h-5 transition-transform ${activePage === 'live' ? 'scale-110 text-rose-400 drop-shadow-[0_0_8px_rgba(244,63,94,0.8)]' : ''}`} />
+            )}
+            <span className="text-[10px] tracking-tight mt-0.5 font-bold">{isLoggedIn ? 'My Arena' : 'Watch Live'}</span>
+            {(activePage === 'my-tournaments' || activePage === 'live') && (
+              <motion.div layoutId="mobileNavActivePill" className="absolute top-0 w-7 h-1 bg-gradient-to-r from-purple-500 to-cyan-400 rounded-full shadow-[0_0_8px_rgba(168,85,247,0.8)]" />
+            )}
+          </button>
 
-            {/* 4. TICKETS */}
-            <button
-              onClick={() => { playClickSound(); navigateTo('my-tickets'); }}
-              className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl transition-all relative cursor-pointer min-w-[54px] min-h-[46px] ${
-                activePage === 'my-tickets' ? 'text-purple-400 font-extrabold' : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
+          {/* 4. TICKETS OR LOGIN */}
+          <button
+            onClick={() => { playClickSound(); navigateTo(isLoggedIn ? 'my-tickets' : 'login'); }}
+            className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl transition-all relative cursor-pointer min-w-[54px] min-h-[46px] ${
+              (activePage === 'my-tickets' || activePage === 'login') ? 'text-purple-400 font-extrabold' : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            {isLoggedIn ? (
               <Ticket className={`w-5 h-5 transition-transform ${activePage === 'my-tickets' ? 'scale-110 text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]' : ''}`} />
-              <span className="text-[10px] tracking-tight mt-0.5 font-bold">Tickets</span>
-              {activePage === 'my-tickets' && (
-                <motion.div layoutId="mobileNavActivePill" className="absolute top-0 w-7 h-1 bg-gradient-to-r from-purple-500 to-cyan-400 rounded-full shadow-[0_0_8px_rgba(168,85,247,0.8)]" />
-              )}
-            </button>
+            ) : (
+              <LogIn className={`w-5 h-5 transition-transform ${activePage === 'login' ? 'scale-110 text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]' : ''}`} />
+            )}
+            <span className="text-[10px] tracking-tight mt-0.5 font-bold">{isLoggedIn ? 'Tickets' : 'Login'}</span>
+            {(activePage === 'my-tickets' || activePage === 'login') && (
+              <motion.div layoutId="mobileNavActivePill" className="absolute top-0 w-7 h-1 bg-gradient-to-r from-purple-500 to-cyan-400 rounded-full shadow-[0_0_8px_rgba(168,85,247,0.8)]" />
+            )}
+          </button>
 
-            {/* 5. MORE */}
-            <button
-              onClick={() => { playClickSound(); setMobileMenuOpen(true); }}
-              className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl transition-all relative cursor-pointer min-w-[54px] min-h-[46px] ${
-                mobileMenuOpen ? 'text-purple-400 font-extrabold' : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <Menu className="w-5 h-5" />
-              <span className="text-[10px] tracking-tight mt-0.5 font-bold">More</span>
-            </button>
+          {/* 5. MORE */}
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              playClickSound();
+              setMobileMenuOpen(prev => !prev);
+            }}
+            className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl transition-all relative cursor-pointer min-w-[54px] min-h-[46px] ${
+              mobileMenuOpen ? 'text-purple-400 font-extrabold' : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <Menu className="w-5 h-5" />
+            <span className="text-[10px] tracking-tight mt-0.5 font-bold">More</span>
+          </button>
 
-          </div>
-        </nav>
-      )}
+        </div>
+      </nav>
 
       {/* ========================================================= */}
       {/* MOBILE MORE MENU BOTTOM SHEET DRAWER (< 1024px) */}
       {/* ========================================================= */}
-      {isLoggedIn && (
-        <AnimatePresence>
-          {mobileMenuOpen && (
-            <div className="lg:hidden fixed inset-0 z-50 flex flex-col justify-end">
-              {/* Backdrop Overlay */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={() => setMobileMenuOpen(false)}
-                className="fixed inset-0 bg-slate-950/80 backdrop-blur-md"
-              />
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <div className="lg:hidden fixed inset-0 z-50 flex flex-col justify-end">
+            {/* Backdrop Overlay */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setMobileMenuOpen(false)}
+              className="fixed inset-0 bg-slate-950/80 backdrop-blur-md"
+            />
 
-              {/* Bottom Sheet Container */}
-              <motion.div
-                initial={{ y: '100%' }}
-                animate={{ y: 0 }}
-                exit={{ y: '100%' }}
-                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                className="relative w-full max-h-[85vh] overflow-y-auto bg-slate-950 border-t-2 border-purple-500/50 rounded-t-3xl p-5 space-y-4 shadow-2xl z-10 pb-[calc(2rem+env(safe-area-inset-bottom,0px))]"
-              >
-                {/* Drag Handle Top Bar */}
-                <div className="w-12 h-1.5 bg-slate-700/80 rounded-full mx-auto mb-2" />
+            {/* Bottom Sheet Container */}
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="relative w-full max-h-[85vh] overflow-y-auto bg-slate-950 border-t-2 border-purple-500/50 rounded-t-3xl p-5 space-y-4 shadow-2xl z-10 pb-[calc(2rem+env(safe-area-inset-bottom,0px))]"
+            >
+              {/* Drag Handle Top Bar */}
+              <div className="w-12 h-1.5 bg-slate-700/80 rounded-full mx-auto mb-2" />
 
-                {/* Player Profile Header Box */}
+              {/* Player Profile Header Box or Login Card */}
+              {isLoggedIn ? (
                 <div
                   onClick={() => { navigateTo('profile'); setMobileMenuOpen(false); }}
                   className="p-4 rounded-2xl bg-gradient-to-r from-purple-950 via-slate-900 to-indigo-950 border border-purple-500/40 flex items-center justify-between cursor-pointer hover:border-purple-400 transition-all shadow-lg"
@@ -417,80 +448,98 @@ export default function Navbar() {
                   </div>
                   <ChevronRight className="w-5 h-5 text-purple-400" />
                 </div>
-
-                {/* Quick Feature Grid */}
-                <div className="grid grid-cols-2 gap-2.5">
-                  <button
-                    onClick={() => { navigateTo('live'); setMobileMenuOpen(false); }}
-                    className="p-3.5 rounded-2xl bg-slate-900 border border-rose-500/30 hover:border-rose-500 flex items-center gap-2.5 text-left transition-all cursor-pointer"
-                  >
-                    <Radio className="w-5 h-5 text-rose-400 animate-pulse shrink-0" />
-                    <div>
-                      <span className="font-heading font-bold text-xs text-white block">Watch Live</span>
-                      <span className="text-[9px] text-rose-300 font-mono">🔴 BROADCAST</span>
+              ) : (
+                <div
+                  onClick={() => { navigateTo('login'); setMobileMenuOpen(false); }}
+                  className="p-4 rounded-2xl bg-gradient-to-r from-purple-900/80 via-slate-900 to-cyan-900/80 border border-purple-400/50 flex items-center justify-between cursor-pointer hover:border-purple-400 transition-all shadow-lg"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 rounded-2xl bg-purple-600/30 border border-purple-400 flex items-center justify-center text-purple-300 shrink-0">
+                      <LogIn className="w-5 h-5 text-purple-300" />
                     </div>
-                  </button>
-
-                  <button
-                    onClick={() => { navigateTo('games'); setMobileMenuOpen(false); }}
-                    className="p-3.5 rounded-2xl bg-slate-900 border border-purple-500/30 hover:border-purple-400 flex items-center gap-2.5 text-left transition-all cursor-pointer"
-                  >
-                    <Gamepad2 className="w-5 h-5 text-cyan-400 shrink-0" />
                     <div>
-                      <span className="font-heading font-bold text-xs text-white block">Games</span>
-                      <span className="text-[9px] text-slate-400">8 Ball & BGMI</span>
+                      <h4 className="font-heading font-black text-sm text-white">Login / Sign In</h4>
+                      <p className="text-[11px] text-purple-200">Access tournaments & paid tickets</p>
                     </div>
-                  </button>
-
-                  <button
-                    onClick={() => { navigateTo('leaderboard'); setMobileMenuOpen(false); }}
-                    className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 hover:border-purple-500/40 flex items-center gap-2.5 text-left transition-all cursor-pointer"
-                  >
-                    <Award className="w-5 h-5 text-amber-400 shrink-0" />
-                    <div>
-                      <span className="font-heading font-bold text-xs text-white block">Rankings</span>
-                      <span className="text-[9px] text-slate-400">Leaderboard</span>
-                    </div>
-                  </button>
-
-                  <button
-                    onClick={() => { navigateTo('winners'); setMobileMenuOpen(false); }}
-                    className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 hover:border-purple-500/40 flex items-center gap-2.5 text-left transition-all cursor-pointer"
-                  >
-                    <Trophy className="w-5 h-5 text-emerald-400 shrink-0" />
-                    <div>
-                      <span className="font-heading font-bold text-xs text-white block">Winners</span>
-                      <span className="text-[9px] text-slate-400">Hall of Fame</span>
-                    </div>
-                  </button>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-purple-300" />
                 </div>
+              )}
 
-                {/* Additional Menu Items */}
-                <div className="space-y-2 pt-2 border-t border-slate-800 text-xs font-semibold">
-                  <button
-                    onClick={() => toggleSound()}
-                    className="w-full flex items-center justify-between p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 text-slate-200 cursor-pointer"
-                  >
-                    <span className="flex items-center gap-2.5">
-                      {soundActive ? <Volume2 className="w-4 h-4 text-purple-400" /> : <VolumeX className="w-4 h-4 text-slate-500" />}
-                      Sound Effects (SFX)
-                    </span>
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${soundActive ? 'bg-purple-500/30 text-purple-300 border border-purple-500/40' : 'bg-slate-800 text-slate-500'}`}>
-                      {soundActive ? 'ON' : 'OFF'}
-                    </span>
-                  </button>
+              {/* Quick Feature Grid */}
+              <div className="grid grid-cols-2 gap-2.5">
+                <button
+                  onClick={() => { navigateTo('live'); setMobileMenuOpen(false); }}
+                  className="p-3.5 rounded-2xl bg-slate-900 border border-rose-500/30 hover:border-rose-500 flex items-center gap-2.5 text-left transition-all cursor-pointer"
+                >
+                  <Radio className="w-5 h-5 text-rose-400 animate-pulse shrink-0" />
+                  <div>
+                    <span className="font-heading font-bold text-xs text-white block">Watch Live</span>
+                    <span className="text-[9px] text-rose-300 font-mono">🔴 BROADCAST</span>
+                  </div>
+                </button>
 
-                  <button
-                    onClick={() => { navigateTo('how-it-works'); setMobileMenuOpen(false); }}
-                    className="w-full flex items-center justify-between p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 text-slate-200 cursor-pointer"
-                  >
-                    <span className="flex items-center gap-2.5">
-                      <HelpCircle className="w-4 h-4 text-cyan-400" />
-                      How It Works & Rules
-                    </span>
-                    <ChevronRight className="w-4 h-4 text-slate-500" />
-                  </button>
+                <button
+                  onClick={() => { navigateTo('games'); setMobileMenuOpen(false); }}
+                  className="p-3.5 rounded-2xl bg-slate-900 border border-purple-500/30 hover:border-purple-400 flex items-center gap-2.5 text-left transition-all cursor-pointer"
+                >
+                  <Gamepad2 className="w-5 h-5 text-cyan-400 shrink-0" />
+                  <div>
+                    <span className="font-heading font-bold text-xs text-white block">Games</span>
+                    <span className="text-[9px] text-slate-400">8 Ball & BGMI</span>
+                  </div>
+                </button>
 
+                <button
+                  onClick={() => { navigateTo('leaderboard'); setMobileMenuOpen(false); }}
+                  className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 hover:border-purple-500/40 flex items-center gap-2.5 text-left transition-all cursor-pointer"
+                >
+                  <Award className="w-5 h-5 text-amber-400 shrink-0" />
+                  <div>
+                    <span className="font-heading font-bold text-xs text-white block">Rankings</span>
+                    <span className="text-[9px] text-slate-400">Leaderboard</span>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => { navigateTo('winners'); setMobileMenuOpen(false); }}
+                  className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 hover:border-purple-500/40 flex items-center gap-2.5 text-left transition-all cursor-pointer"
+                >
+                  <Trophy className="w-5 h-5 text-emerald-400 shrink-0" />
+                  <div>
+                    <span className="font-heading font-bold text-xs text-white block">Winners</span>
+                    <span className="text-[9px] text-slate-400">Hall of Fame</span>
+                  </div>
+                </button>
+              </div>
+
+              {/* Additional Menu Items */}
+              <div className="space-y-2 pt-2 border-t border-slate-800 text-xs font-semibold">
+                <button
+                  onClick={() => toggleSound()}
+                  className="w-full flex items-center justify-between p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 text-slate-200 cursor-pointer"
+                >
+                  <span className="flex items-center gap-2.5">
+                    {soundActive ? <Volume2 className="w-4 h-4 text-purple-400" /> : <VolumeX className="w-4 h-4 text-slate-500" />}
+                    Sound Effects (SFX)
+                  </span>
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${soundActive ? 'bg-purple-500/30 text-purple-300 border border-purple-500/40' : 'bg-slate-800 text-slate-500'}`}>
+                    {soundActive ? 'ON' : 'OFF'}
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => { navigateTo('how-it-works'); setMobileMenuOpen(false); }}
+                  className="w-full flex items-center justify-between p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 text-slate-200 cursor-pointer"
+                >
+                  <span className="flex items-center gap-2.5">
+                    <HelpCircle className="w-4 h-4 text-cyan-400" />
+                    How It Works & Rules
+                  </span>
+                  <ChevronRight className="w-4 h-4 text-slate-500" />
+                </button>
+
+                {isLoggedIn ? (
                   <button
                     onClick={() => {
                       logout();
@@ -500,20 +549,30 @@ export default function Navbar() {
                   >
                     <LogOut className="w-4 h-4" /> Logout Account
                   </button>
-                </div>
+                ) : (
+                  <button
+                    onClick={() => {
+                      navigateTo('login');
+                      setMobileMenuOpen(false);
+                    }}
+                    className="w-full flex items-center justify-center gap-2 p-3.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold uppercase tracking-wider mt-2 cursor-pointer shadow-lg shadow-purple-500/30"
+                  >
+                    <LogIn className="w-4 h-4" /> Login Account
+                  </button>
+                )}
+              </div>
 
-                {/* Close Button */}
-                <button
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="w-full py-3 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 font-bold text-xs uppercase cursor-pointer"
-                >
-                  Close Menu
-                </button>
-              </motion.div>
-            </div>
-          )}
-        </AnimatePresence>
-      )}
+              {/* Close Button */}
+              <button
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-full py-3 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 font-bold text-xs uppercase cursor-pointer"
+              >
+                Close Menu
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </>
   );
 }
