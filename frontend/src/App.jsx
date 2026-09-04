@@ -113,10 +113,11 @@ function MainContent() {
       case 'live':
         return <Live />;
       case 'profile':
-        return isLoggedIn ? <Profile initialTab="overview" /> : <Login />;
+        return isLoggedIn ? <Profile key="profile" initialTab="overview" /> : <Login />;
       case 'my-tournaments':
+        return isLoggedIn ? <Profile key="my-tournaments" initialTab="myTournaments" /> : <Login />;
       case 'my-tickets':
-        return isLoggedIn ? <Profile initialTab="myTournaments" /> : <Login />;
+        return isLoggedIn ? <Profile key="my-tickets" initialTab="myTickets" /> : <Login />;
       case 'admin':
         return <Admin />;
       default:

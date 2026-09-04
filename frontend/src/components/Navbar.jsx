@@ -375,7 +375,7 @@ export default function Navbar() {
             type="button"
             {...touchProps(() => handleNavClick(isLoggedIn ? 'my-tournaments' : 'live', isLoggedIn ? 'MY_ARENA' : 'WATCH_LIVE'))}
             className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl transition-all relative cursor-pointer touch-manipulation active:scale-95 min-w-[54px] min-h-[46px] ${
-              (activePage === 'my-tournaments' || activePage === 'live') ? 'text-purple-400 font-extrabold' : 'text-slate-400 hover:text-slate-200'
+              (isLoggedIn ? activePage === 'my-tournaments' : activePage === 'live') ? 'text-purple-400 font-extrabold' : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             {isLoggedIn ? (
@@ -384,7 +384,7 @@ export default function Navbar() {
               <Radio className={`w-5 h-5 pointer-events-none transition-transform ${activePage === 'live' ? 'scale-110 text-rose-400 drop-shadow-[0_0_8px_rgba(244,63,94,0.8)]' : ''}`} />
             )}
             <span className="text-[10px] tracking-tight mt-0.5 font-bold pointer-events-none">{isLoggedIn ? 'My Arena' : 'Watch Live'}</span>
-            {(activePage === 'my-tournaments' || activePage === 'live') && (
+            {(isLoggedIn ? activePage === 'my-tournaments' : activePage === 'live') && (
               <motion.div layoutId="mobileNavActivePill" className="absolute top-0 w-7 h-1 bg-gradient-to-r from-purple-500 to-cyan-400 rounded-full shadow-[0_0_8px_rgba(168,85,247,0.8)] pointer-events-none" />
             )}
           </button>
@@ -394,7 +394,7 @@ export default function Navbar() {
             type="button"
             {...touchProps(() => handleNavClick(isLoggedIn ? 'my-tickets' : 'login', isLoggedIn ? 'TICKETS' : 'LOGIN'))}
             className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl transition-all relative cursor-pointer touch-manipulation active:scale-95 min-w-[54px] min-h-[46px] ${
-              (activePage === 'my-tickets' || activePage === 'login') ? 'text-purple-400 font-extrabold' : 'text-slate-400 hover:text-slate-200'
+              (isLoggedIn ? activePage === 'my-tickets' : activePage === 'login') ? 'text-purple-400 font-extrabold' : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             {isLoggedIn ? (
@@ -403,7 +403,7 @@ export default function Navbar() {
               <LogIn className={`w-5 h-5 pointer-events-none transition-transform ${activePage === 'login' ? 'scale-110 text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]' : ''}`} />
             )}
             <span className="text-[10px] tracking-tight mt-0.5 font-bold pointer-events-none">{isLoggedIn ? 'Tickets' : 'Login'}</span>
-            {(activePage === 'my-tickets' || activePage === 'login') && (
+            {(isLoggedIn ? activePage === 'my-tickets' : activePage === 'login') && (
               <motion.div layoutId="mobileNavActivePill" className="absolute top-0 w-7 h-1 bg-gradient-to-r from-purple-500 to-cyan-400 rounded-full shadow-[0_0_8px_rgba(168,85,247,0.8)] pointer-events-none" />
             )}
           </button>

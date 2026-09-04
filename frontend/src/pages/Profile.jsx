@@ -224,7 +224,8 @@ export default function Profile({ initialTab = 'overview' }) {
       <div className="flex items-center gap-2 border-b border-slate-800 pb-2 overflow-x-auto">
         {[
           { id: 'overview', label: 'Overview' },
-          { id: 'myTournaments', label: `My Tickets (${userRegistrations.length})` },
+          { id: 'myTournaments', label: `🎮 My Arena (${userRegistrations.length})` },
+          { id: 'myTickets', label: `🎟️ My Tickets (${userRegistrations.length})` },
           { id: 'settings', label: 'Edit Profile Settings' }
         ].map((tab) => (
           <button
@@ -318,13 +319,13 @@ export default function Profile({ initialTab = 'overview' }) {
         </div>
       )}
 
-      {/* MY TOURNAMENTS & TICKETS */}
+      {/* MY TOURNAMENTS (MY ARENA MATCHES) */}
       {activeTab === 'myTournaments' && (
         <div className="space-y-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-6 rounded-3xl glass-panel border border-slate-800">
             <div>
-              <h3 className="font-heading font-black text-2xl text-white">My Registered Tournaments & Paid Tickets</h3>
-              <p className="text-xs text-slate-400">View all your registered esports tournaments, entry fee payment status, and match room codes.</p>
+              <h3 className="font-heading font-black text-2xl text-white">🎮 My Arena — Live Matches & Room Access</h3>
+              <p className="text-xs text-slate-400">View active esports tournament matches, live broadcasts, and room entry codes.</p>
             </div>
             <button
               onClick={() => navigateTo('tournaments')}
@@ -336,10 +337,10 @@ export default function Profile({ initialTab = 'overview' }) {
 
           {userRegistrations.length === 0 ? (
             <div className="p-12 rounded-3xl glass-panel border border-slate-800 text-center space-y-4">
-              <span className="text-4xl block">🎟️</span>
-              <h4 className="font-heading font-bold text-white text-lg">NO REGISTERED TICKETS FOUND</h4>
+              <span className="text-4xl block">🎮</span>
+              <h4 className="font-heading font-bold text-white text-lg">NO ACTIVE ARENA MATCHES</h4>
               <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                You have not registered for any tournaments yet. Browse active 8 Ball Pool, BGMI, and Free Fire events to register!
+                You have not registered for any tournament matches yet. Browse active 8 Ball Pool, BGMI, and Free Fire events to compete!
               </p>
               <button
                 onClick={() => navigateTo('tournaments')}
@@ -356,7 +357,7 @@ export default function Profile({ initialTab = 'overview' }) {
                   {/* Top Bar: Ticket ID & Status Badge */}
                   <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                     <div>
-                      <span className="text-[10px] font-bold text-purple-400 uppercase tracking-wider block">TICKET ID</span>
+                      <span className="text-[10px] font-bold text-purple-400 uppercase tracking-wider block">ARENA SLOT ID</span>
                       <span className="font-mono font-extrabold text-base text-emerald-400">{reg.registrationId || reg.id}</span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -460,40 +461,17 @@ export default function Profile({ initialTab = 'overview' }) {
                   {/* Entry Fee & Registered Date Grid */}
                   <div className="grid grid-cols-2 gap-3 text-xs bg-slate-950 p-3.5 rounded-2xl border border-slate-800">
                     <div>
-                      <span className="text-slate-400 block text-[10px] font-bold uppercase">Entry Fee Paid</span>
+                      <span className="text-slate-400 block text-[10px] font-bold uppercase">Entry Fee</span>
                       <span className="font-mono font-black text-emerald-400 text-sm">
                         {reg.entryFee && reg.entryFee > 0 ? `₹${reg.entryFee}` : 'Free Entry'}
                       </span>
                     </div>
                     <div>
-                      <span className="text-slate-400 block text-[10px] font-bold uppercase">Match Time</span>
+                      <span className="text-slate-400 block text-[10px] font-bold uppercase">Match Start Time</span>
                       <span className="font-bold text-purple-300 text-xs block">{reg.date}</span>
                       <span className="text-slate-400 text-[11px]">{reg.time}</span>
                     </div>
                   </div>
-
-                  {/* Payment Status Notice */}
-                  {reg.status === 'Pending Verification' ? (
-                    <div className="p-3 rounded-xl bg-amber-950/40 border border-amber-500/30 text-xs text-amber-200 space-y-1">
-                      <div className="flex items-center gap-1.5 font-bold text-amber-300">
-                        <Clock className="w-4 h-4 text-amber-400" />
-                        <span>Payment Verification Pending</span>
-                      </div>
-                      <p className="text-[11px] text-slate-300">
-                        Your payment screenshot is under review by the DD Gaming Admin team. Slot confirmation will update here automatically upon approval.
-                      </p>
-                    </div>
-                  ) : reg.status === 'Confirmed' ? (
-                    <div className="p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/30 text-xs text-emerald-200 space-y-1">
-                      <div className="flex items-center gap-1.5 font-bold text-emerald-300">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                        <span>Slot Confirmed & Active</span>
-                      </div>
-                      <p className="text-[11px] text-slate-300">
-                        Your registration ticket is confirmed! Match Room ID & Password will be published here before match start time.
-                      </p>
-                    </div>
-                  ) : null}
 
                   {/* Player & Gaming Details */}
                   <div className="pt-2 border-t border-slate-800 grid grid-cols-2 gap-2 text-xs text-slate-300">
@@ -507,6 +485,101 @@ export default function Profile({ initialTab = 'overview' }) {
                     </div>
                   </div>
 
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* MY TICKETS (PAID ENTRY RECEIPTS & PASSES) */}
+      {activeTab === 'myTickets' && (
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-6 rounded-3xl glass-panel border border-slate-800">
+            <div>
+              <h3 className="font-heading font-black text-2xl text-white">🎟️ My Paid Tournament Entry Tickets</h3>
+              <p className="text-xs text-slate-400">View your verified registration ticket passes, transaction IDs, and entry fee payment receipts.</p>
+            </div>
+            <button
+              onClick={() => navigateTo('tournaments')}
+              className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs uppercase tracking-wider shadow"
+            >
+              + Get New Ticket
+            </button>
+          </div>
+
+          {userRegistrations.length === 0 ? (
+            <div className="p-12 rounded-3xl glass-panel border border-slate-800 text-center space-y-4">
+              <span className="text-4xl block">🎟️</span>
+              <h4 className="font-heading font-bold text-white text-lg">NO REGISTERED TICKETS FOUND</h4>
+              <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                You have not registered for any tournaments yet. Join active events to generate your verified entry tickets!
+              </p>
+              <button
+                onClick={() => navigateTo('tournaments')}
+                className="px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-heading font-extrabold text-xs uppercase tracking-wider shadow-lg"
+              >
+                Browse Active Tournaments
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {userRegistrations.map((reg, idx) => (
+                <div key={idx} className="p-6 rounded-3xl bg-slate-950/90 border-2 border-purple-500/40 space-y-4 shadow-2xl relative overflow-hidden">
+                  <div className="absolute top-0 right-0 bg-gradient-to-l from-purple-600 to-cyan-500 text-white text-[9px] font-black uppercase px-3 py-1 rounded-bl-xl tracking-widest shadow">
+                    VERIFIED ENTRY TICKET
+                  </div>
+
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-3 pt-2">
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">OFFICIAL TICKET CODE</span>
+                      <span className="font-mono font-extrabold text-lg text-emerald-400">{reg.registrationId || reg.id}</span>
+                    </div>
+                    <span className={`px-3 py-1 rounded-full text-xs font-black uppercase border ${
+                      reg.status === 'Confirmed' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                    }`}>
+                      {reg.status || 'Confirmed'}
+                    </span>
+                  </div>
+
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-wider bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/30 inline-block">
+                      {reg.gameIcon || '🎱'} {reg.game || '8 Ball Pool'}
+                    </span>
+                    <h4 className="font-heading font-black text-xl text-white">{reg.title}</h4>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 text-xs bg-slate-900/80 p-3.5 rounded-2xl border border-slate-800">
+                    <div>
+                      <span className="text-slate-400 block text-[10px] font-bold uppercase">Entry Fee Paid</span>
+                      <span className="font-mono font-black text-emerald-400 text-sm">
+                        {reg.entryFee && reg.entryFee > 0 ? `₹${reg.entryFee}` : 'Free Entry'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block text-[10px] font-bold uppercase">Match Schedule</span>
+                      <span className="font-bold text-purple-300 text-xs block">{reg.date}</span>
+                      <span className="text-slate-400 text-[11px]">{reg.time}</span>
+                    </div>
+                  </div>
+
+                  <div className="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800 grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <span className="text-slate-500 text-[10px] font-bold uppercase block">Player Name</span>
+                      <span className="font-bold text-white truncate block">{reg.playerName || userProfile.name}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 text-[10px] font-bold uppercase block">Gaming ID</span>
+                      <span className="font-mono font-bold text-purple-300 truncate block">{reg.gamingId || userProfile.gamingUsername}</span>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px]">
+                    <span className="text-slate-400 font-mono">Issued by DD GAMING ESPORTS</span>
+                    <span className="text-emerald-400 font-bold flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Valid Entry Ticket
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>
