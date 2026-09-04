@@ -99,8 +99,8 @@ export default function Navbar() {
             </button>
 
             {/* MOBILE COMPACT CENTER TITLE (< 1024px) */}
-            <div className="lg:hidden flex items-center justify-center px-2">
-              <span className="font-heading font-extrabold text-xs sm:text-sm text-purple-300 uppercase tracking-wider truncate max-w-[130px] sm:max-w-[200px]">
+            <div className="lg:hidden flex items-center justify-center px-1">
+              <span className="font-heading font-extrabold text-xs sm:text-sm text-purple-300 uppercase tracking-wider truncate max-w-[100px] xs:max-w-[150px] sm:max-w-[200px]">
                 {getPageTitle(activePage)}
               </span>
             </div>
@@ -160,7 +160,7 @@ export default function Navbar() {
                 <div className="relative">
                   <button
                     {...touchProps(() => setNotifDropdownOpen(!notifDropdownOpen))}
-                    className={`p-2 rounded-xl border text-xs font-bold transition-all relative cursor-pointer touch-manipulation ${
+                    className={`p-2 rounded-xl border text-xs font-bold transition-all relative cursor-pointer touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center ${
                       unreadNotificationCount > 0
                         ? 'bg-purple-600/30 border-purple-500/50 text-purple-300 animate-pulse'
                         : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
@@ -178,12 +178,17 @@ export default function Navbar() {
                   {/* Notifications Dropdown Panel */}
                   <AnimatePresence>
                     {notifDropdownOpen && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                        className="absolute right-0 mt-2 w-72 sm:w-96 rounded-2xl bg-slate-950 border border-purple-500/40 shadow-2xl p-4 z-[120] space-y-3"
-                      >
+                      <>
+                        <div
+                          onClick={() => setNotifDropdownOpen(false)}
+                          className="fixed inset-0 z-[115] bg-transparent"
+                        />
+                        <motion.div
+                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                          className="absolute right-0 mt-2 w-[calc(100vw-1.5rem)] max-w-sm sm:w-96 rounded-2xl bg-slate-950 border border-purple-500/40 shadow-2xl p-4 z-[120] space-y-3"
+                        >
                         <div className="flex items-center justify-between border-b border-slate-800 pb-2">
                           <div className="flex items-center gap-1.5 font-heading font-bold text-xs sm:text-sm text-white">
                             <Bell className="w-4 h-4 text-purple-400" /> Notifications
@@ -236,6 +241,7 @@ export default function Navbar() {
                           )}
                         </div>
                       </motion.div>
+                      </>
                     )}
                   </AnimatePresence>
                 </div>

@@ -148,7 +148,7 @@ export default function Home() {
               transition={{ duration: 0.8, delay: 0.3 }}
               className="lg:col-span-5 relative flex justify-center items-center"
             >
-              <div className="absolute w-80 h-80 sm:w-96 sm:h-96 rounded-full bg-gradient-to-tr from-amber-500/30 via-purple-600/30 to-cyan-500/20 blur-2xl animate-pulse-glow" />
+              <div className="absolute w-72 h-72 sm:w-96 sm:h-96 max-w-full rounded-full bg-gradient-to-tr from-amber-500/30 via-purple-600/30 to-cyan-500/20 blur-2xl animate-pulse-glow pointer-events-none" />
 
               {upcomingTrn ? (
                 /* 1. UPCOMING EVENT DYNAMIC HERO CARD WITH LIVE COUNTDOWN ANIMATION */

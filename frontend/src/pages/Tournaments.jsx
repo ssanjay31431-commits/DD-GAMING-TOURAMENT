@@ -185,11 +185,11 @@ export default function Tournaments() {
                     </div>
                   </div>
 
-                  <div className="p-4 sm:p-6 space-y-3.5">
-                    <h3 className="font-heading font-bold text-lg sm:text-xl text-white">
+                  <div className="p-4 sm:p-6 space-y-3.5 min-w-0">
+                    <h3 className="font-heading font-bold text-lg sm:text-xl text-white break-words">
                       {trn.title}
                     </h3>
-                    <p className="text-xs text-purple-300 font-medium">
+                    <p className="text-xs text-purple-300 font-medium truncate">
                       {trn.format}
                     </p>
 
@@ -203,14 +203,14 @@ export default function Tournaments() {
                     )}
 
                     <div className="grid grid-cols-2 gap-2.5 text-xs">
-                      <div className="bg-slate-950 p-2.5 rounded-xl border border-white/5">
+                      <div className="bg-slate-950 p-2.5 rounded-xl border border-white/5 min-w-0">
                         <span className="text-slate-400 block text-[10px] uppercase font-bold">Match Schedule</span>
                         <span className="font-bold text-slate-200 mt-0.5 block truncate">{trn.date}</span>
                         <span className="text-[10px] text-purple-300 font-mono">{trn.time}</span>
                       </div>
-                      <div className="bg-slate-950 p-2.5 rounded-xl border border-white/5">
+                      <div className="bg-slate-950 p-2.5 rounded-xl border border-white/5 min-w-0">
                         <span className="text-slate-400 block text-[10px] uppercase font-bold">Prize Pool</span>
-                        <span className="font-black text-amber-400 text-sm sm:text-base">
+                        <span className="font-black text-amber-400 text-sm sm:text-base truncate block">
                           ₹{trn.prizePool.toLocaleString()}
                         </span>
                       </div>
@@ -244,25 +244,21 @@ export default function Tournaments() {
                   {(trn.status === 'Live' || trn.isLiveStreaming || trn.liveStreamUrl) && (
                     <button
                       onClick={() => navigateTo('live')}
-                      className="w-full py-3 rounded-xl bg-gradient-to-r from-rose-600 via-red-600 to-rose-700 hover:from-rose-500 hover:to-red-500 text-white font-heading font-black text-xs uppercase tracking-wider shadow-lg shadow-rose-500/30 flex items-center justify-center gap-2 animate-pulse cursor-pointer border border-rose-400/50"
+                      className="w-full min-h-[44px] py-3 rounded-xl bg-gradient-to-r from-rose-600 via-red-600 to-rose-700 hover:from-rose-500 hover:to-red-500 text-white font-heading font-black text-xs uppercase tracking-wider shadow-lg shadow-rose-500/30 flex items-center justify-center gap-2 animate-pulse cursor-pointer border border-rose-400/50 touch-manipulation active:scale-95"
                     >
                       <Play className="w-4 h-4 fill-white" /> 🔴 WATCH LIVE MATCH NOW
                     </button>
                   )}
 
                   {isAlreadyRegisteredForTournament(trn.id) ? (
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.95 }}
+                    <button
                       onClick={() => navigateTo('my-tournaments')}
-                      className="w-full py-3 rounded-xl font-heading font-extrabold text-xs uppercase tracking-wider transition-all shadow-lg bg-slate-900 border-2 border-emerald-500/60 text-emerald-300 hover:bg-slate-800 cursor-pointer shadow-emerald-500/20 flex items-center justify-center gap-1.5"
+                      className="w-full min-h-[44px] py-3 rounded-xl font-heading font-extrabold text-xs uppercase tracking-wider transition-all shadow-lg bg-slate-900 border-2 border-emerald-500/60 text-emerald-300 hover:bg-slate-800 cursor-pointer shadow-emerald-500/20 flex items-center justify-center gap-1.5 touch-manipulation active:scale-95"
                     >
                       ✅ ALREADY REGISTERED (VIEW TICKET)
-                    </motion.button>
+                    </button>
                   ) : (
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.95 }}
+                    <button
                       disabled={trn.status === 'Completed' || trn.status === 'Expired' || trn.status === 'Registration Closed'}
                       onClick={() => {
                         if (trn.status === 'Upcoming') {
@@ -273,7 +269,7 @@ export default function Tournaments() {
                           openRegistrationModal(trn);
                         }
                       }}
-                      className={`w-full py-3 rounded-xl font-heading font-extrabold text-xs uppercase tracking-wider transition-all shadow-lg ${
+                      className={`w-full min-h-[44px] py-3 rounded-xl font-heading font-extrabold text-xs uppercase tracking-wider transition-all shadow-lg touch-manipulation active:scale-95 ${
                         trn.status === 'Completed' || trn.status === 'Expired'
                           ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
                           : trn.status === 'Upcoming'
@@ -282,7 +278,7 @@ export default function Tournaments() {
                           ? 'bg-gradient-to-r from-amber-600 to-purple-600 hover:from-amber-500 text-white cursor-pointer'
                           : trn.status === 'Registration Closed'
                           ? 'bg-slate-800 text-slate-400 cursor-not-allowed border border-slate-700'
-                          : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-purple-500/25'
+                          : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-purple-500/25 cursor-pointer'
                       }`}
                     >
                       {trn.status === 'Completed' || trn.status === 'Expired' ? '🏆 Tournament Ended (Expired)' :
@@ -290,12 +286,12 @@ export default function Tournaments() {
                        trn.status === 'Result Pending' ? '⏳ Wait for Result' :
                        trn.status === 'Registration Closed' ? 'Registration Closed' :
                        'Join Tournament'}
-                    </motion.button>
+                    </button>
                   )}
 
                   <button
                     onClick={() => openTournamentDetail(trn)}
-                    className="w-full py-2.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-slate-700 text-slate-300 text-xs font-semibold transition-all"
+                    className="w-full min-h-[44px] py-2.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-slate-700 text-slate-300 text-xs font-semibold transition-all touch-manipulation cursor-pointer active:scale-95"
                   >
                     View Details & Rules
                   </button>

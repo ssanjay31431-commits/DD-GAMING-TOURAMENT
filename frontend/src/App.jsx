@@ -26,24 +26,21 @@ import Live from './pages/Live';
 const pageTransitionVariants = {
   initial: {
     opacity: 0,
-    x: 30,
     scale: 0.98
   },
   animate: {
     opacity: 1,
-    x: 0,
     scale: 1,
     transition: {
-      duration: 0.35,
+      duration: 0.25,
       ease: [0.22, 1, 0.36, 1]
     }
   },
   exit: {
     opacity: 0,
-    x: -30,
     scale: 0.98,
     transition: {
-      duration: 0.25,
+      duration: 0.18,
       ease: [0.22, 1, 0.36, 1]
     }
   }

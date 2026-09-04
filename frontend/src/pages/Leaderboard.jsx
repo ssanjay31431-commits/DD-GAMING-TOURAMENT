@@ -116,7 +116,7 @@ export default function Leaderboard() {
                       key={idx}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className={`p-6 rounded-3xl text-center space-y-3 relative overflow-hidden border ${
+                      className={`p-4 sm:p-6 rounded-3xl text-center space-y-3 relative overflow-hidden border min-w-0 ${
                         isGold
                           ? 'bg-gradient-to-b from-amber-950/80 via-slate-900 to-purple-950/80 border-amber-500/50 shadow-2xl md:order-2 order-1'
                           : isSilver
@@ -124,7 +124,7 @@ export default function Leaderboard() {
                           : 'bg-slate-900/90 border-amber-700/30 md:order-3 order-3'
                       }`}
                     >
-                      <div className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center text-3xl font-black shadow-lg ${
+                      <div className={`w-14 h-14 sm:w-16 sm:h-16 mx-auto rounded-full flex items-center justify-center text-2xl sm:text-3xl font-black shadow-lg ${
                         isGold ? 'bg-gradient-to-tr from-amber-400 to-yellow-500 text-slate-950' :
                         isSilver ? 'bg-gradient-to-tr from-slate-400 to-slate-200 text-slate-950' :
                         'bg-gradient-to-tr from-amber-700 to-amber-500 text-white'
@@ -132,9 +132,9 @@ export default function Leaderboard() {
                         {isGold ? '🥇' : isSilver ? '🥈' : '🥉'}
                       </div>
 
-                      <div>
+                      <div className="min-w-0">
                         <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block">{rankItem.rank || `Rank #${idx + 1}`}</span>
-                        <h3 className="font-heading font-black text-xl text-white mt-0.5">{rankItem.playerName || rankItem.teamName}</h3>
+                        <h3 className="font-heading font-black text-lg sm:text-xl text-white mt-0.5 truncate break-words">{rankItem.playerName || rankItem.teamName}</h3>
                         {rankItem.kills !== undefined && (
                           <p className="text-xs text-purple-300 font-mono mt-1">🎯 {rankItem.kills} Kills</p>
                         )}
@@ -142,7 +142,7 @@ export default function Leaderboard() {
 
                       <div className="pt-2 border-t border-white/10">
                         <span className="text-[10px] font-bold text-slate-400 uppercase block">Prize Reward</span>
-                        <span className="font-mono font-black text-amber-400 text-lg">₹{rankItem.prizeAmount || rankItem.amount || 0}</span>
+                        <span className="font-mono font-black text-amber-400 text-base sm:text-lg">₹{rankItem.prizeAmount || rankItem.amount || 0}</span>
                       </div>
                     </motion.div>
                   );
