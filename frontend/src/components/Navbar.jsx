@@ -17,16 +17,20 @@ export default function Navbar() {
   
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notifDropdownOpen, setNotifDropdownOpen] = useState(false);
+  const [moreDropdownOpen, setMoreDropdownOpen] = useState(false);
 
-  const navLinks = [
+  const primaryNavLinks = [
     { id: 'home', label: 'Home' },
     { id: 'tournaments', label: 'Tournaments', badge: '🎱 8 Ball' },
     { id: 'my-tournaments', label: 'My Tournaments', badge: '🎟️ My Tickets' },
     { id: 'live', label: 'Watch Live', badge: '🔴 LIVE' },
     { id: 'games', label: 'Games' },
-    { id: 'leaderboard', label: 'Rankings' },
-    { id: 'winners', label: 'Winners' },
-    { id: 'how-it-works', label: 'How It Works' },
+  ];
+
+  const secondaryNavLinks = [
+    { id: 'leaderboard', label: 'Rankings', icon: Award, color: 'text-amber-400' },
+    { id: 'winners', label: 'Winners', icon: Trophy, color: 'text-emerald-400' },
+    { id: 'how-it-works', label: 'How It Works', icon: HelpCircle, color: 'text-cyan-400' },
   ];
 
   const getPageTitle = (pageId) => {
@@ -53,6 +57,7 @@ export default function Navbar() {
     } catch (_) {}
     setMobileMenuOpen(false);
     setNotifDropdownOpen(false);
+    setMoreDropdownOpen(false);
     navigateTo(pageId);
   };
 
@@ -113,40 +118,93 @@ export default function Navbar() {
 
             {/* DESKTOP NAVIGATION LINKS (ONLY VISIBLE ON >= 1024px DESKTOP SCREENS) */}
             {isLoggedIn && (
-              <nav className="hidden lg:flex items-center gap-1 xl:gap-2 shrink min-w-0 overflow-x-auto no-scrollbar py-1">
-                {navLinks.map((link) => {
-                  const isActive = activePage === link.id;
-                  return (
+              <div className="hidden lg:flex items-center flex-1 min-w-0 mx-2 xl:mx-4 overflow-hidden relative">
+                <nav className="flex items-center gap-1 xl:gap-2 shrink min-w-0 overflow-x-auto no-scrollbar py-1 pr-2">
+                  {primaryNavLinks.map((link) => {
+                    const isActive = activePage === link.id;
+                    return (
+                      <button
+                        key={link.id}
+                        {...touchProps(() => handleNavClick(link.id, link.label))}
+                        className={`relative px-2.5 xl:px-3.5 py-1.5 rounded-lg text-xs xl:text-sm font-semibold transition-all duration-200 flex items-center gap-1 shrink-0 cursor-pointer touch-manipulation whitespace-nowrap ${
+                          isActive
+                            ? 'text-white font-bold bg-white/10'
+                            : 'text-slate-300 hover:text-white hover:bg-white/5'
+                        }`}
+                      >
+                        <span>{link.label}</span>
+                        {link.badge && (
+                          <span className="hidden 2xl:inline-block px-1.5 py-0.5 rounded-full text-[9px] xl:text-[10px] bg-purple-500/30 text-purple-300 border border-purple-500/40">
+                            {link.badge}
+                          </span>
+                        )}
+                        {isActive && (
+                          <motion.div
+                            layoutId="activeNavIndicator"
+                            className="absolute bottom-0 left-1 right-1 h-0.5 bg-gradient-to-r from-purple-500 to-cyan-400 rounded-full"
+                            transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                          />
+                        )}
+                      </button>
+                    );
+                  })}
+
+                  {/* DESKTOP MORE DROPDOWN MENU */}
+                  <div className="relative shrink-0">
                     <button
-                      key={link.id}
-                      {...touchProps(() => handleNavClick(link.id, link.label))}
-                      className={`relative px-2.5 xl:px-3.5 py-1.5 rounded-lg text-xs xl:text-sm font-semibold transition-all duration-200 flex items-center gap-1 shrink-0 cursor-pointer touch-manipulation whitespace-nowrap ${
-                        isActive
-                          ? 'text-white font-bold bg-white/10'
+                      {...touchProps(() => setMoreDropdownOpen(prev => !prev))}
+                      className={`relative px-2.5 xl:px-3 py-1.5 rounded-lg text-xs xl:text-sm font-semibold transition-all duration-200 flex items-center gap-1 shrink-0 cursor-pointer touch-manipulation whitespace-nowrap ${
+                        secondaryNavLinks.some(s => s.id === activePage)
+                          ? 'text-purple-300 font-bold bg-purple-500/20 border border-purple-500/40'
                           : 'text-slate-300 hover:text-white hover:bg-white/5'
                       }`}
                     >
-                      <span>{link.label}</span>
-                      {link.badge && (
-                        <span className="hidden 2xl:inline-block px-1.5 py-0.5 rounded-full text-[9px] xl:text-[10px] bg-purple-500/30 text-purple-300 border border-purple-500/40">
-                          {link.badge}
-                        </span>
-                      )}
-                      {isActive && (
-                        <motion.div
-                          layoutId="activeNavIndicator"
-                          className="absolute bottom-0 left-1 right-1 h-0.5 bg-gradient-to-r from-purple-500 to-cyan-400 rounded-full"
-                          transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-                        />
-                      )}
+                      <span>
+                        {secondaryNavLinks.find(s => s.id === activePage)?.label || 'More'}
+                      </span>
+                      <ChevronRight className={`w-3.5 h-3.5 transition-transform duration-200 ${moreDropdownOpen ? 'rotate-90 text-purple-400' : 'rotate-0 text-slate-400'}`} />
                     </button>
-                  );
-                })}
-              </nav>
+
+                    <AnimatePresence>
+                      {moreDropdownOpen && (
+                        <>
+                          <div
+                            onClick={() => setMoreDropdownOpen(false)}
+                            className="fixed inset-0 z-[115] bg-transparent"
+                          />
+                          <motion.div
+                            initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                            className="absolute left-0 mt-2 w-48 rounded-xl bg-slate-950 border border-purple-500/40 shadow-2xl p-1.5 z-[120] space-y-1"
+                          >
+                            {secondaryNavLinks.map(sLink => {
+                              const IconComponent = sLink.icon;
+                              const isSubActive = activePage === sLink.id;
+                              return (
+                                <button
+                                  key={sLink.id}
+                                  {...touchProps(() => handleNavClick(sLink.id, sLink.label))}
+                                  className={`w-full text-left px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer ${
+                                    isSubActive ? 'bg-purple-600/30 text-purple-300 font-bold' : 'text-slate-300 hover:bg-white/5 hover:text-white'
+                                  }`}
+                                >
+                                  <IconComponent className={`w-4 h-4 ${sLink.color} shrink-0`} />
+                                  <span>{sLink.label}</span>
+                                </button>
+                              );
+                            })}
+                          </motion.div>
+                        </>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </nav>
+              </div>
             )}
 
             {/* RIGHT CONTROLS: SFX + NOTIFICATIONS + PROFILE */}
-            <div className="flex items-center gap-2 sm:gap-2.5 shrink-0 ml-2">
+            <div className="flex items-center gap-2 sm:gap-2.5 shrink-0 ml-auto pl-2.5 sm:pl-3 border-l border-white/10 bg-slate-950/90 backdrop-blur-md z-20">
               {/* Sound Effects Toggle Button (DESKTOP + TABLET) */}
               <button
                 {...touchProps(toggleSound)}
