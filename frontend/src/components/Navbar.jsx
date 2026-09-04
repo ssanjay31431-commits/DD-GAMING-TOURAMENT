@@ -334,11 +334,15 @@ export default function Navbar() {
       {/* ========================================================= */}
       {/* MOBILE FIXED BOTTOM ESPORTS NAVIGATION BAR (< 1024px) */}
       {/* ========================================================= */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-[130] glass-panel border-t border-purple-500/30 bg-slate-950/95 backdrop-blur-2xl px-2 py-1.5 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] shadow-2xl touch-manipulation">
+      <nav
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-[130] glass-panel border-t border-purple-500/30 bg-slate-950/95 backdrop-blur-2xl px-2 py-1.5 shadow-2xl touch-manipulation"
+        style={{ paddingBottom: 'calc(0.6rem + env(safe-area-inset-bottom, 12px))' }}
+      >
         <div className="flex items-center justify-around max-w-md mx-auto">
           
           {/* 1. HOME */}
           <button
+            type="button"
             {...touchProps(() => handleNavClick('home', 'HOME'))}
             className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl transition-all relative cursor-pointer touch-manipulation active:scale-95 min-w-[54px] min-h-[46px] ${
               activePage === 'home' ? 'text-purple-400 font-extrabold' : 'text-slate-400 hover:text-slate-200'
@@ -353,6 +357,7 @@ export default function Navbar() {
 
           {/* 2. TOURNAMENTS */}
           <button
+            type="button"
             {...touchProps(() => handleNavClick('tournaments', 'TOURNAMENTS'))}
             className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl transition-all relative cursor-pointer touch-manipulation active:scale-95 min-w-[54px] min-h-[46px] ${
               activePage === 'tournaments' ? 'text-purple-400 font-extrabold' : 'text-slate-400 hover:text-slate-200'
@@ -367,6 +372,7 @@ export default function Navbar() {
 
           {/* 3. MY ARENA OR WATCH LIVE */}
           <button
+            type="button"
             {...touchProps(() => handleNavClick(isLoggedIn ? 'my-tournaments' : 'live', isLoggedIn ? 'MY_ARENA' : 'WATCH_LIVE'))}
             className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl transition-all relative cursor-pointer touch-manipulation active:scale-95 min-w-[54px] min-h-[46px] ${
               (activePage === 'my-tournaments' || activePage === 'live') ? 'text-purple-400 font-extrabold' : 'text-slate-400 hover:text-slate-200'
@@ -385,6 +391,7 @@ export default function Navbar() {
 
           {/* 4. TICKETS OR LOGIN */}
           <button
+            type="button"
             {...touchProps(() => handleNavClick(isLoggedIn ? 'my-tickets' : 'login', isLoggedIn ? 'TICKETS' : 'LOGIN'))}
             className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl transition-all relative cursor-pointer touch-manipulation active:scale-95 min-w-[54px] min-h-[46px] ${
               (activePage === 'my-tickets' || activePage === 'login') ? 'text-purple-400 font-extrabold' : 'text-slate-400 hover:text-slate-200'
@@ -403,6 +410,7 @@ export default function Navbar() {
 
           {/* 5. MORE */}
           <button
+            type="button"
             {...touchProps(() => {
               console.log('MOBILE NAV CLICK: MORE');
               playClickSound();
