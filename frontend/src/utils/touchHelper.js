@@ -12,8 +12,8 @@
 export function touchProps(fn) {
   if (typeof fn !== 'function') return {};
 
-  let touchStartX = 0;
-  let touchStartY = 0;
+  let touchStartX = null;
+  let touchStartY = null;
   let lastTouchTime = 0;
 
   return {
@@ -24,26 +24,41 @@ export function touchProps(fn) {
       }
     },
     onTouchEnd: (e) => {
-      let deltaX = 0;
-      let deltaY = 0;
+      let isCleanTap = true;
 
-      if (e.changedTouches && e.changedTouches[0]) {
-        deltaX = Math.abs(e.changedTouches[0].clientX - touchStartX);
-        deltaY = Math.abs(e.changedTouches[0].clientY - touchStartY);
+      if (touchStartX !== null && touchStartY !== null && e.changedTouches && e.changedTouches[0]) {
+        const deltaX = Math.abs(e.changedTouches[0].clientX - touchStartX);
+        const deltaY = Math.abs(e.changedTouches[0].clientY - touchStartY);
+        // Only reject if finger moved significantly (> 30px, e.g. actual scrolling)
+        if (deltaX > 30 || deltaY > 30) {
+          isCleanTap = false;
+        }
       }
 
-      // If touch movement is less than 12px in both dimensions, it's a mobile tap
-      if (deltaX < 12 && deltaY < 12) {
+      // Reset start coordinates for next gesture
+      touchStartX = null;
+      touchStartY = null;
+
+      if (isCleanTap) {
         lastTouchTime = Date.now();
-        fn(e);
+        try {
+          fn(e);
+        } catch (err) {
+          console.error("Error executing touch handler:", err);
+        }
       }
     },
     onClick: (e) => {
-      // If already executed by onTouchEnd within 400ms, ignore duplicate synthetic click
-      if (Date.now() - lastTouchTime < 400) {
+      // Prevent double execution if already handled by onTouchEnd within 350ms
+      if (Date.now() - lastTouchTime < 350) {
         return;
       }
-      fn(e);
+      lastTouchTime = Date.now();
+      try {
+        fn(e);
+      } catch (err) {
+        console.error("Error executing click handler:", err);
+      }
     }
   };
 }
