@@ -7,6 +7,7 @@ import {
 import { useApp } from '../context/AppContext';
 import { getGameBanner } from '../utils/gameBanners';
 import AdminLogin from '../components/AdminLogin';
+import { touchProps } from '../utils/touchHelper';
 
 export default function Admin() {
   const {
@@ -259,30 +260,33 @@ export default function Admin() {
             </h1>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <button
-              onClick={() => {
+              type="button"
+              {...touchProps(() => {
                 setDeleteAllPassword('');
                 setDeleteAllError('');
                 setIsDeleteAllModalOpen(true);
-              }}
-              className="px-4 py-3 rounded-2xl bg-gradient-to-r from-red-700 to-rose-700 hover:from-red-600 hover:to-rose-600 text-white font-heading font-bold text-xs uppercase tracking-wider shadow-lg shadow-red-950/40 flex items-center justify-center gap-2 border border-red-500/40 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+              })}
+              className="px-4 py-3 rounded-2xl bg-gradient-to-r from-red-700 to-rose-700 hover:from-red-600 hover:to-rose-600 text-white font-heading font-bold text-xs uppercase tracking-wider shadow-lg shadow-red-950/40 flex items-center justify-center gap-2 border border-red-500/40 transition-all hover:scale-105 active:scale-95 cursor-pointer touch-manipulation min-h-[44px]"
             >
-              <Trash2 className="w-4 h-4 text-red-200" />
+              <Trash2 className="w-4 h-4 text-red-200 pointer-events-none" />
               <span>Delete All Data</span>
             </button>
             <button
-              onClick={() => setActiveTab('create')}
-              className="px-6 py-3 rounded-2xl bg-gradient-to-r from-rose-600 to-purple-600 hover:from-rose-500 hover:to-purple-500 text-white font-heading font-black text-xs uppercase tracking-wider shadow-lg shadow-rose-500/25 flex items-center justify-center gap-2"
+              type="button"
+              {...touchProps(() => setActiveTab('create'))}
+              className="px-6 py-3 rounded-2xl bg-gradient-to-r from-rose-600 to-purple-600 hover:from-rose-500 hover:to-purple-500 text-white font-heading font-black text-xs uppercase tracking-wider shadow-lg shadow-rose-500/25 flex items-center justify-center gap-2 touch-manipulation cursor-pointer min-h-[44px]"
             >
-              <Plus className="w-4 h-4" /> + CREATE NEW TOURNAMENT
+              <Plus className="w-4 h-4 pointer-events-none" /> + CREATE NEW TOURNAMENT
             </button>
             <button
-              onClick={handleAdminLogout}
-              className="px-4 py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-rose-300 font-bold text-xs uppercase tracking-wider border border-slate-700 flex items-center justify-center gap-1.5 shadow"
+              type="button"
+              {...touchProps(handleAdminLogout)}
+              className="px-4 py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-rose-300 font-bold text-xs uppercase tracking-wider border border-slate-700 flex items-center justify-center gap-1.5 shadow touch-manipulation cursor-pointer min-h-[44px]"
               title="Logout Admin"
             >
-              <LogOut className="w-4 h-4" /> Logout
+              <LogOut className="w-4 h-4 pointer-events-none" /> Logout
             </button>
           </div>
         </div>
@@ -334,8 +338,9 @@ export default function Admin() {
           return (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-2.5 rounded-xl font-heading font-bold text-xs uppercase tracking-wider transition-all shrink-0 flex items-center gap-2 border ${
+              type="button"
+              {...touchProps(() => setActiveTab(tab.id))}
+              className={`px-4 py-2.5 rounded-xl font-heading font-bold text-xs uppercase tracking-wider transition-all shrink-0 flex items-center gap-2 border touch-manipulation cursor-pointer min-h-[44px] ${
                 isActive
                   ? 'bg-rose-600 border-rose-400 text-white shadow-lg shadow-rose-500/25'
                   : tab.highlight
@@ -343,7 +348,7 @@ export default function Admin() {
                   : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
               }`}
             >
-              <Icon className="w-3.5 h-3.5" />
+              <Icon className="w-3.5 h-3.5 pointer-events-none" />
               {tab.label}
             </button>
           );
@@ -819,8 +824,8 @@ export default function Admin() {
             </select>
           </div>
 
-          <div className="rounded-2xl glass-panel border border-slate-800 overflow-hidden shadow-xl">
-            <table className="w-full text-left text-sm">
+          <div className="overflow-x-auto max-w-full rounded-2xl glass-panel border border-slate-800 shadow-xl">
+            <table className="w-full min-w-[650px] text-left text-sm">
               <thead className="bg-slate-950 text-slate-400 font-bold uppercase text-xs border-b border-slate-800">
                 <tr>
                   <th className="py-4 px-6">Ticket ID</th>
@@ -889,8 +894,8 @@ export default function Admin() {
           <h3 className="font-heading font-bold text-xl text-white">Winner Prize Payments & QR Code Inspection</h3>
           <p className="text-xs text-slate-400">Review uploaded recipient QR codes and mark prize amounts as SENT after payment transfer.</p>
 
-          <div className="rounded-2xl glass-panel border border-slate-800 overflow-hidden shadow-xl">
-            <table className="w-full text-left text-sm">
+          <div className="overflow-x-auto max-w-full rounded-2xl glass-panel border border-slate-800 shadow-xl">
+            <table className="w-full min-w-[650px] text-left text-sm">
               <thead className="bg-slate-950 text-slate-400 font-bold uppercase text-xs border-b border-slate-800">
                 <tr>
                   <th className="py-4 px-6">Winner / Player</th>

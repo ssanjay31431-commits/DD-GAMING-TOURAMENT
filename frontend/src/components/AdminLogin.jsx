@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Lock, User, AlertCircle, CheckCircle2, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { touchProps } from '../utils/touchHelper';
 
 export default function AdminLogin({ onLoginSuccess }) {
   const [username, setUsername] = useState('');
@@ -10,7 +11,7 @@ export default function AdminLogin({ onLoginSuccess }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     setError('');
 
     if (username.trim() === 'ddgaming' && (password === 'ddgaming2026' || password === 'ddgaming20')) {
@@ -28,7 +29,7 @@ export default function AdminLogin({ onLoginSuccess }) {
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="w-full max-w-md p-8 rounded-3xl bg-slate-900/90 border-2 border-rose-500/40 shadow-2xl backdrop-blur-xl relative overflow-hidden space-y-6"
+        className="w-full max-w-md p-6 sm:p-8 rounded-3xl bg-slate-900/90 border-2 border-rose-500/40 shadow-2xl backdrop-blur-xl relative overflow-hidden space-y-6"
       >
         {/* Top Glow Accent */}
         <div className="absolute -top-24 -left-24 w-48 h-48 rounded-full bg-rose-500/20 blur-3xl pointer-events-none" />
@@ -74,14 +75,14 @@ export default function AdminLogin({ onLoginSuccess }) {
               Admin Username *
             </label>
             <div className="relative">
-              <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+              <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5 pointer-events-none" />
               <input
                 type="text"
                 required
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="Enter admin username"
-                className="w-full pl-10 pr-4 py-3 rounded-xl glass-input text-sm font-semibold"
+                className="w-full pl-10 pr-4 py-3 rounded-xl glass-input text-sm font-semibold touch-manipulation min-h-[44px]"
               />
             </div>
           </div>
@@ -91,22 +92,22 @@ export default function AdminLogin({ onLoginSuccess }) {
               Admin Password *
             </label>
             <div className="relative">
-              <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+              <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5 pointer-events-none" />
               <input
                 type={showPassword ? "text" : "password"}
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••••••"
-                className="w-full pl-10 pr-11 py-3 rounded-xl glass-input text-sm font-semibold"
+                className="w-full pl-10 pr-11 py-3 rounded-xl glass-input text-sm font-semibold touch-manipulation min-h-[44px]"
               />
               <button
                 type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3.5 top-3.5 text-slate-400 hover:text-slate-200 transition-colors focus:outline-none"
+                {...touchProps(() => setShowPassword(!showPassword))}
+                className="absolute right-2 top-2 p-2.5 text-slate-400 hover:text-slate-200 transition-colors focus:outline-none touch-manipulation cursor-pointer min-w-[40px] min-h-[40px] flex items-center justify-center"
                 title={showPassword ? "Hide Password" : "Show Password"}
               >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {showPassword ? <EyeOff className="w-4 h-4 pointer-events-none" /> : <Eye className="w-4 h-4 pointer-events-none" />}
               </button>
             </div>
           </div>
@@ -114,10 +115,11 @@ export default function AdminLogin({ onLoginSuccess }) {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-rose-600 to-purple-600 hover:from-rose-500 hover:to-purple-500 text-white font-heading font-black text-sm uppercase tracking-wider shadow-lg shadow-rose-500/25 flex items-center justify-center gap-2 transition-all mt-6"
+            {...touchProps(handleSubmit)}
+            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-rose-600 to-purple-600 hover:from-rose-500 hover:to-purple-500 text-white font-heading font-black text-sm uppercase tracking-wider shadow-lg shadow-rose-500/25 flex items-center justify-center gap-2 transition-all mt-6 touch-manipulation cursor-pointer min-h-[46px] active:scale-95"
           >
             {isSubmitting ? 'Authenticating...' : 'Sign In to Dashboard'}
-            <ArrowRight className="w-4 h-4" />
+            <ArrowRight className="w-4 h-4 pointer-events-none" />
           </button>
         </form>
 
