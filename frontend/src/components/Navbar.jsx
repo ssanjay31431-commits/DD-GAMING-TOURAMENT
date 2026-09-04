@@ -113,22 +113,22 @@ export default function Navbar() {
 
             {/* DESKTOP NAVIGATION LINKS (ONLY VISIBLE ON >= 1024px DESKTOP SCREENS) */}
             {isLoggedIn && (
-              <nav className="hidden lg:flex items-center gap-0.5 xl:gap-1.5 overflow-hidden">
+              <nav className="hidden lg:flex items-center gap-1 xl:gap-2 shrink min-w-0 overflow-x-auto no-scrollbar py-1">
                 {navLinks.map((link) => {
                   const isActive = activePage === link.id;
                   return (
                     <button
                       key={link.id}
                       {...touchProps(() => handleNavClick(link.id, link.label))}
-                      className={`relative px-2 xl:px-3.5 py-1.5 xl:py-2 rounded-lg text-xs xl:text-sm font-semibold transition-all duration-200 flex items-center gap-1 shrink-0 cursor-pointer touch-manipulation ${
+                      className={`relative px-2.5 xl:px-3.5 py-1.5 rounded-lg text-xs xl:text-sm font-semibold transition-all duration-200 flex items-center gap-1 shrink-0 cursor-pointer touch-manipulation whitespace-nowrap ${
                         isActive
-                          ? 'text-white font-bold'
+                          ? 'text-white font-bold bg-white/10'
                           : 'text-slate-300 hover:text-white hover:bg-white/5'
                       }`}
                     >
                       <span>{link.label}</span>
                       {link.badge && (
-                        <span className="hidden xl:inline-block px-1.5 py-0.5 rounded-full text-[9px] xl:text-[10px] bg-purple-500/30 text-purple-300 border border-purple-500/40">
+                        <span className="hidden 2xl:inline-block px-1.5 py-0.5 rounded-full text-[9px] xl:text-[10px] bg-purple-500/30 text-purple-300 border border-purple-500/40">
                           {link.badge}
                         </span>
                       )}
@@ -146,37 +146,43 @@ export default function Navbar() {
             )}
 
             {/* RIGHT CONTROLS: SFX + NOTIFICATIONS + PROFILE */}
-            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            <div className="flex items-center gap-2 sm:gap-2.5 shrink-0 ml-2">
               {/* Sound Effects Toggle Button (DESKTOP + TABLET) */}
               <button
                 {...touchProps(toggleSound)}
-                className={`hidden sm:flex p-2 px-3 rounded-xl border text-xs font-bold transition-all items-center gap-1.5 cursor-pointer touch-manipulation ${
+                className={`hidden sm:flex h-10 px-2.5 sm:px-3 rounded-xl border text-xs font-bold transition-all items-center gap-1.5 cursor-pointer touch-manipulation shrink-0 ${
                   soundActive
-                    ? 'bg-purple-600/20 border-purple-500/40 text-purple-300'
-                    : 'bg-slate-900 border-slate-800 text-slate-500'
+                    ? 'bg-purple-600/20 border-purple-500/40 text-purple-300 hover:bg-purple-600/30 shadow-sm shadow-purple-500/20'
+                    : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white hover:border-slate-700'
                 }`}
-                title={soundActive ? 'Sound Effects Active' : 'Sound Effects Muted'}
+                title={soundActive ? 'Sound Effects Active (Click to mute)' : 'Sound Effects Muted (Click to enable)'}
               >
-                {soundActive ? <Volume2 className="w-4 h-4 text-purple-400" /> : <VolumeX className="w-4 h-4 text-slate-500" />}
-                <span className="text-[11px] inline">{soundActive ? 'SFX ON' : 'SFX OFF'}</span>
+                {soundActive ? (
+                  <Volume2 className="w-4 h-4 text-purple-400 shrink-0 pointer-events-none" />
+                ) : (
+                  <VolumeX className="w-4 h-4 text-slate-500 shrink-0 pointer-events-none" />
+                )}
+                <span className="text-[11px] font-mono tracking-tight shrink-0 pointer-events-none hidden md:inline">
+                  {soundActive ? 'SFX ON' : 'SFX OFF'}
+                </span>
               </button>
 
               {/* Notifications Bell Button */}
               {isLoggedIn && (
-                <div className="relative">
+                <div className="relative shrink-0">
                   <button
                     {...touchProps(() => {
                       console.log('MOBILE NAV CLICK: NOTIFICATIONS_BELL');
                       setNotifDropdownOpen(!notifDropdownOpen);
                     })}
-                    className={`p-2 rounded-xl border text-xs font-bold transition-all relative cursor-pointer touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center ${
+                    className={`h-10 w-10 sm:w-auto sm:px-3 rounded-xl border text-xs font-bold transition-all relative cursor-pointer touch-manipulation flex items-center justify-center gap-1.5 shrink-0 ${
                       unreadNotificationCount > 0
                         ? 'bg-purple-600/30 border-purple-500/50 text-purple-300 animate-pulse'
-                        : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+                        : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white hover:border-slate-700'
                     }`}
                     title="In-App Notifications"
                   >
-                    <Bell className="w-4 h-4 text-purple-400 pointer-events-none" />
+                    <Bell className="w-4 h-4 text-purple-400 pointer-events-none shrink-0" />
                     {unreadNotificationCount > 0 && (
                       <span className="absolute -top-1.5 -right-1.5 bg-rose-500 text-white font-mono font-black text-[9px] w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center border-2 border-slate-950 shadow pointer-events-none">
                         {unreadNotificationCount > 9 ? '9+' : unreadNotificationCount}

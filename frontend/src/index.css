@@ -75,8 +75,13 @@
     font-family: var(--font-heading);
   }
 
-  h4, h5, h6, .font-subheading {
-    font-family: var(--font-subheading);
+  /* Hide scrollbar for clean navigation scrolling */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 }
 
