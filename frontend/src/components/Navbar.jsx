@@ -6,6 +6,7 @@ import {
   Award, HelpCircle, User 
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { touchProps, handleTouchOrClick } from '../utils/touchHelper';
 
 export default function Navbar() {
   const { 
@@ -44,21 +45,26 @@ export default function Navbar() {
     }
   };
 
+  const handleNavClick = (pageId) => {
+    playClickSound();
+    navigateTo(pageId);
+  };
+
   return (
     <>
       {/* ========================================================= */}
       {/* TOP HEADER (DESKTOP HORIZONTAL NAVBAR + COMPACT MOBILE HEADER) */}
       {/* ========================================================= */}
-      <header className="sticky top-0 z-40 w-full glass-panel border-b border-white/10 backdrop-blur-xl">
+      <header className="sticky top-0 z-[90] w-full glass-panel border-b border-white/10 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 sm:h-20">
             
             {/* BRAND LOGO (DESKTOP & MOBILE) */}
             <button
-              onClick={() => {
-                if (isLoggedIn) navigateTo('home');
-              }}
-              className="flex items-center gap-2.5 sm:gap-3 group text-left focus:outline-none shrink-0"
+              {...touchProps(() => {
+                if (isLoggedIn) handleNavClick('home');
+              })}
+              className="flex items-center gap-2.5 sm:gap-3 group text-left focus:outline-none shrink-0 cursor-pointer touch-manipulation"
             >
               <div className="relative w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-purple-600 via-indigo-600 to-cyan-500 p-0.5 shadow-lg shadow-purple-500/20 group-hover:scale-105 transition-transform duration-300">
                 <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center relative overflow-hidden">
@@ -107,8 +113,8 @@ export default function Navbar() {
                   return (
                     <button
                       key={link.id}
-                      onClick={() => navigateTo(link.id)}
-                      className={`relative px-2 xl:px-3.5 py-1.5 xl:py-2 rounded-lg text-xs xl:text-sm font-semibold transition-all duration-200 flex items-center gap-1 shrink-0 ${
+                      {...touchProps(() => handleNavClick(link.id))}
+                      className={`relative px-2 xl:px-3.5 py-1.5 xl:py-2 rounded-lg text-xs xl:text-sm font-semibold transition-all duration-200 flex items-center gap-1 shrink-0 cursor-pointer touch-manipulation ${
                         isActive
                           ? 'text-white font-bold'
                           : 'text-slate-300 hover:text-white hover:bg-white/5'
@@ -137,8 +143,8 @@ export default function Navbar() {
             <div className="flex items-center gap-2 sm:gap-3 shrink-0">
               {/* Sound Effects Toggle Button (DESKTOP + TABLET) */}
               <button
-                onClick={toggleSound}
-                className={`hidden sm:flex p-2 px-3 rounded-xl border text-xs font-bold transition-all items-center gap-1.5 ${
+                {...touchProps(toggleSound)}
+                className={`hidden sm:flex p-2 px-3 rounded-xl border text-xs font-bold transition-all items-center gap-1.5 cursor-pointer touch-manipulation ${
                   soundActive
                     ? 'bg-purple-600/20 border-purple-500/40 text-purple-300'
                     : 'bg-slate-900 border-slate-800 text-slate-500'
@@ -153,8 +159,8 @@ export default function Navbar() {
               {isLoggedIn && (
                 <div className="relative">
                   <button
-                    onClick={() => setNotifDropdownOpen(!notifDropdownOpen)}
-                    className={`p-2 rounded-xl border text-xs font-bold transition-all relative ${
+                    {...touchProps(() => setNotifDropdownOpen(!notifDropdownOpen))}
+                    className={`p-2 rounded-xl border text-xs font-bold transition-all relative cursor-pointer touch-manipulation ${
                       unreadNotificationCount > 0
                         ? 'bg-purple-600/30 border-purple-500/50 text-purple-300 animate-pulse'
                         : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
@@ -176,7 +182,7 @@ export default function Navbar() {
                         initial={{ opacity: 0, y: 10, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                        className="absolute right-0 mt-2 w-72 sm:w-96 rounded-2xl bg-slate-950 border border-purple-500/40 shadow-2xl p-4 z-50 space-y-3"
+                        className="absolute right-0 mt-2 w-72 sm:w-96 rounded-2xl bg-slate-950 border border-purple-500/40 shadow-2xl p-4 z-[120] space-y-3"
                       >
                         <div className="flex items-center justify-between border-b border-slate-800 pb-2">
                           <div className="flex items-center gap-1.5 font-heading font-bold text-xs sm:text-sm text-white">
@@ -185,8 +191,8 @@ export default function Navbar() {
                           <div className="flex items-center gap-2">
                             {notifications && notifications.length > 0 && (
                               <button
-                                onClick={() => clearAllNotifications()}
-                                className="text-[10px] font-bold text-purple-400 hover:text-purple-300 bg-purple-500/10 px-2 py-0.5 rounded-lg border border-purple-500/30 transition-all flex items-center gap-1"
+                                {...touchProps(clearAllNotifications)}
+                                className="text-[10px] font-bold text-purple-400 hover:text-purple-300 bg-purple-500/10 px-2 py-0.5 rounded-lg border border-purple-500/30 transition-all flex items-center gap-1 cursor-pointer touch-manipulation"
                               >
                                 <CheckCheck className="w-3 h-3" /> Clear
                               </button>
@@ -204,14 +210,14 @@ export default function Navbar() {
                             notifications.map((n) => (
                               <div
                                 key={n.id}
-                                onClick={() => {
+                                {...touchProps(() => {
                                   markNotificationRead(n.id);
                                   if (n.tournamentId) {
-                                    navigateTo('my-tournaments');
+                                    handleNavClick('my-tournaments');
                                   }
                                   setNotifDropdownOpen(false);
-                                }}
-                                className={`p-2.5 rounded-xl cursor-pointer transition-colors space-y-1 ${
+                                })}
+                                className={`p-2.5 rounded-xl cursor-pointer transition-colors space-y-1 touch-manipulation ${
                                   n.isRead ? 'bg-slate-950 hover:bg-slate-900 text-slate-400' : 'bg-purple-950/40 border border-purple-500/30 text-white font-semibold'
                                 }`}
                               >
@@ -239,8 +245,8 @@ export default function Navbar() {
               {isLoggedIn ? (
                 <div className="hidden lg:flex items-center gap-2 shrink-0">
                   <button
-                    onClick={() => navigateTo('profile')}
-                    className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-lg border max-w-[170px] ${
+                    {...touchProps(() => handleNavClick('profile'))}
+                    className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-lg border max-w-[170px] cursor-pointer touch-manipulation ${
                       activePage === 'profile'
                         ? 'bg-purple-600 border-purple-400 text-white shadow-purple-500/30'
                         : 'bg-slate-900/90 border-purple-500/30 text-white hover:border-purple-500/60 hover:bg-slate-800'
@@ -257,8 +263,8 @@ export default function Navbar() {
                   </button>
 
                   <button
-                    onClick={logout}
-                    className="p-2 rounded-xl bg-slate-900 border border-slate-800 hover:border-rose-500/40 text-slate-400 hover:text-rose-300 transition-all shrink-0"
+                    {...touchProps(logout)}
+                    className="p-2 rounded-xl bg-slate-900 border border-slate-800 hover:border-rose-500/40 text-slate-400 hover:text-rose-300 transition-all shrink-0 cursor-pointer touch-manipulation"
                     title="Logout Account"
                   >
                     <LogOut className="w-4 h-4" />
@@ -266,8 +272,8 @@ export default function Navbar() {
                 </div>
               ) : (
                 <button
-                  onClick={() => navigateTo('login')}
-                  className="hidden lg:flex px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white font-heading font-black text-xs uppercase tracking-wider shadow-lg shadow-purple-500/30 items-center gap-1.5 border border-purple-400/40 shrink-0 cursor-pointer"
+                  {...touchProps(() => handleNavClick('login'))}
+                  className="hidden lg:flex px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white font-heading font-black text-xs uppercase tracking-wider shadow-lg shadow-purple-500/30 items-center gap-1.5 border border-purple-400/40 shrink-0 cursor-pointer touch-manipulation"
                 >
                   <LogIn className="w-4 h-4 text-white" />
                   <span>LOGIN / SIGN IN</span>
@@ -278,8 +284,8 @@ export default function Navbar() {
               <div className="lg:hidden flex items-center gap-2 shrink-0">
                 {!isLoggedIn && (
                   <button
-                    onClick={() => navigateTo('login')}
-                    className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white font-heading font-black text-xs uppercase tracking-wider shadow-lg shadow-purple-500/30 flex items-center gap-1 border border-purple-400/40 shrink-0 cursor-pointer"
+                    {...touchProps(() => handleNavClick('login'))}
+                    className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white font-heading font-black text-xs uppercase tracking-wider shadow-lg shadow-purple-500/30 flex items-center gap-1 border border-purple-400/40 shrink-0 cursor-pointer touch-manipulation active:scale-95"
                   >
                     <LogIn className="w-3.5 h-3.5 text-white" />
                     <span>LOGIN</span>
@@ -287,12 +293,11 @@ export default function Navbar() {
                 )}
 
                 <button
-                  onClick={(e) => {
-                    e.preventDefault();
+                  {...touchProps(() => {
                     playClickSound();
                     setMobileMenuOpen(prev => !prev);
-                  }}
-                  className="p-2 rounded-xl bg-slate-900 border border-purple-500/30 text-slate-200 focus:outline-none flex items-center gap-1.5 cursor-pointer"
+                  })}
+                  className="p-2 rounded-xl bg-slate-900 border border-purple-500/30 text-slate-200 focus:outline-none flex items-center gap-1.5 cursor-pointer touch-manipulation active:scale-95"
                   title="Open Navigation Menu"
                 >
                   {isLoggedIn && (
@@ -316,13 +321,13 @@ export default function Navbar() {
       {/* ========================================================= */}
       {/* MOBILE FIXED BOTTOM ESPORTS NAVIGATION BAR (< 1024px) */}
       {/* ========================================================= */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 glass-panel border-t border-purple-500/30 bg-slate-950/95 backdrop-blur-2xl px-2 py-1.5 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] shadow-2xl">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-[100] glass-panel border-t border-purple-500/30 bg-slate-950/95 backdrop-blur-2xl px-2 py-1.5 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] shadow-2xl touch-manipulation">
         <div className="flex items-center justify-around max-w-md mx-auto">
           
           {/* 1. HOME */}
           <button
-            onClick={() => { playClickSound(); navigateTo('home'); }}
-            className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl transition-all relative cursor-pointer min-w-[54px] min-h-[46px] ${
+            {...touchProps(() => handleNavClick('home'))}
+            className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl transition-all relative cursor-pointer touch-manipulation active:scale-95 min-w-[54px] min-h-[46px] ${
               activePage === 'home' ? 'text-purple-400 font-extrabold' : 'text-slate-400 hover:text-slate-200'
             }`}
           >
@@ -335,8 +340,8 @@ export default function Navbar() {
 
           {/* 2. TOURNAMENTS */}
           <button
-            onClick={() => { playClickSound(); navigateTo('tournaments'); }}
-            className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl transition-all relative cursor-pointer min-w-[54px] min-h-[46px] ${
+            {...touchProps(() => handleNavClick('tournaments'))}
+            className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl transition-all relative cursor-pointer touch-manipulation active:scale-95 min-w-[54px] min-h-[46px] ${
               activePage === 'tournaments' ? 'text-purple-400 font-extrabold' : 'text-slate-400 hover:text-slate-200'
             }`}
           >
@@ -349,8 +354,8 @@ export default function Navbar() {
 
           {/* 3. MY ARENA OR WATCH LIVE */}
           <button
-            onClick={() => { playClickSound(); navigateTo(isLoggedIn ? 'my-tournaments' : 'live'); }}
-            className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl transition-all relative cursor-pointer min-w-[54px] min-h-[46px] ${
+            {...touchProps(() => handleNavClick(isLoggedIn ? 'my-tournaments' : 'live'))}
+            className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl transition-all relative cursor-pointer touch-manipulation active:scale-95 min-w-[54px] min-h-[46px] ${
               (activePage === 'my-tournaments' || activePage === 'live') ? 'text-purple-400 font-extrabold' : 'text-slate-400 hover:text-slate-200'
             }`}
           >
@@ -367,8 +372,8 @@ export default function Navbar() {
 
           {/* 4. TICKETS OR LOGIN */}
           <button
-            onClick={() => { playClickSound(); navigateTo(isLoggedIn ? 'my-tickets' : 'login'); }}
-            className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl transition-all relative cursor-pointer min-w-[54px] min-h-[46px] ${
+            {...touchProps(() => handleNavClick(isLoggedIn ? 'my-tickets' : 'login'))}
+            className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl transition-all relative cursor-pointer touch-manipulation active:scale-95 min-w-[54px] min-h-[46px] ${
               (activePage === 'my-tickets' || activePage === 'login') ? 'text-purple-400 font-extrabold' : 'text-slate-400 hover:text-slate-200'
             }`}
           >
@@ -385,12 +390,11 @@ export default function Navbar() {
 
           {/* 5. MORE */}
           <button
-            onClick={(e) => {
-              e.preventDefault();
+            {...touchProps(() => {
               playClickSound();
               setMobileMenuOpen(prev => !prev);
-            }}
-            className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl transition-all relative cursor-pointer min-w-[54px] min-h-[46px] ${
+            })}
+            className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl transition-all relative cursor-pointer touch-manipulation active:scale-95 min-w-[54px] min-h-[46px] ${
               mobileMenuOpen ? 'text-purple-400 font-extrabold' : 'text-slate-400 hover:text-slate-200'
             }`}
           >
@@ -406,13 +410,13 @@ export default function Navbar() {
       {/* ========================================================= */}
       <AnimatePresence>
         {mobileMenuOpen && (
-          <div className="lg:hidden fixed inset-0 z-50 flex flex-col justify-end">
+          <div className="lg:hidden fixed inset-0 z-[110] flex flex-col justify-end">
             {/* Backdrop Overlay */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setMobileMenuOpen(false)}
+              {...touchProps(() => setMobileMenuOpen(false))}
               className="fixed inset-0 bg-slate-950/80 backdrop-blur-md"
             />
 
@@ -430,8 +434,8 @@ export default function Navbar() {
               {/* Player Profile Header Box or Login Card */}
               {isLoggedIn ? (
                 <div
-                  onClick={() => { navigateTo('profile'); setMobileMenuOpen(false); }}
-                  className="p-4 rounded-2xl bg-gradient-to-r from-purple-950 via-slate-900 to-indigo-950 border border-purple-500/40 flex items-center justify-between cursor-pointer hover:border-purple-400 transition-all shadow-lg"
+                  {...touchProps(() => { handleNavClick('profile'); setMobileMenuOpen(false); })}
+                  className="p-4 rounded-2xl bg-gradient-to-r from-purple-950 via-slate-900 to-indigo-950 border border-purple-500/40 flex items-center justify-between cursor-pointer touch-manipulation hover:border-purple-400 transition-all shadow-lg"
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-11 h-11 rounded-full overflow-hidden border-2 border-purple-400 shrink-0">
@@ -450,8 +454,8 @@ export default function Navbar() {
                 </div>
               ) : (
                 <div
-                  onClick={() => { navigateTo('login'); setMobileMenuOpen(false); }}
-                  className="p-4 rounded-2xl bg-gradient-to-r from-purple-900/80 via-slate-900 to-cyan-900/80 border border-purple-400/50 flex items-center justify-between cursor-pointer hover:border-purple-400 transition-all shadow-lg"
+                  {...touchProps(() => { handleNavClick('login'); setMobileMenuOpen(false); })}
+                  className="p-4 rounded-2xl bg-gradient-to-r from-purple-900/80 via-slate-900 to-cyan-900/80 border border-purple-400/50 flex items-center justify-between cursor-pointer touch-manipulation hover:border-purple-400 transition-all shadow-lg"
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-11 h-11 rounded-2xl bg-purple-600/30 border border-purple-400 flex items-center justify-center text-purple-300 shrink-0">
@@ -469,8 +473,8 @@ export default function Navbar() {
               {/* Quick Feature Grid */}
               <div className="grid grid-cols-2 gap-2.5">
                 <button
-                  onClick={() => { navigateTo('live'); setMobileMenuOpen(false); }}
-                  className="p-3.5 rounded-2xl bg-slate-900 border border-rose-500/30 hover:border-rose-500 flex items-center gap-2.5 text-left transition-all cursor-pointer"
+                  {...touchProps(() => { handleNavClick('live'); setMobileMenuOpen(false); })}
+                  className="p-3.5 rounded-2xl bg-slate-900 border border-rose-500/30 hover:border-rose-500 flex items-center gap-2.5 text-left transition-all cursor-pointer touch-manipulation"
                 >
                   <Radio className="w-5 h-5 text-rose-400 animate-pulse shrink-0" />
                   <div>
@@ -480,8 +484,8 @@ export default function Navbar() {
                 </button>
 
                 <button
-                  onClick={() => { navigateTo('games'); setMobileMenuOpen(false); }}
-                  className="p-3.5 rounded-2xl bg-slate-900 border border-purple-500/30 hover:border-purple-400 flex items-center gap-2.5 text-left transition-all cursor-pointer"
+                  {...touchProps(() => { handleNavClick('games'); setMobileMenuOpen(false); })}
+                  className="p-3.5 rounded-2xl bg-slate-900 border border-purple-500/30 hover:border-purple-400 flex items-center gap-2.5 text-left transition-all cursor-pointer touch-manipulation"
                 >
                   <Gamepad2 className="w-5 h-5 text-cyan-400 shrink-0" />
                   <div>
@@ -491,8 +495,8 @@ export default function Navbar() {
                 </button>
 
                 <button
-                  onClick={() => { navigateTo('leaderboard'); setMobileMenuOpen(false); }}
-                  className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 hover:border-purple-500/40 flex items-center gap-2.5 text-left transition-all cursor-pointer"
+                  {...touchProps(() => { handleNavClick('leaderboard'); setMobileMenuOpen(false); })}
+                  className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 hover:border-purple-500/40 flex items-center gap-2.5 text-left transition-all cursor-pointer touch-manipulation"
                 >
                   <Award className="w-5 h-5 text-amber-400 shrink-0" />
                   <div>
@@ -502,8 +506,8 @@ export default function Navbar() {
                 </button>
 
                 <button
-                  onClick={() => { navigateTo('winners'); setMobileMenuOpen(false); }}
-                  className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 hover:border-purple-500/40 flex items-center gap-2.5 text-left transition-all cursor-pointer"
+                  {...touchProps(() => { handleNavClick('winners'); setMobileMenuOpen(false); })}
+                  className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 hover:border-purple-500/40 flex items-center gap-2.5 text-left transition-all cursor-pointer touch-manipulation"
                 >
                   <Trophy className="w-5 h-5 text-emerald-400 shrink-0" />
                   <div>
@@ -516,8 +520,8 @@ export default function Navbar() {
               {/* Additional Menu Items */}
               <div className="space-y-2 pt-2 border-t border-slate-800 text-xs font-semibold">
                 <button
-                  onClick={() => toggleSound()}
-                  className="w-full flex items-center justify-between p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 text-slate-200 cursor-pointer"
+                  {...touchProps(toggleSound)}
+                  className="w-full flex items-center justify-between p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 text-slate-200 cursor-pointer touch-manipulation"
                 >
                   <span className="flex items-center gap-2.5">
                     {soundActive ? <Volume2 className="w-4 h-4 text-purple-400" /> : <VolumeX className="w-4 h-4 text-slate-500" />}
@@ -529,8 +533,8 @@ export default function Navbar() {
                 </button>
 
                 <button
-                  onClick={() => { navigateTo('how-it-works'); setMobileMenuOpen(false); }}
-                  className="w-full flex items-center justify-between p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 text-slate-200 cursor-pointer"
+                  {...touchProps(() => { handleNavClick('how-it-works'); setMobileMenuOpen(false); })}
+                  className="w-full flex items-center justify-between p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 text-slate-200 cursor-pointer touch-manipulation"
                 >
                   <span className="flex items-center gap-2.5">
                     <HelpCircle className="w-4 h-4 text-cyan-400" />
@@ -541,21 +545,21 @@ export default function Navbar() {
 
                 {isLoggedIn ? (
                   <button
-                    onClick={() => {
+                    {...touchProps(() => {
                       logout();
                       setMobileMenuOpen(false);
-                    }}
-                    className="w-full flex items-center justify-center gap-2 p-3.5 rounded-xl bg-rose-950/80 border border-rose-500/40 text-rose-300 font-bold uppercase tracking-wider mt-2 cursor-pointer shadow-lg"
+                    })}
+                    className="w-full flex items-center justify-center gap-2 p-3.5 rounded-xl bg-rose-950/80 border border-rose-500/40 text-rose-300 font-bold uppercase tracking-wider mt-2 cursor-pointer touch-manipulation shadow-lg"
                   >
                     <LogOut className="w-4 h-4" /> Logout Account
                   </button>
                 ) : (
                   <button
-                    onClick={() => {
-                      navigateTo('login');
+                    {...touchProps(() => {
+                      handleNavClick('login');
                       setMobileMenuOpen(false);
-                    }}
-                    className="w-full flex items-center justify-center gap-2 p-3.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold uppercase tracking-wider mt-2 cursor-pointer shadow-lg shadow-purple-500/30"
+                    })}
+                    className="w-full flex items-center justify-center gap-2 p-3.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold uppercase tracking-wider mt-2 cursor-pointer touch-manipulation shadow-lg shadow-purple-500/30"
                   >
                     <LogIn className="w-4 h-4" /> Login Account
                   </button>
@@ -564,8 +568,8 @@ export default function Navbar() {
 
               {/* Close Button */}
               <button
-                onClick={() => setMobileMenuOpen(false)}
-                className="w-full py-3 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 font-bold text-xs uppercase cursor-pointer"
+                {...touchProps(() => setMobileMenuOpen(false))}
+                className="w-full py-3 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 font-bold text-xs uppercase cursor-pointer touch-manipulation"
               >
                 Close Menu
               </button>
@@ -576,4 +580,5 @@ export default function Navbar() {
     </>
   );
 }
+
 

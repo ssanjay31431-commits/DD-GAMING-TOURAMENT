@@ -5,6 +5,7 @@ import { useGoogleLogin } from '@react-oauth/google';
 import { useApp } from '../context/AppContext';
 import { playTypingSound } from '../utils/soundEffects';
 import { checkUsernameAvailabilityAPI } from '../utils/api';
+import { touchProps } from '../utils/touchHelper';
 
 export default function Login() {
   const { login, registerUser, googleLogin } = useApp();
@@ -121,7 +122,7 @@ export default function Login() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     setErrorMsg('');
     setSuggestions([]);
 
@@ -178,8 +179,8 @@ export default function Login() {
         <button
           type="button"
           disabled={isLoggingInDemo}
-          onClick={handleDemoLogin}
-          className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-heading font-black text-sm uppercase tracking-wider shadow-lg shadow-amber-500/25 flex items-center justify-center gap-2 transition-all active:scale-98 cursor-pointer disabled:opacity-75"
+          {...touchProps(handleDemoLogin)}
+          className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-heading font-black text-sm uppercase tracking-wider shadow-lg shadow-amber-500/25 flex items-center justify-center gap-2 transition-all active:scale-98 cursor-pointer touch-manipulation disabled:opacity-75"
         >
           {isLoggingInDemo ? (
             <>
@@ -198,12 +199,12 @@ export default function Login() {
         <div className="flex bg-slate-950/80 p-1.5 rounded-2xl border border-slate-800">
           <button
             type="button"
-            onClick={() => {
+            {...touchProps(() => {
               setIsRegisterMode(false);
               setErrorMsg('');
               setSuggestions([]);
-            }}
-            className={`flex-1 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer ${
+            })}
+            className={`flex-1 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer touch-manipulation ${
               !isRegisterMode
                 ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30'
                 : 'text-slate-400 hover:text-white'
@@ -214,12 +215,12 @@ export default function Login() {
           </button>
           <button
             type="button"
-            onClick={() => {
+            {...touchProps(() => {
               setIsRegisterMode(true);
               setErrorMsg('');
               setSuggestions([]);
-            }}
-            className={`flex-1 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer ${
+            })}
+            className={`flex-1 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer touch-manipulation ${
               isRegisterMode
                 ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-600/30'
                 : 'text-slate-400 hover:text-white'
@@ -241,12 +242,12 @@ export default function Login() {
                   <button
                     key={idx}
                     type="button"
-                    onClick={() => {
+                    {...touchProps(() => {
                       setFormData({ ...formData, gamingUsername: suggested });
                       setErrorMsg('');
                       setSuggestions([]);
-                    }}
-                    className="px-2.5 py-1 rounded-lg bg-purple-600/40 hover:bg-purple-600 text-purple-200 border border-purple-400/40 text-xs font-mono font-bold transition-all cursor-pointer"
+                    })}
+                    className="px-2.5 py-1 rounded-lg bg-purple-600/40 hover:bg-purple-600 text-purple-200 border border-purple-400/40 text-xs font-mono font-bold transition-all cursor-pointer touch-manipulation"
                   >
                     {suggested}
                   </button>
@@ -260,8 +261,8 @@ export default function Login() {
         <button
           type="button"
           disabled={isLoadingGoogle}
-          onClick={handleGoogleAuthClick}
-          className="w-full py-3 rounded-2xl bg-white text-slate-900 font-bold text-sm flex items-center justify-center gap-3 hover:bg-slate-100 transition-all shadow-md active:scale-98 disabled:opacity-75 cursor-pointer"
+          {...touchProps(handleGoogleAuthClick)}
+          className="w-full py-3 rounded-2xl bg-white text-slate-900 font-bold text-sm flex items-center justify-center gap-3 hover:bg-slate-100 transition-all shadow-md active:scale-98 disabled:opacity-75 cursor-pointer touch-manipulation"
         >
           {isLoadingGoogle ? (
             <>
@@ -350,8 +351,8 @@ export default function Login() {
               />
               <button
                 type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3.5 top-3 text-slate-400 hover:text-white cursor-pointer"
+                {...touchProps(() => setShowPassword(!showPassword))}
+                className="absolute right-3.5 top-3 text-slate-400 hover:text-white cursor-pointer touch-manipulation"
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
@@ -362,7 +363,8 @@ export default function Login() {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.96 }}
             type="submit"
-            className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white font-heading font-black text-sm uppercase tracking-wider shadow-xl shadow-purple-500/30 flex items-center justify-center gap-2 transition-all mt-2 cursor-pointer"
+            {...touchProps(handleSubmit)}
+            className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white font-heading font-black text-sm uppercase tracking-wider shadow-xl shadow-purple-500/30 flex items-center justify-center gap-2 transition-all mt-2 cursor-pointer touch-manipulation active:scale-95"
           >
             {isRegisterMode ? 'Register & Enter Arena' : 'Login to DD Gaming'}
             <ArrowRight className="w-4 h-4" />
@@ -373,12 +375,12 @@ export default function Login() {
         <div className="text-center pt-2 border-t border-slate-800">
           <button
             type="button"
-            onClick={() => {
+            {...touchProps(() => {
               setIsRegisterMode(!isRegisterMode);
               setErrorMsg('');
               setSuggestions([]);
-            }}
-            className="text-xs text-purple-300 hover:text-purple-200 font-bold cursor-pointer"
+            })}
+            className="text-xs text-purple-300 hover:text-purple-200 font-bold cursor-pointer touch-manipulation"
           >
             {isRegisterMode
               ? 'Already have an account? Sign in here'
@@ -391,4 +393,5 @@ export default function Login() {
     </div>
   );
 }
+
 

@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Trophy, Gamepad2, Swords, Sparkles, Users, Award, ChevronRight, Clock, ShieldCheck, Flame, HelpCircle, ChevronDown, CheckCircle2, Instagram, Youtube } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { getGameBanner } from '../utils/gameBanners';
+import { touchProps } from '../utils/touchHelper';
 
 export default function Home() {
   const { tournaments, navigateTo, openTournamentDetail, openRegistrationModal, faqs, isAlreadyRegisteredForTournament } = useApp();
@@ -107,8 +108,8 @@ export default function Home() {
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => navigateTo('tournaments')}
-                  className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white font-heading font-black text-base uppercase tracking-wider shadow-2xl shadow-purple-500/40 flex items-center justify-center gap-3 group"
+                  {...touchProps(() => navigateTo('tournaments'))}
+                  className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white font-heading font-black text-base uppercase tracking-wider shadow-2xl shadow-purple-500/40 flex items-center justify-center gap-3 group cursor-pointer touch-manipulation active:scale-95"
                 >
                   <Gamepad2 className="w-5 h-5 group-hover:rotate-12 transition-transform" />
                   Explore Tournaments
@@ -118,8 +119,8 @@ export default function Home() {
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => navigateTo('leaderboard')}
-                  className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-slate-900/90 border border-purple-500/30 hover:border-purple-500 text-white font-heading font-bold text-base uppercase tracking-wider hover:bg-slate-800 transition-all flex items-center justify-center gap-3"
+                  {...touchProps(() => navigateTo('leaderboard'))}
+                  className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-slate-900/90 border border-purple-500/30 hover:border-purple-500 text-white font-heading font-bold text-base uppercase tracking-wider hover:bg-slate-800 transition-all flex items-center justify-center gap-3 cursor-pointer touch-manipulation active:scale-95"
                 >
                   <Trophy className="w-5 h-5 text-amber-400" />
                   View Rankings
@@ -208,8 +209,8 @@ export default function Home() {
                   <motion.button
                     whileHover={{ scale: 1.03 }}
                     whileTap={{ scale: 0.97 }}
-                    onClick={() => openTournamentDetail(upcomingTrn)}
-                    className="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-500 via-rose-600 to-purple-600 hover:from-amber-400 hover:to-purple-500 text-white font-heading font-black text-xs uppercase tracking-wider shadow-xl shadow-amber-500/25 flex items-center justify-center gap-2 border border-amber-400/30 transition-all cursor-pointer"
+                    {...touchProps(() => openTournamentDetail(upcomingTrn))}
+                    className="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-500 via-rose-600 to-purple-600 hover:from-amber-400 hover:to-purple-500 text-white font-heading font-black text-xs uppercase tracking-wider shadow-xl shadow-amber-500/25 flex items-center justify-center gap-2 border border-amber-400/30 transition-all cursor-pointer touch-manipulation"
                   >
                     <Sparkles className="w-4 h-4 text-amber-200" />
                     VIEW UPCOMING EVENT DETAILS
@@ -258,8 +259,8 @@ export default function Home() {
                       <motion.button
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
-                        onClick={() => navigateTo('my-tournaments')}
-                        className="w-full py-3.5 rounded-xl bg-slate-900 border-2 border-emerald-500/60 text-emerald-300 hover:bg-slate-800 font-heading font-extrabold text-xs uppercase tracking-wider shadow-lg shadow-emerald-500/20 transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                        {...touchProps(() => navigateTo('my-tournaments'))}
+                        className="w-full py-3.5 rounded-xl bg-slate-900 border-2 border-emerald-500/60 text-emerald-300 hover:bg-slate-800 font-heading font-extrabold text-xs uppercase tracking-wider shadow-lg shadow-emerald-500/20 transition-all cursor-pointer touch-manipulation flex items-center justify-center gap-1.5"
                       >
                         ✅ ALREADY REGISTERED (VIEW TICKET)
                       </motion.button>
@@ -267,8 +268,8 @@ export default function Home() {
                       <motion.button
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
-                        onClick={() => openRegistrationModal(poolSpecial)}
-                        className="w-full py-3.5 rounded-xl bg-gradient-to-r from-purple-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white font-heading font-extrabold text-xs uppercase tracking-wider shadow-lg shadow-purple-500/25 transition-all cursor-pointer"
+                        {...touchProps(() => openRegistrationModal(poolSpecial))}
+                        className="w-full py-3.5 rounded-xl bg-gradient-to-r from-purple-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white font-heading font-extrabold text-xs uppercase tracking-wider shadow-lg shadow-purple-500/25 transition-all cursor-pointer touch-manipulation"
                       >
                         JOIN EVENT ({poolSpecial.entryFee === 0 ? 'FREE' : `₹${poolSpecial.entryFee}`} ENTRY)
                       </motion.button>
@@ -296,8 +297,8 @@ export default function Home() {
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    onClick={() => navigateTo('tournaments')}
-                    className="w-full py-3.5 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-500 hover:from-purple-500 text-white font-heading font-extrabold text-xs uppercase tracking-wider shadow-lg shadow-purple-500/25 transition-all cursor-pointer"
+                    {...touchProps(() => navigateTo('tournaments'))}
+                    className="w-full py-3.5 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-500 hover:from-purple-500 text-white font-heading font-extrabold text-xs uppercase tracking-wider shadow-lg shadow-purple-500/25 transition-all cursor-pointer touch-manipulation"
                   >
                     EXPLORE ALL GAMES
                   </motion.button>
