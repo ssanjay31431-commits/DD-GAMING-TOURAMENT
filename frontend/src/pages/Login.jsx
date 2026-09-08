@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Lock, LogIn, UserPlus, ArrowRight, Eye, EyeOff, Loader2, Zap } from 'lucide-react';
+import { Mail, Lock, LogIn, UserPlus, ArrowRight, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useGoogleLogin } from '@react-oauth/google';
 import { useApp } from '../context/AppContext';
 import { playTypingSound } from '../utils/soundEffects';
@@ -15,7 +15,6 @@ export default function Login() {
   const [errorMsg, setErrorMsg] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [isLoadingGoogle, setIsLoadingGoogle] = useState(false);
-  const [isLoggingInDemo, setIsLoggingInDemo] = useState(false);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -40,42 +39,6 @@ export default function Login() {
     } else {
       setErrorMsg('');
       setSuggestions([]);
-    }
-  };
-
-  // Demo Quick Login for Instant Mobile Testing
-  const handleDemoLogin = async (e) => {
-    if (e) e.preventDefault();
-    setErrorMsg('');
-    setSuggestions([]);
-    setIsLoggingInDemo(true);
-
-    const demoEmail = 'demo.player@ddgaming.com';
-    const demoPass = 'demo1234';
-
-    try {
-      const res = await login(demoEmail, demoPass);
-      if (res && res.success === false) {
-        // Auto register demo account if not existing on backend
-        const regRes = await registerUser({
-          email: demoEmail,
-          password: demoPass,
-          fullName: 'Demo Player',
-          gamingUsername: 'Demo_Pro8Ball'
-        });
-        if (regRes && regRes.success === false) {
-          // Direct fallback session creation
-          await googleLogin({
-            email: demoEmail,
-            name: 'Demo Player',
-            gamingUsername: 'Demo_Pro8Ball'
-          });
-        }
-      }
-    } catch (err) {
-      console.warn('Demo login notice:', err);
-    } finally {
-      setIsLoggingInDemo(false);
     }
   };
 
@@ -174,26 +137,6 @@ export default function Login() {
               : 'Enter your player credentials to access tournaments'}
           </p>
         </div>
-
-        {/* Quick Demo Login Button for Instant Mobile Access */}
-        <button
-          type="button"
-          disabled={isLoggingInDemo}
-          {...touchProps(handleDemoLogin)}
-          className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-heading font-black text-sm uppercase tracking-wider shadow-lg shadow-amber-500/25 flex items-center justify-center gap-2 transition-all active:scale-98 cursor-pointer touch-manipulation disabled:opacity-75"
-        >
-          {isLoggingInDemo ? (
-            <>
-              <Loader2 className="w-5 h-5 animate-spin text-slate-950" />
-              <span>Logging in Demo...</span>
-            </>
-          ) : (
-            <>
-              <Zap className="w-5 h-5 fill-current" />
-              <span>⚡ DEMO QUICK LOGIN</span>
-            </>
-          )}
-        </button>
 
         {/* Auth Mode Tabs (Sign In / Create Account) */}
         <div className="flex bg-slate-950/80 p-1.5 rounded-2xl border border-slate-800">
