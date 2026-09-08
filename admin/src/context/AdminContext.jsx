@@ -6,6 +6,7 @@ import {
   adminUpdateTournamentAPI,
   adminDeleteTournamentAPI,
   adminUpdateRegistrationStatusAPI,
+  adminDeleteRegistrationAPI,
   adminLiveUpdateTournamentAPI,
   adminVerifyResultsAPI,
   adminUpdateLiveStreamAPI,
@@ -162,6 +163,18 @@ export function AdminProvider({ children }) {
     showToast(`Payment for ticket ${regId} rejected.`, 'error');
   };
 
+  const adminDeleteRegistration = async (regId) => {
+    setRegistrations(prev => prev.filter(r => r.id !== regId && r._id !== regId));
+    const res = await adminDeleteRegistrationAPI(regId);
+    if (res && res.success) {
+      showToast(`Registration ticket ${regId} permanently deleted!`, 'info');
+      return { success: true };
+    } else {
+      showToast(res?.message || 'Failed to delete ticket', 'error');
+      return { success: false, message: res?.message };
+    }
+  };
+
   const adminLiveUpdateTournament = async (id, liveData) => {
     setTournaments(prev => prev.map(t => t.id === id ? { ...t, ...liveData } : t));
     await adminLiveUpdateTournamentAPI(id, liveData);
@@ -259,6 +272,7 @@ export function AdminProvider({ children }) {
         adminDeleteTournament,
         adminApprovePayment,
         adminRejectPayment,
+        adminDeleteRegistration,
         adminLiveUpdateTournament,
         adminVerifyResults,
         adminUpdateLiveStream,

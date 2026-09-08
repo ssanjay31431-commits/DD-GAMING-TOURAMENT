@@ -1110,6 +1110,42 @@ app.put('/api/admin/registrations/:id/status', async (req, res) => {
   }
 });
 
+// DELETE Registration Ticket (Admin Website)
+app.delete('/api/admin/registrations/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id) return res.status(400).json({ success: false, message: 'Registration ID is required' });
+
+    let deletedCount = 0;
+    if (isDbConnected && mongoose.connection.readyState === 1) {
+      const queryList = [{ id: String(id) }];
+      if (mongoose.Types.ObjectId.isValid(id)) {
+        queryList.push({ _id: new mongoose.Types.ObjectId(id) });
+      }
+      const dbRes = await Registration.deleteMany({ $or: queryList });
+      deletedCount = dbRes.deletedCount;
+    }
+
+    for (let i = memoryRegistrations.length - 1; i >= 0; i--) {
+      const item = memoryRegistrations[i];
+      if (item.id === id || item._id === id || String(item.id) === String(id)) {
+        memoryRegistrations.splice(i, 1);
+        deletedCount++;
+      }
+    }
+
+    addAuditLog('Registration Ticket Deleted', `Admin deleted registration ticket ${id}`);
+
+    return res.json({
+      success: true,
+      message: `Registration ticket ${id} deleted successfully.`,
+      deletedCount
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // QUICK EMAIL SENDER API (Send email via Brevo from Admin Dashboard)
 app.post('/api/admin/send-email', async (req, res) => {
   try {

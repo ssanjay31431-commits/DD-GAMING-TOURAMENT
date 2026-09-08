@@ -14,6 +14,7 @@ export default function AdminDashboard() {
     registrations,
     adminApprovePayment,
     adminRejectPayment,
+    adminDeleteRegistration,
     adminCreateTournament,
     adminUpdateTournamentStatus,
     adminUpdateTournament,
@@ -39,6 +40,7 @@ export default function AdminDashboard() {
   const [viewQrModalReg, setViewQrModalReg] = useState(null);
   const [editingTrn, setEditingTrn] = useState(null);
   const [confirmDeleteTrn, setConfirmDeleteTrn] = useState(null);
+  const [confirmDeleteReg, setConfirmDeleteReg] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [prizeTxnInputs, setPrizeTxnInputs] = useState({});
 
@@ -1156,7 +1158,7 @@ export default function AdminDashboard() {
                     )}
                   </div>
 
-                  {/* Admin Action Buttons: Approve / Reject / Quick Email */}
+                  {/* Admin Action Buttons: Approve / Reject / Quick Email / Delete */}
                   <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-800">
                     <button
                       type="button"
@@ -1181,6 +1183,14 @@ export default function AdminDashboard() {
                       title="Send Custom Email via Brevo"
                     >
                       <Mail className="w-4 h-4" /> Email
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmDeleteReg(reg)}
+                      className="py-2.5 px-3.5 rounded-xl bg-rose-950/80 hover:bg-rose-900 border border-rose-500/40 text-rose-300 hover:text-white font-bold text-xs uppercase flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                      title="Delete Registration Ticket"
+                    >
+                      <Trash2 className="w-4 h-4" /> Delete
                     </button>
                   </div>
                 </div>
@@ -2057,6 +2067,49 @@ export default function AdminDashboard() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Registration Ticket Deletion Confirmation Modal */}
+      {confirmDeleteReg && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+          <div className="w-full max-w-md p-6 rounded-3xl bg-slate-900 border border-rose-500/40 shadow-2xl space-y-5">
+            <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
+              <div className="w-10 h-10 rounded-2xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400 shrink-0">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-heading font-black text-lg text-white">Delete Ticket {confirmDeleteReg.id}?</h3>
+                <p className="text-xs text-rose-300">Player: {confirmDeleteReg.playerName}</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Are you sure you want to permanently delete registration ticket <strong className="text-white">{confirmDeleteReg.id}</strong> for <strong className="text-white">{confirmDeleteReg.playerName}</strong> ({confirmDeleteReg.gamingId || 'No ID'})? This action cannot be undone.
+            </p>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setConfirmDeleteReg(null)}
+                className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold uppercase cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  const targetId = confirmDeleteReg.id || confirmDeleteReg._id;
+                  setConfirmDeleteReg(null);
+                  await adminDeleteRegistration(targetId);
+                }}
+                className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-heading font-black uppercase tracking-wider shadow-lg shadow-rose-950/50 flex items-center gap-2 cursor-pointer"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>Confirm Delete</span>
+              </button>
+            </div>
           </div>
         </div>
       )}

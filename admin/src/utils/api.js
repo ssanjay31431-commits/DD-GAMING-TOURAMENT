@@ -35,6 +35,18 @@ export async function adminUpdateRegistrationStatusAPI(id, status) {
   }
 }
 
+export async function adminDeleteRegistrationAPI(id) {
+  try {
+    const cleanId = encodeURIComponent(id);
+    const res = await fetch(`${API_BASE_URL}/admin/registrations/${cleanId}`, {
+      method: 'DELETE'
+    });
+    return await res.json();
+  } catch (err) {
+    return { success: false, message: err.message };
+  }
+}
+
 export async function adminUpdateLiveStreamAPI(id, { liveStreamUrl, action, roomId }) {
   try {
     const res = await fetch(`${API_BASE_URL}/admin/tournaments/${id}/live-stream`, {
