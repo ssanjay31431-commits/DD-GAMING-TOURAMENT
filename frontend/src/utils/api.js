@@ -358,4 +358,17 @@ export async function adminLoginAPI({ username, password }) {
   }
 }
 
+export async function adminUpdateRoomIdAPI(id, roomId) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/tournaments/${id}/room-id`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ roomId })
+    });
+    return await res.json();
+  } catch (err) {
+    return { success: false, message: err.message };
+  }
+}
+
 

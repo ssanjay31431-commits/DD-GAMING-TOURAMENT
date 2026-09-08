@@ -35,16 +35,29 @@ export async function adminUpdateRegistrationStatusAPI(id, status) {
   }
 }
 
-export async function adminUpdateLiveStreamAPI(id, { liveStreamUrl, action }) {
+export async function adminUpdateLiveStreamAPI(id, { liveStreamUrl, action, roomId }) {
   try {
     const res = await fetch(`${API_BASE_URL}/admin/tournaments/${id}/live-stream`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ liveStreamUrl, action })
+      body: JSON.stringify({ liveStreamUrl, action, roomId })
     });
     return await res.json();
   } catch (err) {
     return null;
+  }
+}
+
+export async function adminUpdateRoomIdAPI(id, roomId) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/tournaments/${id}/room-id`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ roomId })
+    });
+    return await res.json();
+  } catch (err) {
+    return { success: false, message: err.message };
   }
 }
 

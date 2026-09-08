@@ -1338,7 +1338,7 @@ app.get('/api/tournaments/:id/live-access', async (req, res) => {
 app.put('/api/admin/tournaments/:id/live-stream', async (req, res) => {
   try {
     const { id } = req.params;
-    const { liveStreamUrl, action } = req.body; // action: 'UPDATE' | 'START_LIVE' | 'END_LIVE' | 'REMOVE'
+    const { liveStreamUrl, action, roomId } = req.body; // action: 'UPDATE' | 'START_LIVE' | 'END_LIVE' | 'REMOVE'
 
     const videoId = parseYouTubeVideoId(liveStreamUrl);
     const embedUrl = videoId ? `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0` : '';
@@ -1348,6 +1348,10 @@ app.put('/api/admin/tournaments/:id/live-stream', async (req, res) => {
       youtubeVideoId: videoId,
       liveEmbedUrl: embedUrl
     };
+
+    if (roomId !== undefined && roomId !== null) {
+      updatePayload.roomId = String(roomId).trim();
+    }
 
     if (action === 'START_LIVE') {
       updatePayload.status = 'Live';
@@ -1397,6 +1401,53 @@ app.put('/api/admin/tournaments/:id/live-stream', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+// 2B. ADMIN UPDATE TOURNAMENT ROOM ID
+const handleUpdateRoomId = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { roomId } = req.body;
+
+    if (roomId === undefined || roomId === null || String(roomId).trim() === '') {
+      return res.status(400).json({
+        success: false,
+        message: 'Room ID cannot be empty. Please enter a valid Room ID.'
+      });
+    }
+
+    const cleanRoomId = String(roomId).trim();
+    const updatePayload = { roomId: cleanRoomId };
+
+    let updatedTrn = null;
+    if (isDbConnected && mongoose.connection.readyState === 1) {
+      updatedTrn = await Tournament.findOneAndUpdate(buildTournamentQuery(id), updatePayload, { new: true });
+    } else {
+      const idx = INITIAL_TOURNAMENTS.findIndex(t => t.id === id || String(t.id) === String(id));
+      if (idx !== -1) {
+        INITIAL_TOURNAMENTS[idx] = { ...INITIAL_TOURNAMENTS[idx], ...updatePayload };
+        updatedTrn = INITIAL_TOURNAMENTS[idx];
+      }
+    }
+
+    if (!updatedTrn) {
+      return res.status(404).json({ success: false, message: 'Tournament not found' });
+    }
+
+    addAuditLog('Room ID Updated', `Updated Room ID for tournament ${updatedTrn.title} (${updatedTrn.id}) to "${cleanRoomId}".`);
+
+    return res.json({
+      success: true,
+      message: 'Room ID updated successfully!',
+      tournament: updatedTrn,
+      roomId: cleanRoomId
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+app.put('/api/tournaments/:id/room-id', handleUpdateRoomId);
+app.put('/api/admin/tournaments/:id/room-id', handleUpdateRoomId);
 
 // 3. ADMIN SAVE DRAFT OR PUBLISH TOP 10 RESULTS
 app.put('/api/admin/tournaments/:id/results', async (req, res) => {

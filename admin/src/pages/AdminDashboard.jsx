@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   ShieldAlert, Plus, CheckCircle2, XCircle, Trash2, Edit3, Users, DollarSign,
   Trophy, Sparkles, Filter, RefreshCw, Eye, QrCode, AlertTriangle, Layers,
-  Activity, Play, CheckSquare, Clock, History, Settings, Award, Crosshair, LogOut, ArrowLeft,
+  Activity, Play, CheckSquare, Clock, History, Settings, Award, Crosshair, LogOut, ArrowLeft, Key,
   Mail, Send, MessageSquare, Lock, AlertCircle, EyeOff, Menu, X
 } from 'lucide-react';
 import { useAdminApp } from '../context/AdminContext';
@@ -21,6 +21,7 @@ export default function AdminDashboard() {
     adminLiveUpdateTournament,
     adminVerifyResults,
     adminUpdateLiveStream,
+    adminUpdateRoomId,
     adminSaveResults,
     isAdminAuth,
     adminLogin,
@@ -73,6 +74,7 @@ export default function AdminDashboard() {
   const [selectedProofScreenshot, setSelectedProofScreenshot] = useState(null);
   const [registrationSearch, setRegistrationSearch] = useState('');
   const [liveUrlInputs, setLiveUrlInputs] = useState({});
+  const [roomIdInputs, setRoomIdInputs] = useState({});
   
   // Quick Email Sender State
   const [quickEmailModalReg, setQuickEmailModalReg] = useState(null);
@@ -168,6 +170,7 @@ export default function AdminDashboard() {
   const [entryFee, setEntryFee] = useState(100);
   const [date, setDate] = useState('2026-08-30');
   const [time, setTime] = useState('08:00 PM IST');
+  const [liveStartTime, setLiveStartTime] = useState('08:00 PM IST');
   const [status, setStatus] = useState('Registration Open');
   const [registrationStartDate, setRegistrationStartDate] = useState('2026-08-30');
   const [registrationStartTime, setRegistrationStartTime] = useState('06:00 PM IST');
@@ -315,6 +318,7 @@ export default function AdminDashboard() {
       killReward: Number(killReward),
       date,
       time,
+      liveStartTime: liveStartTime || time,
       registrationStartDate: status === 'Upcoming' ? registrationStartDate : date,
       registrationStartTime: status === 'Upcoming' ? registrationStartTime : time,
       description,
@@ -686,6 +690,18 @@ export default function AdminDashboard() {
             </div>
 
             <div>
+              <label className="block text-xs font-bold text-cyan-300 mb-1">Live Starting Time (Match Live Time) *</label>
+              <input
+                type="text"
+                required
+                value={liveStartTime}
+                onChange={(e) => setLiveStartTime(e.target.value)}
+                placeholder="11:00 AM IST"
+                className="w-full px-4 py-2.5 rounded-xl glass-input text-sm border-cyan-500/40 text-cyan-200 font-bold"
+              />
+            </div>
+
+            <div>
               <label className="block text-xs font-bold text-slate-300 mb-1">Initial Status *</label>
               <select
                 value={status}
@@ -870,6 +886,48 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
+              {/* ROOM ID CONTROL BOX */}
+              <div className="p-3 rounded-2xl bg-slate-950 border border-cyan-500/30 space-y-2 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-cyan-300 flex items-center gap-1 uppercase text-[10px]">
+                    <Key className="w-3.5 h-3.5 text-cyan-400" /> Game Match Room ID
+                  </span>
+                  {trn.roomId ? (
+                    <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono font-bold text-[10px] border border-emerald-500/30">
+                      ROOM ID: {trn.roomId}
+                    </span>
+                  ) : (
+                    <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-bold text-[9px] uppercase">
+                      No Room ID
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={roomIdInputs[trn.id] !== undefined ? roomIdInputs[trn.id] : (trn.roomId || '')}
+                    onChange={(e) => setRoomIdInputs({ ...roomIdInputs, [trn.id]: e.target.value })}
+                    placeholder="Enter Room ID (e.g. 12345678)"
+                    className="w-full px-3 py-1.5 rounded-lg glass-input text-xs font-mono font-bold"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const val = roomIdInputs[trn.id] !== undefined ? roomIdInputs[trn.id] : trn.roomId;
+                      if (!val || !String(val).trim()) {
+                        showToast('Room ID cannot be empty when saving!', 'error');
+                        return;
+                      }
+                      adminUpdateRoomId(trn.id, String(val).trim());
+                    }}
+                    className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-500 hover:to-cyan-500 text-white text-[11px] font-bold shrink-0 shadow border border-purple-400/40 transition-all cursor-pointer"
+                  >
+                    {trn.roomId ? 'Update Room ID' : 'Save Room ID'}
+                  </button>
+                </div>
+              </div>
+
               {/* LIVE STREAM LINK CONTROL BOX */}
               <div className="p-3 rounded-2xl bg-slate-950 border border-purple-500/30 space-y-2 text-xs">
                 <div className="flex items-center justify-between">
@@ -903,7 +961,14 @@ export default function AdminDashboard() {
                 <div className="flex items-center justify-between pt-1 gap-2">
                   <button
                     type="button"
-                    onClick={() => adminUpdateLiveStream(trn.id, { liveStreamUrl: liveUrlInputs[trn.id] || trn.liveStreamUrl, action: 'START_LIVE' })}
+                    onClick={() => {
+                      const currentRoomId = roomIdInputs[trn.id] !== undefined ? roomIdInputs[trn.id] : trn.roomId;
+                      adminUpdateLiveStream(trn.id, {
+                        liveStreamUrl: liveUrlInputs[trn.id] || trn.liveStreamUrl,
+                        action: 'START_LIVE',
+                        roomId: currentRoomId
+                      });
+                    }}
                     className="flex-1 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-[11px] uppercase tracking-wider flex items-center justify-center gap-1 shadow"
                   >
                     🔴 Start Live
@@ -1666,6 +1731,17 @@ export default function AdminDashboard() {
                   value={editingTrn.time || ''}
                   onChange={(e) => setEditingTrn({ ...editingTrn, time: e.target.value })}
                   className="w-full px-4 py-2.5 rounded-xl glass-input text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-cyan-300 mb-1">Live Starting Time (Match Live Time)</label>
+                <input
+                  type="text"
+                  value={editingTrn.liveStartTime !== undefined ? editingTrn.liveStartTime : (editingTrn.time || '')}
+                  onChange={(e) => setEditingTrn({ ...editingTrn, liveStartTime: e.target.value })}
+                  placeholder="11:00 AM IST"
+                  className="w-full px-4 py-2.5 rounded-xl glass-input text-sm text-cyan-200 font-bold border-cyan-500/40"
                 />
               </div>
 

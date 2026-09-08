@@ -1,11 +1,11 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Trophy, Calendar, Clock, Users, ShieldCheck, Zap, Award, CheckCircle2, ChevronRight } from 'lucide-react';
+import { X, Trophy, Calendar, Clock, Users, ShieldCheck, Zap, Award, CheckCircle2, ChevronRight, Copy, Key } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { getGameBanner } from '../utils/gameBanners';
 
 export default function TournamentDetailModal() {
-  const { selectedTournamentDetail, closeTournamentDetail, openRegistrationModal, isAlreadyRegisteredForTournament, navigateTo } = useApp();
+  const { selectedTournamentDetail, closeTournamentDetail, openRegistrationModal, isAlreadyRegisteredForTournament, navigateTo, showToast } = useApp();
 
   if (!selectedTournamentDetail) return null;
 
@@ -96,6 +96,38 @@ export default function TournamentDetailModal() {
                   </span>
                 </div>
               )}
+
+              {(trn.status === 'Live' || trn.isLiveStreaming || trn.roomId) && (
+                <div className="p-4 rounded-2xl bg-gradient-to-r from-purple-950 via-slate-900 to-indigo-950 border-2 border-cyan-500/50 space-y-3 shadow-lg">
+                  <div className="flex items-center justify-between">
+                    <span className="px-2.5 py-0.5 rounded-full bg-rose-600 text-white font-extrabold text-[10px] uppercase tracking-wider flex items-center gap-1.5 animate-pulse">
+                      <span className="w-2 h-2 rounded-full bg-white animate-ping" /> 🔴 MATCH ROOM ACCESS
+                    </span>
+                    {trn.roomId ? (
+                      <span className="px-3 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 font-mono font-black text-sm border border-emerald-500/40">
+                        ROOM ID: {trn.roomId}
+                      </span>
+                    ) : (
+                      <span className="px-2.5 py-1 rounded-lg bg-slate-800 text-amber-300 font-semibold text-xs border border-amber-500/30">
+                        Room ID will be available soon.
+                      </span>
+                    )}
+                  </div>
+
+                  {trn.roomId ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(trn.roomId);
+                        if (showToast) showToast('Room ID copied to clipboard!', 'success');
+                      }}
+                      className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-heading font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg cursor-pointer active:scale-98 transition-all"
+                    >
+                      <Copy className="w-4 h-4" /> JOIN GAME / COPY ROOM ID
+                    </button>
+                  ) : null}
+                </div>
+              )}
               
               {/* Quick Info Grid */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 rounded-xl bg-slate-950/60 border border-white/5">
@@ -107,10 +139,10 @@ export default function TournamentDetailModal() {
                   </p>
                 </div>
                 <div>
-                  <p className="text-[11px] font-bold text-slate-400 uppercase">Time</p>
-                  <p className="text-sm font-bold text-white flex items-center gap-1 mt-0.5">
+                  <p className="text-[11px] font-bold text-slate-400 uppercase">Live Start Time</p>
+                  <p className="text-sm font-bold text-cyan-300 flex items-center gap-1 mt-0.5">
                     <Clock className="w-3.5 h-3.5 text-cyan-400" />
-                    {trn.time}
+                    {trn.liveStartTime || trn.time}
                   </p>
                 </div>
                 <div>

@@ -1073,6 +1073,17 @@ export default function Admin() {
                   className="w-full px-4 py-2.5 rounded-xl glass-input text-sm"
                 />
               </div>
+
+              <div>
+                <label className="block text-xs font-bold text-cyan-300 mb-1">Live Starting Time (Match Live Time)</label>
+                <input
+                  type="text"
+                  value={editingTrn.liveStartTime !== undefined ? editingTrn.liveStartTime : (editingTrn.time || '')}
+                  onChange={(e) => setEditingTrn({ ...editingTrn, liveStartTime: e.target.value })}
+                  placeholder="11:00 AM IST"
+                  className="w-full px-4 py-2.5 rounded-xl glass-input text-sm text-cyan-200 font-bold border-cyan-500/40"
+                />
+              </div>
             </div>
 
             <div className="flex items-center gap-3 pt-4 border-t border-slate-800">

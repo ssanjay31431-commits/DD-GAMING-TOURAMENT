@@ -38,6 +38,8 @@ const tournamentSchema = new mongoose.Schema({
   youtubeVideoId: { type: String, default: '' },
   liveEmbedUrl: { type: String, default: '' },
   isLiveStreaming: { type: Boolean, default: false },
+  roomId: { type: String, default: '' },
+  liveStartTime: { type: String, default: '' },
   resultState: { type: String, default: 'NOT_READY' }, // 'NOT_READY' | 'DRAFT' | 'PUBLISHED'
   bracket: { type: Array, default: [] },
   rankings: { type: Array, default: [] },

@@ -9,6 +9,7 @@ import {
   adminLiveUpdateTournamentAPI,
   adminVerifyResultsAPI,
   adminUpdateLiveStreamAPI,
+  adminUpdateRoomIdAPI,
   adminSaveResultsAPI,
   adminMarkPrizePaidAPI,
   fetchAuditLogsAPI,
@@ -174,12 +175,32 @@ export function AdminProvider({ children }) {
     showToast('Tournament results verified!', 'success');
   };
 
-  const adminUpdateLiveStream = async (id, { liveStreamUrl, action }) => {
-    const res = await adminUpdateLiveStreamAPI(id, { liveStreamUrl, action });
+  const adminUpdateLiveStream = async (id, { liveStreamUrl, action, roomId }) => {
+    const res = await adminUpdateLiveStreamAPI(id, { liveStreamUrl, action, roomId });
     if (res && res.tournament) {
       setTournaments(prev => prev.map(t => (t.id === id || t._id === id) ? res.tournament : t));
     }
     showToast(`Live stream updated (${action})!`, 'success');
+  };
+
+  const adminUpdateRoomId = async (id, roomId) => {
+    if (!roomId || !String(roomId).trim()) {
+      showToast('Room ID cannot be empty!', 'error');
+      return { success: false, message: 'Room ID cannot be empty' };
+    }
+    const cleanRoomId = String(roomId).trim();
+    setTournaments(prev => prev.map(t => (t.id === id || t._id === id || String(t.id) === String(id) || String(t._id) === String(id)) ? { ...t, roomId: cleanRoomId } : t));
+    const res = await adminUpdateRoomIdAPI(id, cleanRoomId);
+    if (res && res.success) {
+      if (res.tournament) {
+        setTournaments(prev => prev.map(t => (t.id === id || t._id === id || String(t.id) === String(id) || String(t._id) === String(id)) ? res.tournament : t));
+      }
+      showToast(`Room ID updated to "${cleanRoomId}"!`, 'success');
+      return { success: true, roomId: cleanRoomId };
+    } else {
+      showToast(res?.message || 'Failed to update Room ID', 'error');
+      return { success: false, message: res?.message };
+    }
   };
 
   const adminSaveResults = async (id, { rankings, resultState }) => {
@@ -241,6 +262,7 @@ export function AdminProvider({ children }) {
         adminLiveUpdateTournament,
         adminVerifyResults,
         adminUpdateLiveStream,
+        adminUpdateRoomId,
         adminSaveResults,
         adminMarkPrizePaid,
         adminSendEmail,

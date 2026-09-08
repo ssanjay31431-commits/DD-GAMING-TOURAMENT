@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { User, Trophy, Award, Calendar, CheckCircle2, Clock, Settings, Save, Sparkles, Shield, Flame, ChevronRight, Camera, Upload, Check, AlertCircle, Eye, Play } from 'lucide-react';
+import { User, Trophy, Award, Calendar, CheckCircle2, Clock, Settings, Save, Sparkles, Shield, Flame, ChevronRight, Camera, Upload, Check, AlertCircle, Eye, Play, Copy, Key } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { checkUsernameAvailabilityAPI, updateUserProfileAPI } from '../utils/api';
 
@@ -559,7 +559,10 @@ export default function Profile({ initialTab = 'overview' }) {
                     <div>
                       <span className="text-slate-400 block text-[10px] font-bold uppercase">Match Schedule</span>
                       <span className="font-bold text-purple-300 text-xs block">{reg.date}</span>
-                      <span className="text-slate-400 text-[11px]">{reg.time}</span>
+                      <span className="text-slate-400 text-[11px] block">{reg.time}</span>
+                      {reg.liveStartTime && (
+                        <span className="text-cyan-300 text-[10px] font-bold block mt-0.5">🔴 Live Start: {reg.liveStartTime}</span>
+                      )}
                     </div>
                   </div>
 
@@ -573,6 +576,58 @@ export default function Profile({ initialTab = 'overview' }) {
                       <span className="font-mono font-bold text-purple-300 truncate block">{reg.gamingId || userProfile.gamingUsername}</span>
                     </div>
                   </div>
+
+                  {/* ROOM ID & LIVE MATCH SECTION */}
+                  {(reg.tournamentStatus === 'Live' || reg.isLiveStreaming) ? (
+                    <div className="p-4 rounded-2xl bg-gradient-to-r from-purple-950 via-slate-900 to-indigo-950 border-2 border-cyan-500/50 space-y-3 shadow-lg">
+                      <div className="flex items-center justify-between">
+                        <span className="px-2.5 py-0.5 rounded-full bg-rose-600 text-white font-extrabold text-[10px] uppercase tracking-wider flex items-center gap-1.5 animate-pulse">
+                          <span className="w-2 h-2 rounded-full bg-white animate-ping" /> 🔴 LIVE
+                        </span>
+                        {reg.roomId ? (
+                          <span className="px-3 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 font-mono font-black text-sm border border-emerald-500/40">
+                            ROOM ID: {reg.roomId}
+                          </span>
+                        ) : (
+                          <span className="px-2.5 py-1 rounded-lg bg-slate-800 text-amber-300 font-semibold text-xs border border-amber-500/30">
+                            Room ID will be available soon.
+                          </span>
+                        )}
+                      </div>
+
+                      {reg.roomId ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(reg.roomId);
+                            showToast('Room ID copied!', 'success');
+                          }}
+                          className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-heading font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg cursor-pointer active:scale-98 transition-all"
+                        >
+                          <Copy className="w-4 h-4" /> JOIN GAME / COPY ROOM ID
+                        </button>
+                      ) : null}
+                    </div>
+                  ) : reg.roomId ? (
+                    <div className="p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 flex items-center justify-between text-xs">
+                      <span className="text-slate-400 font-bold text-[10px] uppercase flex items-center gap-1">
+                        <Key className="w-3.5 h-3.5 text-cyan-400" /> ROOM ID
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-bold text-emerald-400 text-sm">{reg.roomId}</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(reg.roomId);
+                            showToast('Room ID copied!', 'success');
+                          }}
+                          className="px-2.5 py-1 rounded-lg bg-purple-600/40 hover:bg-purple-600 text-purple-200 hover:text-white text-xs font-bold border border-purple-400/40 cursor-pointer flex items-center gap-1 transition-all"
+                        >
+                          <Copy className="w-3.5 h-3.5" /> COPY ROOM ID
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
 
                   <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px]">
                     <span className="text-slate-400 font-mono">Issued by DD GAMING ESPORTS</span>
