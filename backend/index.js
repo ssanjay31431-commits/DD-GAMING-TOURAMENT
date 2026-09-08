@@ -692,28 +692,58 @@ app.post('/api/users/welcome-seen', async (req, res) => {
   }
 });
 
+// In-Flight Registration Locks Map to prevent simultaneous double click requests
+const pendingRegistrationLocks = new Set();
+
+function deduplicateRegistrations(regList) {
+  if (!Array.isArray(regList)) return [];
+  const seen = new Set();
+  const result = [];
+  for (const reg of regList) {
+    const key = `${reg.tournamentId || reg.tournament?.id || 't'}_${(reg.email || '').toLowerCase().trim()}_${(reg.gamingId || '').trim()}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      result.push(reg);
+    }
+  }
+  return result;
+}
+
 // GET Registrations (Admin view / System view)
 app.get('/api/registrations', async (req, res) => {
   try {
     if (isDbConnected && mongoose.connection.readyState === 1) {
       const registrations = await Registration.find().sort({ createdAt: -1 });
-      return res.json(registrations);
+      return res.json(deduplicateRegistrations(registrations));
     }
   } catch (err) {
     console.warn('DB registrations fetch warning:', err.message);
   }
-  res.json(memoryRegistrations);
+  res.json(deduplicateRegistrations(memoryRegistrations));
 });
 
-// SUBMIT Registration (Player registration form submit)
+// SUBMIT Registration (Player registration form submit with strict anti-double click locks)
 app.post('/api/registrations', rateLimiter({ windowMs: 60 * 1000, maxRequests: 20 }), async (req, res) => {
+  const { tournament, fullName, gamingId, phone, email, txnId, paymentScreenshot } = req.body || {};
+  if (!tournament || !tournament.id || !fullName || !gamingId || !email) {
+    return res.status(400).json({ success: false, message: 'Missing required registration fields.' });
+  }
+
+  const normalizedEmail = email ? email.toLowerCase().trim() : '';
+  const cleanGamingId = gamingId ? gamingId.trim() : '';
+  const lockKey = `${tournament.id}_${normalizedEmail}_${cleanGamingId}`;
+
+  if (pendingRegistrationLocks.has(lockKey)) {
+    return res.status(409).json({
+      success: false,
+      message: 'Your registration request is already being processed. Please wait a moment.'
+    });
+  }
+
+  pendingRegistrationLocks.add(lockKey);
+
   try {
-    const { tournament, fullName, gamingId, phone, email, txnId, paymentScreenshot } = req.body;
-    if (!tournament || !tournament.id || !fullName || !gamingId || !email) {
-      return res.status(400).json({ success: false, message: 'Missing required registration fields.' });
-    }
     const regId = `REG-DD-${Math.floor(1000 + Math.random() * 9000)}`;
-    const normalizedEmail = email ? email.toLowerCase().trim() : '';
 
     if (isDbConnected && mongoose.connection.readyState === 1) {
       // 0. Verify tournament registration status strictly
@@ -733,17 +763,14 @@ app.post('/api/registrations', rateLimiter({ windowMs: 60 * 1000, maxRequests: 2
         }
       }
 
-      // 1. Check for duplicate registration to prevent race conditions
+      // 1. Check for duplicate registration to prevent race conditions & double-click tickets
       const existingReg = await Registration.findOne({
         tournamentId: tournament.id,
-        $or: [{ email: normalizedEmail }, { gamingId: gamingId }]
+        $or: [{ email: normalizedEmail }, { gamingId: cleanGamingId }]
       });
 
       if (existingReg) {
-        return res.status(409).json({
-          success: false,
-          message: 'You have already registered for this tournament!'
-        });
+        return res.status(200).json(existingReg);
       }
 
       // 2. Atomic slot incrementation to prevent overbooking
@@ -775,7 +802,7 @@ app.post('/api/registrations', rateLimiter({ windowMs: 60 * 1000, maxRequests: 2
         tournamentId: tournament.id,
         tournamentTitle: tournament.title,
         playerName: fullName,
-        gamingId: gamingId,
+        gamingId: cleanGamingId,
         phone: phone || '',
         email: normalizedEmail,
         userId: user ? user._id.toString() : '',
@@ -788,41 +815,55 @@ app.post('/api/registrations', rateLimiter({ windowMs: 60 * 1000, maxRequests: 2
 
       if (user) {
         user.name = fullName || user.name;
-        user.gamingUsername = gamingId || user.gamingUsername;
+        user.gamingUsername = cleanGamingId || user.gamingUsername;
         user.phone = phone || user.phone;
-        user.totalTournamentsPlayed += 1;
-        user.registeredTournaments.unshift({
-          tournamentId: tournament.id,
-          registrationId: regId,
-          registeredAt: new Date().toLocaleDateString(),
-          status: newReg.status,
-          paymentTxnId: newReg.txnId
-        });
-        await user.save();
+        const alreadyInUser = (user.registeredTournaments || []).some(r => r.tournamentId === tournament.id);
+        if (!alreadyInUser) {
+          user.totalTournamentsPlayed += 1;
+          user.registeredTournaments.unshift({
+            tournamentId: tournament.id,
+            registrationId: regId,
+            registeredAt: new Date().toLocaleDateString(),
+            status: newReg.status,
+            paymentTxnId: newReg.txnId
+          });
+          await user.save();
+        }
       }
 
       return res.status(201).json(newReg);
     }
+
+    // Memory Store Duplicate Check & Fallback
+    const existingMem = memoryRegistrations.find(r =>
+      (r.tournamentId === tournament.id || String(r.tournamentId) === String(tournament.id)) &&
+      (r.email === normalizedEmail || r.gamingId === cleanGamingId)
+    );
+    if (existingMem) {
+      return res.status(200).json(existingMem);
+    }
+
+    const fallbackReg = {
+      id: `REG-DD-${Math.floor(1000 + Math.random() * 9000)}`,
+      tournamentId: tournament.id,
+      tournamentTitle: tournament.title,
+      playerName: fullName,
+      gamingId: cleanGamingId,
+      phone: phone || '',
+      email: normalizedEmail,
+      entryFee: tournament.entryFee || 0,
+      txnId: txnId || 'FREE_ENTRY',
+      status: tournament.entryFee === 0 ? 'Confirmed' : 'Pending Verification',
+      createdAt: new Date().toLocaleString()
+    };
+    memoryRegistrations.unshift(fallbackReg);
+    return res.status(201).json(fallbackReg);
   } catch (err) {
     console.warn('DB submit registration warning:', err.message);
+    res.status(500).json({ success: false, message: err.message });
+  } finally {
+    pendingRegistrationLocks.delete(lockKey);
   }
-
-  const fallbackReg = {
-    id: `REG-DD-${Math.floor(1000 + Math.random() * 9000)}`,
-    tournamentId: req.body.tournament?.id,
-    tournamentTitle: req.body.tournament?.title,
-    playerName: req.body.fullName,
-    gamingId: req.body.gamingId,
-    phone: req.body.phone || '',
-    email: req.body.email ? req.body.email.toLowerCase().trim() : '',
-    entryFee: req.body.tournament?.entryFee || 0,
-    txnId: req.body.txnId || 'FREE_ENTRY',
-    status: req.body.tournament?.entryFee === 0 ? 'Confirmed' : 'Pending Verification',
-    createdAt: new Date().toLocaleString()
-  };
-  memoryRegistrations.unshift(fallbackReg);
-
-  res.status(201).json(fallbackReg);
 });
 
 // UPDATE User Profile (With Username availability check & auto-create if missing)
@@ -1004,12 +1045,12 @@ app.get('/api/admin/registrations', async (req, res) => {
   try {
     if (isDbConnected && mongoose.connection.readyState === 1) {
       const registrations = await Registration.find().sort({ createdAt: -1 });
-      return res.json(registrations);
+      return res.json(deduplicateRegistrations(registrations));
     }
   } catch (err) {
     console.warn('Admin fetch registrations warning:', err.message);
   }
-  res.json(memoryRegistrations);
+  res.json(deduplicateRegistrations(memoryRegistrations));
 });
 
 // UPDATE Ticket Status (Approve / Confirm / Reject Ticket from Admin Website)

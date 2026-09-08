@@ -135,14 +135,27 @@ export default function AdminDashboard() {
     adminLogout();
   };
 
-  const filteredRegistrations = (registrations || []).filter(r => {
+  const uniqueRegistrations = (() => {
+    const seen = new Set();
+    const result = [];
+    for (const r of (registrations || [])) {
+      const key = `${r.tournamentId || r.tournamentTitle}_${(r.email || '').toLowerCase().trim()}_${(r.gamingId || '').trim()}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        result.push(r);
+      }
+    }
+    return result;
+  })();
+
+  const filteredRegistrations = uniqueRegistrations.filter(r => {
     if (paymentFilter === 'pending') return r.status === 'Pending Verification';
     if (paymentFilter === 'confirmed') return r.status === 'Confirmed';
     if (paymentFilter === 'rejected') return r.status === 'Rejected';
     return true;
   });
 
-  const searchedRegistrations = (registrations || []).filter(r => {
+  const searchedRegistrations = uniqueRegistrations.filter(r => {
     const q = registrationSearch.toLowerCase().trim();
     if (!q) return true;
     return (

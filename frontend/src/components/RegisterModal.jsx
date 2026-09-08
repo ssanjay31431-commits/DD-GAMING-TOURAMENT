@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, CheckCircle2, User, Phone, Mail, QrCode, ShieldCheck, ArrowRight, ArrowLeft, Copy, Sparkles, AlertCircle, Upload, Image as ImageIcon, Clock } from 'lucide-react';
+import { X, CheckCircle2, User, Phone, Mail, QrCode, ShieldCheck, ArrowRight, ArrowLeft, Copy, Sparkles, AlertCircle, Upload, Image as ImageIcon, Clock, Loader2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useApp } from '../context/AppContext';
 
@@ -8,6 +8,7 @@ export default function RegisterModal() {
   const { selectedTournamentRegister, closeRegistrationModal, submitRegistration, userProfile, navigateTo } = useApp();
 
   const [step, setStep] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     fullName: userProfile?.name || '',
     gamingId: userProfile?.gamingUsername || '',
@@ -62,42 +63,51 @@ export default function RegisterModal() {
 
   const handleFinalSubmit = async (e) => {
     if (e) e.preventDefault();
+    if (isSubmitting) return;
+
     if (trn.entryFee > 0 && !formData.paymentScreenshot) {
       setErrorMsg('Please upload your payment screenshot from GPay / PhonePe / Paytm to complete registration.');
       return;
     }
     setErrorMsg('');
-
-    const regResult = await submitRegistration({
-      tournament: trn,
-      fullName: formData.fullName,
-      gamingId: formData.gamingId,
-      phone: formData.phone,
-      email: formData.email,
-      txnId: `PAY-${Date.now()}`,
-      paymentScreenshot: formData.paymentScreenshot,
-      entryType: trn.entryType || (isTeamGame ? 'Team' : 'Solo'),
-      teamName: isTeamGame ? formData.teamName : undefined,
-      teamMembers: isTeamGame ? formData.teamMembers.slice(0, teamMemberCount - 1) : []
-    });
-
-    setSubmittedRegResult(regResult || {
-      id: `REG-DD-${Math.floor(1000 + Math.random() * 9000)}`,
-      playerName: formData.fullName,
-      gamingId: formData.gamingId,
-      tournamentTitle: trn.title,
-      status: trn.entryFee === 0 ? 'Confirmed' : 'Pending Verification'
-    });
-    setStep(4);
+    setIsSubmitting(true);
 
     try {
-      confetti({
-        particleCount: 120,
-        spread: 70,
-        origin: { y: 0.6 }
+      const regResult = await submitRegistration({
+        tournament: trn,
+        fullName: formData.fullName,
+        gamingId: formData.gamingId,
+        phone: formData.phone,
+        email: formData.email,
+        txnId: `PAY-${Date.now()}`,
+        paymentScreenshot: formData.paymentScreenshot,
+        entryType: trn.entryType || (isTeamGame ? 'Team' : 'Solo'),
+        teamName: isTeamGame ? formData.teamName : undefined,
+        teamMembers: isTeamGame ? formData.teamMembers.slice(0, teamMemberCount - 1) : []
       });
+
+      setSubmittedRegResult(regResult || {
+        id: `REG-DD-${Math.floor(1000 + Math.random() * 9000)}`,
+        playerName: formData.fullName,
+        gamingId: formData.gamingId,
+        tournamentTitle: trn.title,
+        status: trn.entryFee === 0 ? 'Confirmed' : 'Pending Verification'
+      });
+      setStep(4);
+
+      try {
+        confetti({
+          particleCount: 120,
+          spread: 70,
+          origin: { y: 0.6 }
+        });
+      } catch (err) {
+        console.log('Confetti error:', err);
+      }
     } catch (err) {
-      console.log('Confetti error:', err);
+      setErrorMsg('An error occurred during submission. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -600,10 +610,20 @@ export default function RegisterModal() {
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-heading font-extrabold text-sm tracking-wider uppercase flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition-all"
+                    disabled={isSubmitting}
+                    className="flex-1 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-heading font-extrabold text-sm tracking-wider uppercase flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition-all disabled:opacity-60 cursor-pointer disabled:cursor-not-allowed"
                   >
-                    Submit & Register
-                    <CheckCircle2 className="w-4 h-4" />
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin text-white" />
+                        <span>Submitting Ticket...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Submit & Register</span>
+                        <CheckCircle2 className="w-4 h-4" />
+                      </>
+                    )}
                   </button>
                 </div>
               </form>

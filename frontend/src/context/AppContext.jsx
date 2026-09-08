@@ -560,6 +560,11 @@ function processTournamentsWithAutoOpen(dataList) {
       email: userProfile.email
     });
 
+    if (newReg && newReg.success === false) {
+      showToast(newReg.message || 'Registration failed.', 'error');
+      return newReg;
+    }
+
     const regObj = newReg || {
       id: `REG-DD-${Math.floor(1000 + Math.random() * 9000)}`,
       tournamentId: registrationData.tournament.id,
@@ -574,28 +579,36 @@ function processTournamentsWithAutoOpen(dataList) {
       createdAt: new Date().toLocaleString()
     };
 
-    setRegistrations(prev => [regObj, ...(prev || [])]);
+    setRegistrations(prev => {
+      const exists = (prev || []).some(r => r.id === regObj.id || (r.tournamentId === regObj.tournamentId && (r.email === regObj.email || r.gamingId === regObj.gamingId)));
+      if (exists) return prev || [];
+      return [regObj, ...(prev || [])];
+    });
 
-    // Update User Profile state
-    setUserProfile(prev => ({
-      ...prev,
-      name: registrationData.fullName || prev.name,
-      gamingUsername: registrationData.gamingId || prev.gamingUsername,
-      phone: registrationData.phone || prev.phone,
-      totalTournamentsPlayed: (prev.totalTournamentsPlayed || 0) + 1,
-      registeredTournaments: [
-        {
-          tournamentId: registrationData.tournament.id,
-          registrationId: regObj.id,
-          registeredAt: new Date().toLocaleDateString(),
-          status: regObj.status,
-          paymentTxnId: regObj.txnId
-        },
-        ...(prev.registeredTournaments || [])
-      ]
-    }));
+    // Update User Profile state safely without adding duplicate tournaments
+    setUserProfile(prev => {
+      const alreadyInUser = (prev.registeredTournaments || []).some(r => r.tournamentId === registrationData.tournament.id);
+      if (alreadyInUser) return prev;
+      return {
+        ...prev,
+        name: registrationData.fullName || prev.name,
+        gamingUsername: registrationData.gamingId || prev.gamingUsername,
+        phone: registrationData.phone || prev.phone,
+        totalTournamentsPlayed: (prev.totalTournamentsPlayed || 0) + 1,
+        registeredTournaments: [
+          {
+            tournamentId: registrationData.tournament.id,
+            registrationId: regObj.id || `REG-DD-${Date.now()}`,
+            registeredAt: new Date().toLocaleDateString(),
+            status: regObj.status || 'Pending Verification',
+            paymentTxnId: regObj.txnId
+          },
+          ...(prev.registeredTournaments || [])
+        ]
+      };
+    });
 
-    showToast(`Successfully submitted payment for ${registrationData.tournament.title}! Redirecting to My Tournaments...`, 'success');
+    showToast('Registration ticket submitted successfully!', 'success');
 
     // Auto-navigate to My Tournaments without page refresh
     setTimeout(() => {
