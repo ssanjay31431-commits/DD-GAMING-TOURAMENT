@@ -44,6 +44,8 @@ export default function Login() {
 
   // Official Google OAuth 2.0 Popup Trigger
   const triggerGoogleOAuth = useGoogleLogin({
+    flow: 'implicit',
+    ux_mode: 'popup',
     onSuccess: (tokenResponse) => {
       setIsLoadingGoogle(false);
       googleLogin(tokenResponse);
@@ -51,12 +53,13 @@ export default function Login() {
     onError: (errorResponse) => {
       setIsLoadingGoogle(false);
       console.warn('Google OAuth error notice:', errorResponse);
-      setErrorMsg('User has cancelled sign in.');
+      if (errorResponse?.error && errorResponse.error !== 'popup_closed_by_user') {
+        setErrorMsg('Google Sign-In was cancelled or failed.');
+      }
     },
     onNonOAuthError: (nonOAuthError) => {
       setIsLoadingGoogle(false);
       console.warn('Google non-OAuth notice:', nonOAuthError);
-      setErrorMsg('User has cancelled sign in.');
     }
   });
 
@@ -64,23 +67,11 @@ export default function Login() {
     setErrorMsg('');
     setSuggestions([]);
     setIsLoadingGoogle(true);
-
-    const timer = setTimeout(() => {
-      setIsLoadingGoogle((prev) => {
-        if (prev) {
-          setErrorMsg('User has cancelled sign in.');
-          return false;
-        }
-        return false;
-      });
-    }, 6000);
-
     try {
       triggerGoogleOAuth();
     } catch (err) {
-      clearTimeout(timer);
       setIsLoadingGoogle(false);
-      setErrorMsg('User has cancelled sign in.');
+      setErrorMsg('Could not open Google Sign-In popup. Please check your browser popup settings.');
     }
   };
 
@@ -204,7 +195,7 @@ export default function Login() {
         <button
           type="button"
           disabled={isLoadingGoogle}
-          {...touchProps(handleGoogleAuthClick)}
+          onClick={handleGoogleAuthClick}
           className="w-full py-3 rounded-2xl bg-white text-slate-900 font-bold text-sm flex items-center justify-center gap-3 hover:bg-slate-100 transition-all shadow-md active:scale-98 disabled:opacity-75 cursor-pointer touch-manipulation"
         >
           {isLoadingGoogle ? (
@@ -306,7 +297,6 @@ export default function Login() {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.96 }}
             type="submit"
-            {...touchProps(handleSubmit)}
             className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white font-heading font-black text-sm uppercase tracking-wider shadow-xl shadow-purple-500/30 flex items-center justify-center gap-2 transition-all mt-2 cursor-pointer touch-manipulation active:scale-95"
           >
             {isRegisterMode ? 'Register & Enter Arena' : 'Login to DD Gaming'}
