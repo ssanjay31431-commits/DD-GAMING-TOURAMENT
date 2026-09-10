@@ -44,7 +44,7 @@ export default function Tournaments() {
           EXPLORE TOURNAMENTS
         </h1>
         <p className="text-sm text-slate-400 max-w-xl">
-          Browse active 8 Ball Pool tournaments, join upcoming matches, and lock in your slot.
+          Browse active multi-game tournaments across BGMI, Free Fire, Ludo King, 8 Ball Pool, Chess, and Carrom Pool, join upcoming matches, and lock in your slot.
         </p>
       </div>
 

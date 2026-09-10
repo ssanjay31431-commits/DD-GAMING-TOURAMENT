@@ -58,7 +58,7 @@ export default function AudioWelcomeModal() {
               ENABLE SOUND EFFECTS?
             </h2>
             <p className="text-xs text-slate-300 leading-relaxed max-w-xs mx-auto">
-              Experience DD GAMING with 8 Ball Pool cue hit sounds, victory chimes, and interactive audio feedback.
+              Experience DD GAMING with match victory chimes, interactive button cues, and esports tournament sound effects.
             </p>
           </div>
 

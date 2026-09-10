@@ -550,7 +550,7 @@ export default function Navbar() {
                   <Gamepad2 className="w-5 h-5 text-cyan-400 shrink-0" />
                   <div>
                     <span className="font-heading font-bold text-xs text-white block">Games</span>
-                    <span className="text-[9px] text-slate-400">8 Ball & BGMI</span>
+                    <span className="text-[9px] text-slate-400">All 6 Games</span>
                   </div>
                 </button>
 

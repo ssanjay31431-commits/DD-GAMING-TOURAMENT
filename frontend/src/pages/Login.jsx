@@ -258,13 +258,13 @@ export default function Login() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">8 Ball Pool Unique ID / Gaming Username</label>
+                <label className="block text-xs font-bold text-slate-300 mb-1">In-Game ID / Gaming Username (BGMI, Free Fire, Ludo, Pool, Chess)</label>
                 <input
                   type="text"
                   value={formData.gamingUsername}
                   onKeyDown={playTypingSound}
                   onChange={(e) => handleUsernameChange(e.target.value)}
-                  placeholder="e.g. Player_8Ball"
+                  placeholder="e.g. ProGamer_99"
                   className="w-full px-4 py-2.5 rounded-xl glass-input text-sm"
                 />
               </div>

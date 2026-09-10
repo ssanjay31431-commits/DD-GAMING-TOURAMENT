@@ -140,7 +140,7 @@ export default function RegisterModal() {
     if (game === 'Chess') return 'Chess.com / Lichess Username';
     if (game === 'Ludo King') return 'Ludo King User ID';
     if (game === 'Carrom Pool') return 'Carrom Pool User ID';
-    return '8 Ball Pool Unique ID / Gaming Username';
+    return 'In-Game ID / Gaming Username (BGMI / Free Fire / Ludo / Pool / Chess)';
   };
 
   const getGameIdPlaceholder = (trn) => {
@@ -442,7 +442,7 @@ export default function RegisterModal() {
                 </div>
 
                 <div className="p-3.5 rounded-xl bg-purple-950/40 border border-purple-500/20 text-xs text-purple-200 leading-relaxed">
-                  <strong>Rules Summary:</strong> Matches are 1v1 in 8 Ball Pool. Both players must record victory screenshots. Fair play is mandatory. Disconnection without proof results in forfeiture.
+                  <strong>Rules Summary:</strong> Matches are conducted according to official tournament rules for {trn.game || 'selected game'}. Both players/teams must record victory screenshots. Fair play is mandatory.
                 </div>
 
                 <label className="flex items-start gap-3 p-3 rounded-xl bg-slate-950 border border-slate-800 cursor-pointer">

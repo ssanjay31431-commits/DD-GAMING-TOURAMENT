@@ -232,22 +232,32 @@ export default function Home() {
             
             <div className="lg:col-span-7 space-y-4">
               <div className="flex items-center gap-2">
-                <span className="text-3xl">🎱</span>
+                <span className="text-3xl">🎮</span>
                 <span className="px-3 py-1 rounded-full text-xs font-black bg-purple-500/20 text-purple-300 border border-purple-500/40 uppercase tracking-wider">
-                  EXAMPLE EVENT FORMAT
+                  UNIVERSAL MULTI-GAME TOURNAMENT FORMAT
                 </span>
               </div>
 
               <h2 className="font-heading font-black text-3xl sm:text-4xl text-white">
-                DD 8 BALL POOL WEEKEND CLASH
+                DD UNIVERSAL ESPORTS GRAND CLASH
               </h2>
 
               <p className="text-sm text-slate-300 leading-relaxed">
-                8 Ball Pool 1v1 — ₹100 entry — 32 fixed slots — announced prize pool — clear rules and match timing. Slot confirmed upon required payment verification.
+                Multi-game tournament platform — compete daily in <strong>BGMI, Free Fire, Ludo King, 8 Ball Pool, Chess, and Carrom Pool</strong> — instant slot bookings, guaranteed prize payouts, and real-time live standings.
               </p>
 
+              {/* Supported Multi-Game Badges */}
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                <span className="px-2.5 py-1 rounded-lg bg-slate-950 border border-purple-500/30 text-xs font-bold text-slate-200">🎯 BGMI</span>
+                <span className="px-2.5 py-1 rounded-lg bg-slate-950 border border-orange-500/30 text-xs font-bold text-slate-200">🔥 Free Fire</span>
+                <span className="px-2.5 py-1 rounded-lg bg-slate-950 border border-emerald-500/30 text-xs font-bold text-slate-200">🎲 Ludo King</span>
+                <span className="px-2.5 py-1 rounded-lg bg-slate-950 border border-cyan-500/30 text-xs font-bold text-slate-200">🎱 8 Ball Pool</span>
+                <span className="px-2.5 py-1 rounded-lg bg-slate-950 border border-amber-500/30 text-xs font-bold text-slate-200">♟ Chess</span>
+                <span className="px-2.5 py-1 rounded-lg bg-slate-950 border border-blue-500/30 text-xs font-bold text-slate-200">🥏 Carrom Pool</span>
+              </div>
+
               {/* Countdown Box */}
-              <div className="pt-1">
+              <div className="pt-2">
                 <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
                   Registration Closes In:
                 </p>
@@ -276,37 +286,34 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Right Event Summary Card */}
-            <div className="lg:col-span-5 bg-slate-950/90 p-6 rounded-2xl border border-purple-500/30 space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                <span className="text-xs text-slate-400 font-bold uppercase">Announced Prize Pool</span>
-                <span className="font-heading font-black text-xl text-amber-400">₹2,500</span>
-              </div>
+            {/* Event Specs Card */}
+            <div className="lg:col-span-5">
+              <div className="p-6 rounded-2xl bg-slate-950/90 border border-purple-500/30 space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                  <span className="text-xs font-bold text-slate-400 uppercase">Announced Prize Pool</span>
+                  <span className="font-mono font-black text-2xl text-amber-400">₹2,500</span>
+                </div>
+                <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                  <span className="text-xs font-bold text-slate-400 uppercase">Entry Fee</span>
+                  <span className="font-mono font-bold text-lg text-emerald-400">₹100</span>
+                </div>
+                <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                  <span className="text-xs font-bold text-slate-400 uppercase">Fixed Slots</span>
+                  <span className="font-mono font-bold text-sm text-purple-300">32 Slots Total</span>
+                </div>
 
-              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                <span className="text-xs text-slate-400 font-bold uppercase">Entry Fee</span>
-                <span className="font-heading font-black text-emerald-400 text-lg">₹100</span>
-              </div>
-
-              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                <span className="text-xs text-slate-400 font-bold uppercase">Fixed Slots</span>
-                <span className="font-mono font-bold text-purple-300 text-sm">32 Slots Total</span>
-              </div>
-
-              <div className="pt-2 space-y-2">
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => openRegistrationModal(poolSpecial)}
-                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-heading font-black text-sm uppercase tracking-wider shadow-lg shadow-purple-500/30 transition-all flex items-center justify-center gap-2"
-                >
-                  Join 1v1 Event (₹100)
-                </motion.button>
                 <button
-                  onClick={() => openTournamentDetail(poolSpecial)}
-                  className="w-full py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 font-bold text-xs uppercase tracking-wider transition-all"
+                  onClick={() => navigateTo('tournaments')}
+                  className="w-full py-3.5 rounded-xl font-heading font-black text-sm text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-lg shadow-purple-500/30 transition-all flex items-center justify-center gap-2"
                 >
-                  View Rules & Eligibility
+                  JOIN ESPORTS EVENT (₹100)
+                </button>
+                
+                <button
+                  onClick={() => navigateTo('how-it-works')}
+                  className="w-full py-2.5 rounded-xl text-xs font-bold text-slate-400 bg-slate-900 border border-slate-800 hover:text-white transition-all text-center"
+                >
+                  VIEW RULES & ELIGIBILITY
                 </button>
               </div>
             </div>
@@ -449,10 +456,10 @@ export default function Home() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { step: '01', title: '1. Select Event', desc: 'Choose free-entry or paid 1v1 tournaments.', icon: '🎱' },
-            { step: '02', title: '2. Confirm Slot', desc: 'Enter 8 Ball ID & complete required payment.', icon: '📝' },
-            { step: '03', title: '3. Play 1v1 Match', desc: 'Compete in 8 Ball Pool at match timing.', icon: '⚔️' },
-            { step: '04', title: '4. Win & Transparent Prizes', desc: 'Submit victory screenshot & receive UPI payout.', icon: '🏆' }
+            { step: '01', title: '1. Select Event', desc: 'Choose free-entry or paid esports tournaments across 6+ games.', icon: '🎮' },
+            { step: '02', title: '2. Confirm Slot', desc: 'Enter In-Game ID / Username & complete required payment.', icon: '📝' },
+            { step: '03', title: '3. Play Match', desc: 'Compete in your selected game at scheduled match timing.', icon: '⚔️' },
+            { step: '04', title: '4. Win & Transparent Prizes', desc: 'Submit victory screenshot & receive direct UPI payout.', icon: '🏆' }
           ].map((item, idx) => (
             <div key={idx} className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3">
               <div className="w-10 h-10 rounded-xl bg-slate-950 border border-white/10 flex items-center justify-center text-xl">

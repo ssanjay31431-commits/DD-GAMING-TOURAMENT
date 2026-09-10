@@ -18,7 +18,7 @@ export default function Games() {
           SUPPORTED GAMES
         </h1>
         <p className="text-sm text-slate-400 max-w-xl">
-          Version 1 features <strong>8 Ball Pool</strong> daily tournaments with active cash prize pools. Other esports titles are launching next!
+          DD Gaming supports daily tournaments with active cash prize pools across <strong>BGMI, Free Fire, Ludo King, 8 Ball Pool, Chess, and Carrom Pool</strong>!
         </p>
       </div>
 
@@ -73,7 +73,7 @@ export default function Games() {
                   onClick={() => navigateTo('tournaments')}
                   className="w-full py-3.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-heading font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-purple-500/25 transition-all"
                 >
-                  View 8 Ball Tournaments
+                  View {game.name} Tournaments
                   <ChevronRight className="w-4 h-4" />
                 </motion.button>
               ) : (

@@ -72,7 +72,7 @@ export default function WelcomeAnimationModal() {
                 Your tournament journey starts now.
               </p>
               <p className="text-xs text-slate-300 font-medium">
-                Get ready to compete in 1v1 8 Ball Pool duels.
+                Get ready to compete across BGMI, Free Fire, Ludo King, 8 Ball Pool, Chess, and Carrom Pool contests.
               </p>
             </div>
           </div>

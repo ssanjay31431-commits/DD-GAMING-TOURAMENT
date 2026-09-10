@@ -102,9 +102,9 @@ export default function Profile({ initialTab = 'overview' }) {
 
   const userRegistrations = userProfile.registeredTournaments.map((reg) => {
     const trnInfo = tournaments.find(t => t.id === reg.tournamentId) || {
-      title: reg.tournamentTitle || '8 Ball Pool Tournament',
-      game: '8 Ball Pool',
-      gameIcon: '🎱',
+      title: reg.tournamentTitle || 'DD Esports Tournament',
+      game: reg.game || 'Multi-Game',
+      gameIcon: reg.gameIcon || '🎮',
       date: '2026-08-28',
       time: '08:00 PM IST',
       prizePool: 2500,
@@ -183,7 +183,7 @@ export default function Profile({ initialTab = 'overview' }) {
               </div>
 
               <p className="text-xs text-purple-300 font-mono font-bold mt-1 truncate">
-                8 Ball Pool ID: <span className="text-white">{userProfile.gamingUsername || 'Not Configured'}</span>
+                In-Game ID / Gaming Username: <span className="text-white">{userProfile.gamingUsername || 'Not Configured'}</span>
               </p>
               <p className="text-[11px] text-slate-400 mt-0.5">Player Tag: {userProfile.playerId}</p>
 
@@ -260,14 +260,14 @@ export default function Profile({ initialTab = 'overview' }) {
                   <div>
                     <h4 className="font-heading font-bold text-white text-base">NO ACTIVE TICKETS</h4>
                     <p className="text-xs text-slate-400 max-w-xs mx-auto mt-1">
-                      You have not registered for any 8 Ball Pool tournaments yet. Join an active tournament to receive your ticket!
+                      You have not registered for any tournaments yet. Join an active tournament to receive your ticket!
                     </p>
                   </div>
                   <button
                     onClick={() => navigateTo('tournaments')}
                     className="px-6 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-heading font-bold text-xs uppercase tracking-wider inline-flex items-center gap-1.5 shadow"
                   >
-                    Browse 8 Ball Tournaments
+                    Browse Tournaments
                     <ChevronRight className="w-4 h-4" />
                   </button>
                 </div>
@@ -340,7 +340,7 @@ export default function Profile({ initialTab = 'overview' }) {
               <span className="text-4xl block">🎮</span>
               <h4 className="font-heading font-bold text-white text-lg">NO ACTIVE ARENA MATCHES</h4>
               <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                You have not registered for any tournament matches yet. Browse active 8 Ball Pool, BGMI, and Free Fire events to compete!
+                You have not registered for any tournament matches yet. Browse active BGMI, Free Fire, Ludo King, 8 Ball Pool, Chess, and Carrom Pool events to compete!
               </p>
               <button
                 onClick={() => navigateTo('tournaments')}
@@ -685,14 +685,14 @@ export default function Profile({ initialTab = 'overview' }) {
               />
             </div>
 
-            {/* 8 Ball Pool Gaming Username Field with Live Database Availability Check */}
+            {/* Universal Gaming Username Field with Live Database Availability Check */}
             <div>
               <label className="block text-xs font-bold text-slate-300 mb-1">
-                8 Ball Pool Gaming Username / Unique ID
+                In-Game ID / Gaming Username (BGMI, Free Fire, Ludo, Pool, Chess)
               </label>
               <input
                 type="text"
-                placeholder="e.g. 8BallKing_Rahul"
+                placeholder="e.g. ProGamer_Rahul"
                 value={editForm.gamingUsername}
                 onChange={(e) => handleUsernameCheck(e.target.value)}
                 className={`w-full px-4 py-2.5 rounded-xl glass-input text-sm ${
