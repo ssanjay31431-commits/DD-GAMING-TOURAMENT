@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Trophy, Calendar, Clock, Users, ShieldCheck, Zap, Award, CheckCircle2, ChevronRight, Copy, Key } from 'lucide-react';
 import { useApp } from '../context/AppContext';
@@ -6,6 +6,15 @@ import { getGameBanner } from '../utils/gameBanners';
 
 export default function TournamentDetailModal() {
   const { selectedTournamentDetail, closeTournamentDetail, openRegistrationModal, isAlreadyRegisteredForTournament, navigateTo, showToast } = useApp();
+
+  useEffect(() => {
+    if (selectedTournamentDetail) {
+      document.body.style.overflow = 'hidden';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [selectedTournamentDetail]);
 
   if (!selectedTournamentDetail) return null;
 

@@ -17,6 +17,7 @@ export default function Login() {
   const [errorMsg, setErrorMsg] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [isLoadingGoogle, setIsLoadingGoogle] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -49,9 +50,12 @@ export default function Login() {
     flow: 'implicit',
     ux_mode: 'popup',
     prompt: 'select_account',
-    onSuccess: (tokenResponse) => {
-      setIsLoadingGoogle(false);
-      googleLogin(tokenResponse);
+    onSuccess: async (tokenResponse) => {
+      try {
+        await googleLogin(tokenResponse);
+      } finally {
+        setIsLoadingGoogle(false);
+      }
     },
     onError: (errorResponse) => {
       setIsLoadingGoogle(false);
@@ -87,26 +91,35 @@ export default function Login() {
     if (e) e.preventDefault();
     setErrorMsg('');
     setSuggestions([]);
+    setIsSubmitting(true);
 
-    if (isRegisterMode) {
-      if (!formData.email.trim() || !formData.password.trim() || !formData.fullName.trim()) {
-        setErrorMsg('Please complete all required registration fields.');
-        return;
+    try {
+      if (isRegisterMode) {
+        if (!formData.email.trim() || !formData.password.trim() || !formData.fullName.trim()) {
+          setErrorMsg('Please complete all required registration fields.');
+          setIsSubmitting(false);
+          return;
+        }
+        const res = await registerUser(formData);
+        if (res && res.success === false) {
+          setErrorMsg(res.message || 'Registration failed.');
+          if (res.suggestions) setSuggestions(res.suggestions);
+        }
+      } else {
+        if (!formData.email.trim() || !formData.password.trim()) {
+          setErrorMsg('Please enter your email and password.');
+          setIsSubmitting(false);
+          return;
+        }
+        const res = await login(formData.email, formData.password);
+        if (res && res.success === false) {
+          setErrorMsg(res.message || 'Incorrect password or account not found.');
+        }
       }
-      const res = await registerUser(formData);
-      if (res && res.success === false) {
-        setErrorMsg(res.message || 'Registration failed.');
-        if (res.suggestions) setSuggestions(res.suggestions);
-      }
-    } else {
-      if (!formData.email.trim() || !formData.password.trim()) {
-        setErrorMsg('Please enter your email and password.');
-        return;
-      }
-      const res = await login(formData.email, formData.password);
-      if (res && res.success === false) {
-        setErrorMsg(res.message || 'Incorrect password or account not found.');
-      }
+    } catch (err) {
+      setErrorMsg('An unexpected authentication error occurred. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -184,8 +197,8 @@ export default function Login() {
 
         {/* Error & Suggested Username Banner */}
         {errorMsg && (
-          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-semibold text-center space-y-2">
-            <p>{errorMsg}</p>
+          <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-semibold text-center space-y-2 max-w-full box-border break-words overflow-wrap-anywhere">
+            <p className="break-words overflow-wrap-anywhere">{errorMsg}</p>
             {suggestions.length > 0 && (
               <div className="flex flex-wrap items-center justify-center gap-1.5 pt-1">
                 <span className="text-[11px] text-slate-400 font-semibold w-full">Click to select an available username:</span>
@@ -314,10 +327,20 @@ export default function Login() {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.96 }}
             type="submit"
-            className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white font-heading font-black text-sm uppercase tracking-wider shadow-xl shadow-purple-500/30 flex items-center justify-center gap-2 transition-all mt-2 cursor-pointer touch-manipulation active:scale-95"
+            disabled={isSubmitting || isLoadingGoogle}
+            className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white font-heading font-black text-sm uppercase tracking-wider shadow-xl shadow-purple-500/30 flex items-center justify-center gap-2 transition-all mt-2 cursor-pointer touch-manipulation active:scale-95 disabled:opacity-70"
           >
-            {isRegisterMode ? 'Register & Enter Arena' : 'Login to DD Gaming'}
-            <ArrowRight className="w-4 h-4" />
+            {isSubmitting ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin text-white" />
+                <span>{isRegisterMode ? 'Creating Account...' : 'Signing In...'}</span>
+              </>
+            ) : (
+              <>
+                {isRegisterMode ? 'Register & Enter Arena' : 'Login to DD Gaming'}
+                <ArrowRight className="w-4 h-4" />
+              </>
+            )}
           </motion.button>
         </form>
 

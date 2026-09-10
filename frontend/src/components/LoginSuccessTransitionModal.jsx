@@ -33,26 +33,15 @@ export default function LoginSuccessTransitionModal() {
       return () => timers.forEach(clearTimeout);
     }
 
-    // SCENE 1 (0.0s – 0.7s): Pure Black + Subtle Sparks
-    // SCENE 2 (0.7s): Energy Build-Up (Esports Radial Glow)
-    timers.push(setTimeout(() => setStage(1), 700));
-
-    // SCENE 3 (1.3s): "WELCOME TO" text reveals
-    timers.push(setTimeout(() => setStage(2), 1300));
-
-    // SCENE 4 (1.7s): "DD GAMING" dramatic reveal + logo animation
-    timers.push(setTimeout(() => setStage(3), 1700));
-
-    // SCENE 5 (2.7s): Cinematic Light Sweep across text
-    timers.push(setTimeout(() => setStage(4), 2700));
-
-    // SCENE 6 (3.2s): Smooth transition exit & reveal website
-    timers.push(setTimeout(() => setStage(5), 3200));
-
-    // 3.6s: Complete transition & unmount
+    // Fast, crisp mobile-first transition sequence (1.2s total)
+    timers.push(setTimeout(() => setStage(1), 150));
+    timers.push(setTimeout(() => setStage(2), 300));
+    timers.push(setTimeout(() => setStage(3), 500));
+    timers.push(setTimeout(() => setStage(4), 800));
+    timers.push(setTimeout(() => setStage(5), 1100));
     timers.push(setTimeout(() => {
       finishAuthTransition();
-    }, 3600));
+    }, 1200));
 
     return () => {
       timers.forEach(clearTimeout);

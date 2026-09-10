@@ -371,11 +371,13 @@ export default function Navbar() {
 
       {/* ========================================================= */}
       {/* MOBILE FIXED BOTTOM ESPORTS NAVIGATION BAR (< 1024px) */}
+      {/* STRICT AUTHENTICATION GUARD: VISIBLE ONLY AFTER AUTHENTICATION */}
       {/* ========================================================= */}
-      <nav
-        className="lg:hidden fixed bottom-0 left-0 right-0 z-[130] glass-panel border-t border-purple-500/30 bg-slate-950/95 backdrop-blur-2xl px-2 py-1.5 shadow-2xl touch-manipulation"
-        style={{ paddingBottom: 'calc(0.6rem + env(safe-area-inset-bottom, 12px))' }}
-      >
+      {isLoggedIn && activePage !== 'login' && (
+        <nav
+          className="lg:hidden fixed bottom-0 left-0 right-0 z-[130] glass-panel border-t border-purple-500/30 bg-slate-950/95 backdrop-blur-2xl px-2 py-1.5 shadow-2xl touch-manipulation"
+          style={{ paddingBottom: 'calc(0.6rem + env(safe-area-inset-bottom, 12px))' }}
+        >
         <div className="flex items-center justify-around max-w-md mx-auto">
           
           {/* 1. HOME */}
@@ -464,6 +466,7 @@ export default function Navbar() {
 
         </div>
       </nav>
+      )}
 
       {/* ========================================================= */}
       {/* MOBILE MORE MENU BOTTOM SHEET DRAWER (< 1024px) */}

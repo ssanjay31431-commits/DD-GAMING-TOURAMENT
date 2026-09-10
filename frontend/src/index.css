@@ -60,6 +60,21 @@
     overflow-x: hidden;
   }
 
+  /* Universal Mobile Viewport Bounds & Safe Message Container */
+  .mobile-safe-error {
+    max-width: calc(100vw - 24px) !important;
+    box-sizing: border-box !important;
+    overflow-wrap: anywhere !important;
+    word-break: break-word !important;
+    max-height: 70vh !important;
+    overflow-y: auto !important;
+  }
+
+  .overflow-wrap-anywhere {
+    overflow-wrap: anywhere !important;
+    word-break: break-word !important;
+  }
+
   /* Universal Mobile Touch Target Rules */
   button, a, input, select, textarea, [role="button"] {
     touch-action: manipulation;

@@ -30,6 +30,15 @@ export default function RegisterModal() {
   const [errorMsg, setErrorMsg] = useState('');
 
   useEffect(() => {
+    if (selectedTournamentRegister) {
+      document.body.style.overflow = 'hidden';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [selectedTournamentRegister]);
+
+  useEffect(() => {
     if (userProfile) {
       setFormData(prev => ({
         ...prev,
