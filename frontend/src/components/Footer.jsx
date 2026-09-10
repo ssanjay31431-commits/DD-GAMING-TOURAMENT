@@ -86,7 +86,7 @@ export default function Footer() {
                 </h4>
                 <ul className="space-y-2 text-xs">
                   <li className="flex items-center gap-1.5 font-bold text-purple-300">
-                    <span>🎱</span> 8 Ball Pool <span className="text-[9px] bg-purple-500/30 px-1.5 py-0.2 rounded text-purple-200">MAIN GAME</span>
+                    <span>🎱</span> 8 Ball Pool <span className="text-[9px] bg-purple-500/30 px-1.5 py-0.2 rounded text-purple-200">ACTIVE</span>
                   </li>
                   <li className="flex items-center gap-1.5 opacity-60">
                     <span>🎯</span> BGMI (Expansion)

@@ -4,6 +4,7 @@ import { Trophy, Gamepad2, Swords, Sparkles, Users, Award, ChevronRight, Clock, 
 import { useApp } from '../context/AppContext';
 import { getGameBanner } from '../utils/gameBanners';
 import { touchProps } from '../utils/touchHelper';
+import FloatingAdsCarousel from '../components/FloatingAdsCarousel';
 
 export default function Home() {
   const { tournaments, navigateTo, openTournamentDetail, openRegistrationModal, faqs, isAlreadyRegisteredForTournament } = useApp();
@@ -141,170 +142,14 @@ export default function Home() {
               </div>
             </motion.div>
 
-            {/* Right Interactive 3D / Upcoming Event Visual */}
             <motion.div
               initial={{ opacity: 0, scale: 0.85 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8, delay: 0.3 }}
               className="lg:col-span-5 relative flex justify-center items-center"
             >
-              <div className="absolute w-72 h-72 sm:w-96 sm:h-96 max-w-full rounded-full bg-gradient-to-tr from-amber-500/30 via-purple-600/30 to-cyan-500/20 blur-2xl animate-pulse-glow pointer-events-none" />
-
-              {upcomingTrn ? (
-                /* 1. UPCOMING EVENT DYNAMIC HERO CARD WITH LIVE COUNTDOWN ANIMATION */
-                <div className="relative w-full max-w-sm glass-panel p-6 rounded-3xl border-2 border-amber-500/50 shadow-2xl shadow-amber-500/20 space-y-5 animate-float-3d">
-                  
-                  {/* Badge & Title */}
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 truncate">
-                      <span className="text-2xl">{upcomingTrn.gameIcon || '⚡'}</span>
-                      <span className="font-heading font-extrabold text-white text-base truncate">
-                        {upcomingTrn.title}
-                      </span>
-                    </div>
-                    <span className="px-3 py-1 rounded-full text-[10px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse flex items-center gap-1.5 shrink-0 shadow">
-                      <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
-                      ⏳ UPCOMING
-                    </span>
-                  </div>
-
-                  {/* HIGH-TECH LIVE COUNTDOWN BOXES */}
-                  <div className="p-4 rounded-2xl bg-gradient-to-br from-slate-950 via-amber-950/40 to-slate-950 border border-amber-500/40 shadow-inner space-y-2">
-                    <div className="flex items-center justify-center gap-1.5 text-xs font-extrabold text-amber-300 uppercase tracking-widest">
-                      <Clock className="w-4 h-4 text-amber-400 animate-spin" style={{ animationDuration: '6s' }} />
-                      EVENT STARTS IN
-                    </div>
-
-                    <div className="grid grid-cols-4 gap-2 text-center pt-1">
-                      <div className="p-2 rounded-xl bg-slate-900/90 border border-amber-500/30 shadow">
-                        <span className="font-mono font-black text-xl text-amber-400 block">{String(countdown.days).padStart(2, '0')}</span>
-                        <span className="text-[9px] font-bold text-slate-400 block uppercase">DAYS</span>
-                      </div>
-                      <div className="p-2 rounded-xl bg-slate-900/90 border border-amber-500/30 shadow">
-                        <span className="font-mono font-black text-xl text-amber-400 block">{String(countdown.hours).padStart(2, '0')}</span>
-                        <span className="text-[9px] font-bold text-slate-400 block uppercase">HRS</span>
-                      </div>
-                      <div className="p-2 rounded-xl bg-slate-900/90 border border-amber-500/30 shadow">
-                        <span className="font-mono font-black text-xl text-amber-400 block">{String(countdown.minutes).padStart(2, '0')}</span>
-                        <span className="text-[9px] font-bold text-slate-400 block uppercase">MINS</span>
-                      </div>
-                      <div className="p-2 rounded-xl bg-slate-900/90 border border-amber-500/40 shadow animate-pulse">
-                        <span className="font-mono font-black text-xl text-rose-400 block">{String(countdown.seconds).padStart(2, '0')}</span>
-                        <span className="text-[9px] font-bold text-slate-400 block uppercase">SECS</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Tournament Quick Stats */}
-                  <div className="flex items-center justify-between text-xs font-bold text-slate-300 px-1">
-                    <span className="flex items-center gap-1">
-                      🏆 Prize: <strong className="text-amber-400 font-mono text-sm">₹{upcomingTrn.prizePool || 0}</strong>
-                    </span>
-                    <span className="flex items-center gap-1">
-                      🎟️ Entry: <strong className="text-cyan-400 font-mono text-sm">{upcomingTrn.entryFee === 0 ? 'FREE' : `₹${upcomingTrn.entryFee}`}</strong>
-                    </span>
-                  </div>
-
-                  {/* Action CTA Button */}
-                  <motion.button
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.97 }}
-                    {...touchProps(() => openTournamentDetail(upcomingTrn))}
-                    className="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-500 via-rose-600 to-purple-600 hover:from-amber-400 hover:to-purple-500 text-white font-heading font-black text-xs uppercase tracking-wider shadow-xl shadow-amber-500/25 flex items-center justify-center gap-2 border border-amber-400/30 transition-all cursor-pointer touch-manipulation"
-                  >
-                    <Sparkles className="w-4 h-4 text-amber-200" />
-                    VIEW UPCOMING EVENT DETAILS
-                  </motion.button>
-
-                </div>
-              ) : poolSpecial ? (
-                /* 2. ACTIVE OPEN GAME FEATURED PROMOTION CARD */
-                <div className="relative w-full max-w-sm glass-panel p-6 rounded-3xl border border-purple-500/40 shadow-2xl space-y-6 animate-float-3d">
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 truncate">
-                      <span className="text-2xl">{poolSpecial.gameIcon || '🎱'}</span>
-                      <span className="font-heading font-extrabold text-white text-base truncate">
-                        {poolSpecial.title}
-                      </span>
-                    </div>
-                    <span className="px-3 py-1 rounded-full text-[10px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 animate-pulse shrink-0">
-                      ● MAIN GAME
-                    </span>
-                  </div>
-
-                  {/* Simulated 3D Graphic */}
-                  <div className="relative h-44 w-full rounded-2xl bg-gradient-to-br from-slate-950 to-purple-950/80 border border-purple-500/30 flex items-center justify-center overflow-hidden">
-                    <div className="w-28 h-28 rounded-full bg-slate-950 border-4 border-slate-800 shadow-2xl flex items-center justify-center relative">
-                      <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-inner">
-                        <span className="font-heading font-black text-2xl text-slate-950">8</span>
-                      </div>
-                    </div>
-                    
-                    <div className="absolute top-3 left-3 bg-purple-900/80 backdrop-blur-md px-3 py-1 rounded-lg border border-purple-400/40 text-[10px] font-bold text-purple-200">
-                      Prize: ₹{poolSpecial.prizePool || 2500}
-                    </div>
-                    <div className="absolute bottom-3 right-3 bg-cyan-900/80 backdrop-blur-md px-3 py-1 rounded-lg border border-cyan-400/40 text-[10px] font-bold text-cyan-200">
-                      Entry: {poolSpecial.entryFee === 0 ? 'FREE' : `₹${poolSpecial.entryFee}`}
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between text-xs font-semibold text-slate-300">
-                      <span>{poolSpecial.format || '1v1 • Fixed Slots'}</span>
-                      <span className="text-emerald-400 font-bold">Registration Open</span>
-                    </div>
-                    
-                    {isAlreadyRegisteredForTournament(poolSpecial.id) ? (
-                      <motion.button
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        {...touchProps(() => navigateTo('my-tournaments'))}
-                        className="w-full py-3.5 rounded-xl bg-slate-900 border-2 border-emerald-500/60 text-emerald-300 hover:bg-slate-800 font-heading font-extrabold text-xs uppercase tracking-wider shadow-lg shadow-emerald-500/20 transition-all cursor-pointer touch-manipulation flex items-center justify-center gap-1.5"
-                      >
-                        ✅ ALREADY REGISTERED (VIEW TICKET)
-                      </motion.button>
-                    ) : (
-                      <motion.button
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        {...touchProps(() => openRegistrationModal(poolSpecial))}
-                        className="w-full py-3.5 rounded-xl bg-gradient-to-r from-purple-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white font-heading font-extrabold text-xs uppercase tracking-wider shadow-lg shadow-purple-500/25 transition-all cursor-pointer touch-manipulation"
-                      >
-                        JOIN EVENT ({poolSpecial.entryFee === 0 ? 'FREE' : `₹${poolSpecial.entryFee}`} ENTRY)
-                      </motion.button>
-                    )}
-                  </div>
-
-                </div>
-              ) : (
-                /* 3. NEXT GAME PROMOTION DEMO FALLBACK CARD */
-                <div className="relative w-full max-w-sm glass-panel p-6 rounded-3xl border border-purple-500/40 shadow-2xl space-y-6 animate-float-3d text-center">
-                  
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-extrabold bg-purple-500/20 text-purple-300 border border-purple-500/40 animate-pulse">
-                    🎮 NEXT GAME PROMOTION
-                  </div>
-
-                  <div className="space-y-2">
-                    <h3 className="font-heading font-black text-2xl text-white">
-                      DD GAMING ARENA
-                    </h3>
-                    <p className="text-xs text-slate-300 leading-relaxed">
-                      Upcoming competitive esports tournaments launching soon. Stay tuned for registration!
-                    </p>
-                  </div>
-
-                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    {...touchProps(() => navigateTo('tournaments'))}
-                    className="w-full py-3.5 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-500 hover:from-purple-500 text-white font-heading font-extrabold text-xs uppercase tracking-wider shadow-lg shadow-purple-500/25 transition-all cursor-pointer touch-manipulation"
-                  >
-                    EXPLORE ALL GAMES
-                  </motion.button>
-
-                </div>
-              )}
+              <div className="absolute w-72 h-72 sm:w-96 sm:h-96 max-w-full rounded-full bg-gradient-to-tr from-purple-600/25 via-cyan-500/20 to-indigo-600/20 blur-2xl animate-pulse-glow pointer-events-none" />
+              <FloatingAdsCarousel />
             </motion.div>
 
           </div>
