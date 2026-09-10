@@ -76,6 +76,26 @@ export default function Admin() {
     return <AdminLogin onLoginSuccess={() => adminLogin({ username: 'ddgaming', password: 'ddgaming2026' })} />;
   }
 
+  // Date & Time Helpers
+  const getTodayDateString = () => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const getCurrentTimeString = (offsetMinutes = 60) => {
+    const d = new Date(Date.now() + offsetMinutes * 60 * 1000);
+    let hours = d.getHours();
+    const minutes = String(Math.floor(d.getMinutes() / 15) * 15).padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12;
+    const formattedHours = String(hours).padStart(2, '0');
+    return `${formattedHours}:${minutes} ${ampm} IST`;
+  };
+
   // Dynamic Create Tournament Form State
   const [game, setGame] = useState('8 Ball Pool');
   const [gameCode, setGameCode] = useState('8ball');
@@ -86,8 +106,8 @@ export default function Admin() {
   const [teamSize, setTeamSize] = useState(1);
   const [maxCapacity, setMaxCapacity] = useState(32); // max players or teams
   const [entryFee, setEntryFee] = useState(100);
-  const [date, setDate] = useState('2026-08-30');
-  const [time, setTime] = useState('08:00 PM IST');
+  const [date, setDate] = useState(getTodayDateString);
+  const [time, setTime] = useState(() => getCurrentTimeString(60));
   const [description, setDescription] = useState('Special esports tournament managed by DD Gaming Admin.');
   const [rulesInput, setRulesInput] = useState('1. Fair play rules apply.\n2. Submit match victory screenshot.');
   
@@ -103,7 +123,14 @@ export default function Admin() {
 
   // Sync game defaults when game changes
   useEffect(() => {
+    const todayStr = getTodayDateString();
+    const startMatchTimeStr = getCurrentTimeString(60);
+
+    setDate(todayStr);
+    setTime(startMatchTimeStr);
+
     if (game === '8 Ball Pool') {
+      setTitle('DD 8 Ball Pool Super Clash');
       setGameCode('8ball');
       setGameIcon('🎱');
       setMode('1v1 Knockout');
@@ -116,6 +143,7 @@ export default function Admin() {
       setPrize3(400);
       setKillReward(0);
     } else if (game === 'BGMI') {
+      setTitle('DD BGMI Battle Royale Squad Clash');
       setGameCode('bgmi');
       setGameIcon('🎯');
       setMode('Battle Royale Squad');
@@ -128,6 +156,7 @@ export default function Admin() {
       setPrize3(500);
       setKillReward(250);
     } else if (game === 'Free Fire') {
+      setTitle('DD Free Fire Survival Squad Cup');
       setGameCode('freefire');
       setGameIcon('🔥');
       setMode('Custom Match Squad');
@@ -140,6 +169,7 @@ export default function Admin() {
       setPrize3(400);
       setKillReward(200);
     } else if (game === 'Chess') {
+      setTitle('DD Chess Grandmaster Blitz Showdown');
       setGameCode('chess');
       setGameIcon('♟');
       setMode('1v1 Blitz Knockout');
@@ -152,6 +182,7 @@ export default function Admin() {
       setPrize3(0);
       setKillReward(0);
     } else if (game === 'Ludo King') {
+      setTitle('DD Ludo King Royal Championship');
       setGameCode('ludo');
       setGameIcon('🎲');
       setMode('4 Player Battle');
@@ -164,6 +195,7 @@ export default function Admin() {
       setPrize3(100);
       setKillReward(0);
     } else if (game === 'Carrom Pool') {
+      setTitle('DD Carrom Pool Master Duels');
       setGameCode('carrom');
       setGameIcon('🥏');
       setMode('1v1 Duels');
