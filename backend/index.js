@@ -62,8 +62,6 @@ function rateLimiter({ windowMs = 60 * 1000, maxRequests = 50, message = 'Too ma
   };
 }
 
-const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-
 // In-Memory Stores
 const memoryUsers = new Map();
 const memoryRegistrations = [];
@@ -149,6 +147,7 @@ const connectDB = async () => {
         await Tournament.insertMany(INITIAL_TOURNAMENTS);
         console.log('✅ Initial tournaments seeded into MongoDB!');
       }
+      await backfillMissingUserIds();
     } catch (seedErr) {
       console.warn('Seed notice:', seedErr.message);
     }
@@ -309,6 +308,48 @@ app.get('/api/tournaments', async (req, res) => {
   res.json(INITIAL_TOURNAMENTS);
 });
 
+// HELPER: Generate guaranteed unique custom Application ID ('id')
+async function generateUniqueAppId() {
+  let isUnique = false;
+  let customId = '';
+  let attempts = 0;
+  while (!isUnique && attempts < 100) {
+    attempts++;
+    customId = `usr-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    if (isDbConnected && mongoose.connection.readyState === 1) {
+      const existing = await User.findOne({ id: customId });
+      if (!existing) isUnique = true;
+    } else {
+      isUnique = true;
+    }
+  }
+  if (!isUnique) {
+    customId = `usr-${Date.now()}-${Math.floor(10000 + Math.random() * 90000)}`;
+  }
+  return customId;
+}
+
+// HELPER: Safely backfill missing custom 'id', 'playerId', or 'gamingUsername' for existing MongoDB users
+async function backfillMissingUserIds() {
+  try {
+    if (isDbConnected && mongoose.connection.readyState === 1) {
+      const usersWithoutId = await User.find({ $or: [{ id: { $exists: false } }, { id: null }, { id: '' }] });
+      if (usersWithoutId.length > 0) {
+        console.log(`🔧 Backfilling missing custom 'id' for ${usersWithoutId.length} existing MongoDB user(s)...`);
+        for (const u of usersWithoutId) {
+          u.id = await generateUniqueAppId();
+          if (!u.playerId) u.playerId = await generateUniquePlayerId();
+          if (!u.gamingUsername) u.gamingUsername = await generateUniqueGamingUsername(u.name || u.email.split('@')[0]);
+          await u.save().catch(e => console.warn('Notice backfilling user ID:', e.message));
+        }
+        console.log(`✅ User 'id' backfill completed.`);
+      }
+    }
+  } catch (err) {
+    console.warn('Notice during user ID backfill check:', err.message);
+  }
+}
+
 // HELPER: Generate guaranteed unique Player ID
 async function generateUniquePlayerId() {
   let isUnique = false;
@@ -392,9 +433,11 @@ app.post('/api/auth/register', async (req, res) => {
       }
 
       const hashedPassword = await bcrypt.hash(password, 10);
+      const appId = await generateUniqueAppId();
       const playerId = await generateUniquePlayerId();
 
       const newUser = new User({
+        id: appId,
         name: fullName || normalizedEmail.split('@')[0],
         email: normalizedEmail,
         password: hashedPassword,
@@ -409,6 +452,7 @@ app.post('/api/auth/register', async (req, res) => {
         await newUser.save();
       } catch (saveErr) {
         if (saveErr.code === 11000) {
+          newUser.id = await generateUniqueAppId();
           newUser.playerId = `DD-GAME-${Date.now()}`;
           await newUser.save();
         } else {
@@ -613,6 +657,9 @@ app.post('/api/auth/google', async (req, res) => {
       if (name && (!user.name || user.name === 'Player Account')) {
         user.name = name;
       }
+      if (!user.id) {
+        user.id = await generateUniqueAppId();
+      }
       if (!user.playerId) {
         user.playerId = await generateUniquePlayerId();
       }
@@ -625,6 +672,7 @@ app.post('/api/auth/google', async (req, res) => {
       } catch (saveErr) {
         if (saveErr.code === 11000) {
           console.warn('⚠️ [Google Auth Warning] Duplicate key collision on existing user update:', saveErr.message);
+          user.id = await generateUniqueAppId();
           user.playerId = `DD-GAME-${Date.now()}`;
           await user.save();
         } else {
@@ -635,10 +683,12 @@ app.post('/api/auth/google', async (req, res) => {
     } else {
       // First-time sign in -> Create new User document in MongoDB
       const cleanName = name || normalizedEmail.split('@')[0];
+      const appId = await generateUniqueAppId();
       const playerId = await generateUniquePlayerId();
       const gamingUsername = await generateUniqueGamingUsername(cleanName);
 
       user = new User({
+        id: appId,
         name: cleanName,
         email: normalizedEmail,
         googleId: googleId || '',
@@ -659,6 +709,7 @@ app.post('/api/auth/google', async (req, res) => {
       } catch (saveErr) {
         if (saveErr.code === 11000) {
           console.warn('⚠️ [Google Auth Warning] Duplicate key collision on new user creation:', saveErr.message);
+          user.id = await generateUniqueAppId();
           user.playerId = `DD-GAME-${Date.now()}`;
           user.gamingUsername = `${cleanName.replace(/[^a-zA-Z0-9_]/g, '_')}_${Date.now().toString().slice(-4)}`;
           await user.save();
