@@ -81,8 +81,22 @@ export default function Home() {
               initial={{ opacity: 0, x: -40 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8 }}
-              className="lg:col-span-7 space-y-6 text-center lg:text-left z-10"
+              className="lg:col-span-7 space-y-6 text-center lg:text-left z-10 relative"
             >
+              {/* Desktop Gamer Silhouette Graphic Ambient Overlay */}
+              <div className="hidden xl:block absolute -left-28 -top-12 w-96 h-[480px] pointer-events-none z-[-1] opacity-35 select-none">
+                <div className="absolute inset-0 bg-gradient-to-tr from-purple-600/30 via-cyan-500/20 to-transparent blur-3xl rounded-full" />
+                <svg className="w-full h-full text-purple-400 drop-shadow-[0_0_25px_rgba(168,85,247,0.6)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="0.7">
+                  <path d="M12 2a5 5 0 0 1 5 5v2a5 5 0 0 1-10 0V7a5 5 0 0 1 5-5z" />
+                  <path d="M19 11v1a7 7 0 0 1-14 0v-1" />
+                  <path d="M6 19a6 6 0 0 1 12 0" />
+                </svg>
+                <div className="absolute bottom-4 left-6">
+                  <span className="font-heading font-black italic text-sm text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400 tracking-wider">
+                    More Games &bull; More Fun
+                  </span>
+                </div>
+              </div>
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}

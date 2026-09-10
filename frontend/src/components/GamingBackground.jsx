@@ -16,37 +16,37 @@ export default function GamingBackground({ showSideBadges = false, className = '
 
       {/* Ambient Neon Purple & Cyan Glow Orbs */}
       <div 
-        className={`absolute -top-32 -left-32 w-[450px] sm:w-[650px] h-[450px] sm:h-[650px] rounded-full bg-purple-600/15 blur-[120px] ${
+        className={`absolute -top-32 -left-32 w-[350px] sm:w-[650px] h-[350px] sm:h-[650px] rounded-full bg-purple-600/15 blur-[100px] sm:blur-[120px] ${
           reducedMotion ? '' : 'animate-pulse'
         }`}
         style={{ animationDuration: '8s' }}
       />
       <div 
-        className={`absolute top-1/3 -right-32 w-[500px] sm:w-[700px] h-[500px] sm:h-[700px] rounded-full bg-cyan-500/12 blur-[140px] ${
+        className={`absolute top-1/3 -right-32 w-[380px] sm:w-[700px] h-[380px] sm:h-[700px] rounded-full bg-cyan-500/12 blur-[110px] sm:blur-[140px] ${
           reducedMotion ? '' : 'animate-pulse'
         }`}
         style={{ animationDuration: '10s' }}
       />
       <div 
-        className={`absolute -bottom-40 left-1/4 w-[600px] h-[600px] rounded-full bg-indigo-600/15 blur-[130px] ${
+        className={`absolute -bottom-40 left-1/4 w-[400px] sm:w-[600px] h-[400px] sm:h-[600px] rounded-full bg-indigo-600/15 blur-[120px] sm:blur-[130px] ${
           reducedMotion ? '' : 'animate-pulse'
         }`}
         style={{ animationDuration: '12s' }}
       />
 
       {/* Cyber Grid Floor Accent (Bottom Glow Ring) */}
-      <div className="absolute bottom-0 inset-x-0 h-48 sm:h-72 bg-gradient-to-t from-purple-950/40 via-indigo-950/10 to-transparent pointer-events-none">
-        <div className="absolute bottom-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-cyan-500/60 to-transparent" />
-        <div className="absolute -bottom-16 left-1/2 -translate-x-1/2 w-[700px] sm:w-[1100px] h-[200px] rounded-[100%] border border-cyan-500/30 shadow-[0_0_60px_rgba(6,182,212,0.3)] pointer-events-none opacity-60" />
+      <div className="absolute bottom-0 inset-x-0 h-36 sm:h-72 bg-gradient-to-t from-purple-950/40 via-indigo-950/10 to-transparent pointer-events-none">
+        <div className="absolute bottom-0 inset-x-0 h-0.5 sm:h-1 bg-gradient-to-r from-transparent via-cyan-500/60 to-transparent" />
+        <div className="absolute -bottom-16 left-1/2 -translate-x-1/2 w-[500px] sm:w-[1100px] h-[150px] sm:h-[200px] rounded-[100%] border border-cyan-500/30 shadow-[0_0_60px_rgba(6,182,212,0.3)] pointer-events-none opacity-60" />
       </div>
 
       {/* Light Streak Lines */}
-      <div className="absolute inset-0 opacity-25">
+      <div className="absolute inset-0 opacity-20">
         <div className="absolute top-1/4 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-purple-500/40 to-transparent" />
         <div className="absolute top-3/4 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-cyan-400/40 to-transparent" />
       </div>
 
-      {/* Floating Particles */}
+      {/* Floating Neon Particles */}
       {!reducedMotion && (
         <div className="absolute inset-0 opacity-40">
           <div className="absolute top-1/6 left-1/5 w-1.5 h-1.5 rounded-full bg-purple-400 animate-ping" style={{ animationDuration: '4s' }} />
@@ -56,9 +56,33 @@ export default function GamingBackground({ showSideBadges = false, className = '
         </div>
       )}
 
-      {/* FLOATING MULTI-GAME BADGES (Optional Side Display for Login/Hero) */}
+      {/* MOBILE-FRIENDLY FLOATING EDGE GAMING ICONS (Visible on Mobile & Tablet < 1280px) */}
+      <div className="xl:hidden absolute inset-0 z-0 pointer-events-none opacity-40 overflow-hidden">
+        {/* Top-Left Floating Controller */}
+        <div className={`absolute top-20 left-3 w-8 h-8 rounded-lg bg-purple-600/20 border border-purple-500/30 flex items-center justify-center text-xs text-purple-300 ${reducedMotion ? '' : 'animate-float-slow'}`}>
+          🎮
+        </div>
+        {/* Top-Right Floating Chess */}
+        <div className={`absolute top-28 right-3 w-8 h-8 rounded-lg bg-cyan-600/20 border border-cyan-500/30 flex items-center justify-center text-xs text-cyan-300 ${reducedMotion ? '' : 'animate-float-medium'}`}>
+          ♟️
+        </div>
+        {/* Mid-Left Floating Cards */}
+        <div className={`absolute top-1/2 left-2 w-8 h-8 rounded-lg bg-rose-600/20 border border-rose-500/30 flex items-center justify-center text-xs text-rose-300 ${reducedMotion ? '' : 'animate-float-slow'}`}>
+          🃏
+        </div>
+        {/* Mid-Right Floating BGMI Target */}
+        <div className={`absolute top-2/3 right-3 w-8 h-8 rounded-lg bg-amber-600/20 border border-amber-500/30 flex items-center justify-center text-xs text-amber-300 ${reducedMotion ? '' : 'animate-float-medium'}`}>
+          🎯
+        </div>
+        {/* Bottom-Left Floating Crown */}
+        <div className={`absolute bottom-20 left-4 w-8 h-8 rounded-lg bg-purple-600/20 border border-purple-500/30 flex items-center justify-center text-xs text-purple-300 ${reducedMotion ? '' : 'animate-float-slow'}`}>
+          👑
+        </div>
+      </div>
+
+      {/* DESKTOP FLOATING MULTI-GAME BADGES (Visible on >= 1280px) */}
       {showSideBadges && (
-        <div className="hidden xl:block absolute inset-y-0 right-12 w-80 z-0">
+        <div className="hidden xl:block absolute inset-y-0 right-12 w-80 z-0 pointer-events-none">
           <div className="h-full flex flex-col justify-center gap-6 relative">
             {/* Badge 1: Gamepad / Joystick */}
             <div className={`p-4 rounded-2xl bg-slate-900/60 border border-purple-500/40 backdrop-blur-md shadow-xl flex items-center gap-3 w-48 ml-auto ${reducedMotion ? '' : 'animate-float-slow'}`}>
