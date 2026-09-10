@@ -90,6 +90,14 @@
   animation: float3D 4s ease-in-out infinite !important;
 }
 
+.animate-float-slow {
+  animation: float3D 6s ease-in-out infinite !important;
+}
+
+.animate-float-medium {
+  animation: float3D 4.5s ease-in-out infinite !important;
+}
+
 .animate-pulse-glow {
   animation: pulseGlow 3.5s ease-in-out infinite !important;
 }

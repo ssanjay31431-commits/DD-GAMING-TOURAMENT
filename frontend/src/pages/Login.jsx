@@ -6,6 +6,8 @@ import { useApp } from '../context/AppContext';
 import { playTypingSound } from '../utils/soundEffects';
 import { checkUsernameAvailabilityAPI } from '../utils/api';
 import { touchProps } from '../utils/touchHelper';
+import GamingBackground from '../components/GamingBackground';
+import UniversalLogo from '../components/UniversalLogo';
 
 export default function Login() {
   const { login, registerUser, googleLogin } = useApp();
@@ -108,31 +110,40 @@ export default function Login() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-12 flex items-center justify-center min-h-[75vh] relative">
+    <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-10 flex items-center justify-center min-h-[80vh] relative z-10">
       
+      {/* Reusable Gaming Animated Background with Side Badges */}
+      <GamingBackground showSideBadges={true} />
+
+      {/* Left Side Gamer Graphic Silhouette (Desktop >= 1280px) */}
+      <div className="hidden xl:flex flex-col justify-center items-start absolute left-6 bottom-8 z-0 pointer-events-none opacity-85 select-none">
+        <div className="relative w-80 h-96">
+          {/* Neon Player Silhouette Outline */}
+          <div className="absolute inset-0 bg-gradient-to-tr from-purple-600/30 via-cyan-500/20 to-transparent blur-2xl rounded-full" />
+          <svg className="w-full h-full text-purple-400/80 drop-shadow-[0_0_20px_rgba(168,85,247,0.6)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="0.8">
+            <path d="M12 2a5 5 0 0 1 5 5v2a5 5 0 0 1-10 0V7a5 5 0 0 1 5-5z" />
+            <path d="M19 11v1a7 7 0 0 1-14 0v-1" />
+            <path d="M6 19a6 6 0 0 1 12 0" />
+          </svg>
+        </div>
+        <div className="mt-[-40px] pl-4">
+          <span className="font-heading font-black italic text-lg text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400 block tracking-wider drop-shadow">
+            More Games &bull; More Fun
+          </span>
+          <span className="text-[10px] text-slate-400 font-mono tracking-widest uppercase block mt-0.5">
+            Esports Arena &bull; 2026 Edition
+          </span>
+        </div>
+      </div>
+
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-md bg-slate-900/90 border-2 border-purple-500/40 rounded-3xl p-5 sm:p-8 shadow-2xl glass-panel relative overflow-hidden space-y-4 sm:space-y-6"
+        className="w-full max-w-md bg-slate-950/85 border-2 border-purple-500/50 rounded-3xl p-6 sm:p-8 shadow-[0_0_50px_rgba(168,85,247,0.3)] backdrop-blur-2xl relative overflow-hidden space-y-5 sm:space-y-6 z-10"
       >
-        {/* Header Icon & Title */}
-        <div className="text-center space-y-2">
-          <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-tr from-purple-600 to-cyan-500 p-0.5 shadow-xl shadow-purple-500/30 flex items-center justify-center">
-            <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
-              <span className="text-3xl">🎱</span>
-            </div>
-          </div>
-
-          <h2 className="font-heading font-black text-2xl text-white tracking-wide">
-            {isRegisterMode ? 'CREATE PLAYER ACCOUNT' : 'LOGIN TO DD GAMING'}
-          </h2>
-          <p className="text-xs text-slate-400">
-            {isRegisterMode
-              ? 'Join 8 Ball Pool tournaments & claim cash prize rewards'
-              : 'Enter your player credentials to access tournaments'}
-          </p>
-        </div>
+        {/* Universal DD Gaming Logo Emblem Header */}
+        <UniversalLogo variant="login" showSubtitle={true} />
 
         {/* Auth Mode Tabs (Sign In / Create Account) */}
         <div className="flex bg-slate-950/80 p-1.5 rounded-2xl border border-slate-800">

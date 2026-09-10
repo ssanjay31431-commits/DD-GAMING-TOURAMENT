@@ -9,6 +9,8 @@ import { useApp } from '../context/AppContext';
 import { touchProps, handleTouchOrClick } from '../utils/touchHelper';
 import { playClickSound } from '../utils/soundEffects';
 
+import UniversalLogo from './UniversalLogo';
+
 export default function Navbar() {
   const { 
     activePage, navigateTo, isLoggedIn, logout, userProfile, soundActive, toggleSound, 
@@ -21,7 +23,7 @@ export default function Navbar() {
 
   const primaryNavLinks = [
     { id: 'home', label: 'Home' },
-    { id: 'tournaments', label: 'Tournaments', badge: '🎱 8 Ball' },
+    { id: 'tournaments', label: 'Tournaments', badge: '🎮 Multi-Game' },
     { id: 'my-tournaments', label: 'My Tournaments', badge: '🎟️ My Tickets' },
     { id: 'live', label: 'Watch Live', badge: '🔴 LIVE' },
     { id: 'games', label: 'Games' },
@@ -66,48 +68,15 @@ export default function Navbar() {
       {/* ========================================================= */}
       {/* TOP HEADER (DESKTOP HORIZONTAL NAVBAR + COMPACT MOBILE HEADER) */}
       {/* ========================================================= */}
-      <header className="sticky top-0 z-[90] w-full glass-panel border-b border-white/10 backdrop-blur-xl">
+      <header className="sticky top-0 z-[90] w-full glass-panel border-b border-purple-500/30 backdrop-blur-xl bg-slate-950/90 shadow-lg shadow-purple-950/20">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 sm:h-20">
             
             {/* BRAND LOGO (DESKTOP & MOBILE) */}
-            <button
-              {...touchProps(() => {
-                if (isLoggedIn) handleNavClick('home', 'BRAND_LOGO');
-              })}
-              className="flex items-center gap-2.5 sm:gap-3 group text-left focus:outline-none shrink-0 cursor-pointer touch-manipulation"
-            >
-              <div className="relative w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-purple-600 via-indigo-600 to-cyan-500 p-0.5 shadow-lg shadow-purple-500/20 group-hover:scale-105 transition-transform duration-300">
-                <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center relative overflow-hidden">
-                  <span className="font-heading font-black text-base sm:text-xl text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400">
-                    DD
-                  </span>
-                  <div className="absolute -bottom-1 -right-1 text-[9px] sm:text-[10px]">🎱</div>
-                </div>
-              </div>
-
-              {/* Desktop Full Logo Text */}
-              <div className="hidden sm:block">
-                <div className="flex items-center gap-1.5">
-                  <span className="font-heading font-extrabold text-lg sm:text-xl tracking-wider text-white">
-                    DD <span className="text-purple-400">GAMING</span>
-                  </span>
-                  <span className="px-1.5 py-0.5 rounded bg-purple-500/20 border border-purple-500/30 text-[10px] font-bold text-purple-300 uppercase tracking-widest">
-                    ESPORTS
-                  </span>
-                </div>
-                <p className="text-[10px] font-subheading font-bold text-slate-400 tracking-widest uppercase">
-                  PLAY • COMPETE • WIN
-                </p>
-              </div>
-
-              {/* Mobile Compact Logo Badge */}
-              <div className="sm:hidden flex items-center gap-1">
-                <span className="font-heading font-black text-sm tracking-wider text-white">
-                  DD <span className="text-purple-400">GAMING</span>
-                </span>
-              </div>
-            </button>
+            <div {...touchProps(() => { if (isLoggedIn) handleNavClick('home', 'BRAND_LOGO'); })}>
+              <UniversalLogo variant="header" className="hidden sm:flex" />
+              <UniversalLogo variant="compact" className="sm:hidden flex" />
+            </div>
 
             {/* MOBILE COMPACT CENTER TITLE (< 1024px) */}
             <div className="lg:hidden flex-1 min-w-0 flex items-center justify-center px-2 overflow-hidden">

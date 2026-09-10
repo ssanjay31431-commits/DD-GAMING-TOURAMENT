@@ -90,7 +90,7 @@ export default function Home() {
               >
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
                 <span className="text-xs font-extrabold uppercase text-purple-300 tracking-wider">
-                  🎱 DD 8 Ball Pool Main Arena • 32 Fixed Slots
+                  🎮 Multi-Game Esports Arena &bull; Certified Tournaments
                 </span>
               </motion.div>
 

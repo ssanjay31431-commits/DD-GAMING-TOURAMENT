@@ -107,10 +107,13 @@ export default function LoginSuccessTransitionModal() {
                 <div className="absolute inset-0 rounded-full border-2 border-dashed border-purple-400/60 animate-spin-slow" />
                 <div className="absolute inset-2 rounded-full border-2 border-cyan-400/40 animate-reverse-spin" />
                 
-                {/* 8 Ball / DD Gaming Logo Emblem */}
-                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-slate-950 border-2 border-purple-500 shadow-[0_0_30px_rgba(168,85,247,0.6)] flex items-center justify-center relative">
-                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white flex items-center justify-center shadow-inner">
-                    <span className="font-heading font-black text-xs sm:text-sm text-slate-950">8</span>
+                {/* Universal DD Gaming Logo Emblem */}
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-cyan-400 p-0.5 shadow-[0_0_35px_rgba(168,85,247,0.8)] flex items-center justify-center relative">
+                  <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center relative overflow-hidden">
+                    <span className="font-heading font-black italic text-2xl sm:text-3xl text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-cyan-300 to-indigo-300 tracking-tighter">
+                      DD
+                    </span>
+                    <div className="absolute -top-0.5 right-1 text-xs">👑</div>
                   </div>
                 </div>
               </motion.div>
