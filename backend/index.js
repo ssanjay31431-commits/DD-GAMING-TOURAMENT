@@ -620,7 +620,17 @@ app.post('/api/auth/google', async (req, res) => {
         user.gamingUsername = await generateUniqueGamingUsername(name || user.email.split('@')[0]);
       }
 
-      await user.save();
+      try {
+        await user.save();
+      } catch (saveErr) {
+        if (saveErr.code === 11000) {
+          console.warn('⚠️ [Google Auth Warning] Duplicate key collision on existing user update:', saveErr.message);
+          user.playerId = `DD-GAME-${Date.now()}`;
+          await user.save();
+        } else {
+          throw saveErr;
+        }
+      }
       console.log(`✅ Existing Google User updated in MongoDB: ${user.email} (lastLoginAt: ${now.toISOString()})`);
     } else {
       // First-time sign in -> Create new User document in MongoDB
@@ -644,7 +654,18 @@ app.post('/api/auth/google', async (req, res) => {
         rank: 'UNRANKED'
       });
 
-      await user.save();
+      try {
+        await user.save();
+      } catch (saveErr) {
+        if (saveErr.code === 11000) {
+          console.warn('⚠️ [Google Auth Warning] Duplicate key collision on new user creation:', saveErr.message);
+          user.playerId = `DD-GAME-${Date.now()}`;
+          user.gamingUsername = `${cleanName.replace(/[^a-zA-Z0-9_]/g, '_')}_${Date.now().toString().slice(-4)}`;
+          await user.save();
+        } else {
+          throw saveErr;
+        }
+      }
       console.log(`✅ New Google User created & saved in MongoDB: ${user.email} (ID: ${user._id})`);
     }
 
@@ -657,7 +678,14 @@ app.post('/api/auth/google', async (req, res) => {
     return res.json({ token, user });
 
   } catch (err) {
-    console.error('❌ Google authentication error:', err.message || err);
+    console.error('❌ [Google Auth Error]');
+    console.error('  Error Name:', err.name || 'Error');
+    console.error('  Error Message:', err.message);
+    if (err.stack) console.error('  Stack Trace:', err.stack);
+
+    if (err.code === 11000) {
+      return res.status(409).json({ message: 'Account creation conflict: A user record with these credentials already exists.' });
+    }
     return res.status(500).json({ message: 'Authentication service error. Please try again.' });
   }
 });
