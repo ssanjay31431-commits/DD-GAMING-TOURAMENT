@@ -53,13 +53,18 @@ export default function Login() {
     onError: (errorResponse) => {
       setIsLoadingGoogle(false);
       console.warn('Google OAuth error notice:', errorResponse);
-      if (errorResponse?.error && errorResponse.error !== 'popup_closed_by_user') {
-        setErrorMsg('Google Sign-In was cancelled or failed.');
+      if (errorResponse?.error === 'popup_closed_by_user') {
+        setErrorMsg('Google Sign-In popup was closed. Please try again or sign in with Email.');
+      } else {
+        setErrorMsg(errorResponse?.error_description || 'Google Sign-In failed or was cancelled. Please try again or use Email.');
       }
     },
     onNonOAuthError: (nonOAuthError) => {
       setIsLoadingGoogle(false);
       console.warn('Google non-OAuth notice:', nonOAuthError);
+      if (nonOAuthError?.type !== 'popup_closed') {
+        setErrorMsg('Google Sign-In popup blocked or unavailable on this browser. Please use Email Sign-In.');
+      }
     }
   });
 
@@ -71,7 +76,7 @@ export default function Login() {
       triggerGoogleOAuth();
     } catch (err) {
       setIsLoadingGoogle(false);
-      setErrorMsg('Could not open Google Sign-In popup. Please check your browser popup settings.');
+      setErrorMsg('Could not open Google Sign-In popup. Please check browser popup settings or sign in with Email.');
     }
   };
 
@@ -195,7 +200,7 @@ export default function Login() {
         <button
           type="button"
           disabled={isLoadingGoogle}
-          onClick={handleGoogleAuthClick}
+          {...touchProps(handleGoogleAuthClick)}
           className="w-full py-3 rounded-2xl bg-white text-slate-900 font-bold text-sm flex items-center justify-center gap-3 hover:bg-slate-100 transition-all shadow-md active:scale-98 disabled:opacity-75 cursor-pointer touch-manipulation"
         >
           {isLoadingGoogle ? (

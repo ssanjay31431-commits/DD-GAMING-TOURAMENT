@@ -21,7 +21,7 @@ mongoose.set('bufferCommands', false);
 const app = express();
 
 app.use((req, res, next) => {
-  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
+  res.setHeader('Cross-Origin-Opener-Policy', 'unsafe-none');
   next();
 });
 

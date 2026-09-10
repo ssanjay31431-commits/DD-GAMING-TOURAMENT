@@ -333,7 +333,8 @@ export default function Navbar() {
                   >
                     <div className="w-5 h-5 rounded-full overflow-hidden border border-purple-400 shrink-0">
                       <img
-                        src={userProfile?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150'}
+                        src={(userProfile?.avatar && typeof userProfile.avatar === 'string' && (userProfile.avatar.startsWith('http') || userProfile.avatar.startsWith('data:') || userProfile.avatar.startsWith('/'))) ? userProfile.avatar : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150'}
+                        onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150'; }}
                         alt={userProfile?.name || 'Player'}
                         className="w-full h-full object-cover"
                       />
@@ -383,7 +384,8 @@ export default function Navbar() {
                   {isLoggedIn && (
                     <div className="w-5 h-5 rounded-full overflow-hidden border border-purple-400 shrink-0 pointer-events-none">
                       <img
-                        src={userProfile?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150'}
+                        src={(userProfile?.avatar && typeof userProfile.avatar === 'string' && (userProfile.avatar.startsWith('http') || userProfile.avatar.startsWith('data:') || userProfile.avatar.startsWith('/'))) ? userProfile.avatar : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150'}
+                        onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150'; }}
                         alt={userProfile?.name || 'Player'}
                         className="w-full h-full object-cover"
                       />
