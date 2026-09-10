@@ -9,44 +9,80 @@ import FloatingAdsCarousel from '../components/FloatingAdsCarousel';
 export default function Home() {
   const { tournaments, navigateTo, openTournamentDetail, openRegistrationModal, faqs, isAlreadyRegisteredForTournament } = useApp();
 
-  const upcomingTrn = tournaments.find(t => t.status === 'Upcoming');
-  const poolSpecial = tournaments.find(t => t.is8BallSpecial && t.status === 'Registration Open') || tournaments[0];
+  const [selectedActiveId, setSelectedActiveId] = useState(null);
+
+  // Active tournaments with Open or Upcoming status
+  const activeTournaments = tournaments.filter(t => 
+    t.status === 'Registration Open' || t.status === 'Almost Full' || t.status === 'Upcoming'
+  );
+
+  const displayList = activeTournaments.length > 0 ? activeTournaments : tournaments;
+
+  // Selected tournament to highlight in Showcase Hero
+  const selectedTrn = displayList.find(t => t.id === selectedActiveId) || displayList[0];
+
   const featuredTournaments = tournaments.slice(0, 3);
 
-  // Live Countdown Timer for Upcoming Event
+  // Live Countdown Timer for Selected Active Tournament
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
   useEffect(() => {
-    const targetTrn = upcomingTrn || poolSpecial;
-    if (!targetTrn) return;
+    if (!selectedTrn) return;
 
-    const parseTargetDate = () => {
-      const dateStr = targetTrn.registrationStartDate || targetTrn.date;
-      const timeStr = targetTrn.registrationStartTime || targetTrn.time;
-      if (!dateStr) return new Date(Date.now() + 24 * 3600 * 1000);
+    const parseTargetTimestamp = () => {
+      const isUpcoming = selectedTrn.status === 'Upcoming';
+      const dateStr = isUpcoming ? (selectedTrn.registrationStartDate || selectedTrn.date) : selectedTrn.date;
+      const timeStr = isUpcoming ? (selectedTrn.registrationStartTime || selectedTrn.time) : selectedTrn.time;
 
-      const parts = String(dateStr).split('T')[0].split('-').map(Number);
-      if (parts.length === 3 && !isNaN(parts[0])) {
-        let hrs = 12, mins = 0;
-        if (timeStr) {
-          const match = String(timeStr).match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
-          if (match) {
-            hrs = parseInt(match[1], 10);
-            mins = parseInt(match[2], 10);
-            const ampm = match[3] ? match[3].toUpperCase() : null;
-            if (ampm === 'PM' && hrs < 12) hrs += 12;
-            if (ampm === 'AM' && hrs === 12) hrs = 0;
+      const now = new Date();
+
+      if (dateStr && String(dateStr).includes('-')) {
+        const parts = String(dateStr).split('T')[0].split('-').map(Number);
+        if (parts.length === 3 && !isNaN(parts[0])) {
+          let hrs = 20, mins = 0;
+          if (timeStr) {
+            const match = String(timeStr).match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+            if (match) {
+              hrs = parseInt(match[1], 10);
+              mins = parseInt(match[2], 10);
+              const ampm = match[3] ? match[3].toUpperCase() : null;
+              if (ampm === 'PM' && hrs < 12) hrs += 12;
+              if (ampm === 'AM' && hrs === 12) hrs = 0;
+            }
+          }
+          const target = new Date(parts[0], parts[1] - 1, parts[2], hrs, mins, 0);
+          if (target.getTime() > now.getTime()) {
+            return target.getTime();
           }
         }
-        return new Date(parts[0], parts[1] - 1, parts[2], hrs, mins, 0);
       }
-      return new Date(Date.now() + 18 * 3600 * 1000);
+
+      // If match date is today or passed, calculate time to scheduled daily match time
+      let defaultHrs = 20, defaultMins = 0;
+      if (timeStr) {
+        const match = String(timeStr).match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+        if (match) {
+          defaultHrs = parseInt(match[1], 10);
+          defaultMins = parseInt(match[2], 10);
+          const ampm = match[3] ? match[3].toUpperCase() : null;
+          if (ampm === 'PM' && defaultHrs < 12) defaultHrs += 12;
+          if (ampm === 'AM' && defaultHrs === 12) defaultHrs = 0;
+        }
+      }
+
+      const todayTarget = new Date(now.getFullYear(), now.getMonth(), now.getDate(), defaultHrs, defaultMins, 0);
+      if (todayTarget.getTime() > now.getTime()) {
+        return todayTarget.getTime();
+      } else {
+        const tomorrowTarget = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, defaultHrs, defaultMins, 0);
+        return tomorrowTarget.getTime();
+      }
     };
 
     const updateTimer = () => {
-      const target = parseTargetDate();
-      const now = new Date();
-      const diff = target.getTime() - now.getTime();
+      const targetTime = parseTargetTimestamp();
+      const now = Date.now();
+      const diff = targetTime - now;
 
       if (diff <= 0) {
         setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
@@ -64,7 +100,7 @@ export default function Home() {
     updateTimer();
     const timerId = setInterval(updateTimer, 1000);
     return () => clearInterval(timerId);
-  }, [upcomingTrn, poolSpecial]);
+  }, [selectedTrn]);
 
   const [openFaqIndex, setOpenFaqIndex] = useState(0);
 
@@ -177,19 +213,19 @@ export default function Home() {
             
             <div className="pt-2 md:pt-0">
               <div className="font-heading font-black text-2xl sm:text-3xl text-gradient-purple">
-                8 Ball Pool
+                Multi-Game
               </div>
               <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1">
-                Main Launch Game
+                6 Active Titles
               </p>
             </div>
 
             <div className="pt-2 md:pt-0">
               <div className="font-heading font-black text-2xl sm:text-3xl text-gradient-cyan">
-                ₹100 Entry
+                Custom Entry
               </div>
               <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1">
-                32 Fixed Slots
+                Fixed Slots
               </p>
             </div>
 
@@ -204,7 +240,7 @@ export default function Home() {
 
             <div className="pt-2 md:pt-0">
               <div className="font-heading font-black text-2xl sm:text-3xl text-purple-400">
-                1v1 Duels
+                Solo & Squad
               </div>
               <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1">
                 Competitive Matchmaking
@@ -213,10 +249,10 @@ export default function Home() {
 
             <div className="pt-2 md:pt-0 col-span-2 md:col-span-1">
               <div className="font-heading font-black text-2xl sm:text-3xl text-emerald-400">
-                6 Games
+                Instant UPI
               </div>
               <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1">
-                Platform Ecosystem
+                Transparent Payouts
               </p>
             </div>
 
@@ -224,44 +260,73 @@ export default function Home() {
         </div>
       </section>
 
-      {/* EXAMPLE EVENT SHOWCASE */}
+      {/* CURRENT ACTIVE GAME REGISTRATION SHOWCASE */}
       <section className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="p-8 sm:p-10 rounded-3xl bg-gradient-to-br from-purple-950/80 via-slate-900 to-indigo-950/90 border border-purple-500/40 shadow-2xl relative overflow-hidden">
+        <div className="p-6 sm:p-10 rounded-3xl bg-gradient-to-br from-purple-950/80 via-slate-900 to-indigo-950/90 border border-purple-500/40 shadow-2xl relative overflow-hidden">
           
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
             
             <div className="lg:col-span-7 space-y-4">
-              <div className="flex items-center gap-2">
-                <span className="text-3xl">🎮</span>
-                <span className="px-3 py-1 rounded-full text-xs font-black bg-purple-500/20 text-purple-300 border border-purple-500/40 uppercase tracking-wider">
-                  UNIVERSAL MULTI-GAME TOURNAMENT FORMAT
+              
+              {/* Game Selection Tabs */}
+              <div className="flex flex-wrap items-center gap-2 pb-2">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mr-1">
+                  Active Registration Games:
+                </span>
+                {displayList.slice(0, 6).map((trn) => (
+                  <button
+                    key={trn.id}
+                    onClick={() => setSelectedActiveId(trn.id)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer ${
+                      selectedTrn?.id === trn.id
+                        ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/30 border border-purple-400 scale-105'
+                        : 'bg-slate-950/80 text-slate-300 border border-slate-800 hover:border-purple-500/50'
+                    }`}
+                  >
+                    <span>{trn.gameIcon || '🎮'}</span>
+                    <span>{trn.game || trn.title}</span>
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse ml-0.5" />
+                  </button>
+                ))}
+              </div>
+
+              {/* Game Badge & Registration Status */}
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="px-3 py-1 rounded-full text-xs font-black bg-purple-500/20 text-purple-300 border border-purple-500/40 uppercase tracking-wider inline-flex items-center gap-1.5">
+                  <span>{selectedTrn?.gameIcon || '🎮'}</span>
+                  <span>{selectedTrn?.game?.toUpperCase() || 'MULTI-GAME'} REGISTRATION</span>
+                </span>
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 uppercase">
+                  🟢 {selectedTrn?.status || 'Registration Open'}
                 </span>
               </div>
 
-              <h2 className="font-heading font-black text-3xl sm:text-4xl text-white">
-                DD UNIVERSAL ESPORTS GRAND CLASH
+              <h2 className="font-heading font-black text-3xl sm:text-4xl text-white tracking-tight">
+                {selectedTrn?.title || 'DD Universal Esports Grand Clash'}
               </h2>
 
               <p className="text-sm text-slate-300 leading-relaxed">
-                Multi-game tournament platform — compete daily in <strong>BGMI, Free Fire, Ludo King, 8 Ball Pool, Chess, and Carrom Pool</strong> — instant slot bookings, guaranteed prize payouts, and real-time live standings.
+                Official tournament for <strong className="text-purple-300">{selectedTrn?.game || 'Esports'}</strong>. Match scheduled for <strong className="text-cyan-300">{selectedTrn?.date || 'Today'} at {selectedTrn?.time || '08:00 PM IST'}</strong>. Lock in your slot now!
               </p>
 
-              {/* Supported Multi-Game Badges */}
-              <div className="flex flex-wrap items-center gap-2 pt-1">
-                <span className="px-2.5 py-1 rounded-lg bg-slate-950 border border-purple-500/30 text-xs font-bold text-slate-200">🎯 BGMI</span>
-                <span className="px-2.5 py-1 rounded-lg bg-slate-950 border border-orange-500/30 text-xs font-bold text-slate-200">🔥 Free Fire</span>
-                <span className="px-2.5 py-1 rounded-lg bg-slate-950 border border-emerald-500/30 text-xs font-bold text-slate-200">🎲 Ludo King</span>
-                <span className="px-2.5 py-1 rounded-lg bg-slate-950 border border-cyan-500/30 text-xs font-bold text-slate-200">🎱 8 Ball Pool</span>
-                <span className="px-2.5 py-1 rounded-lg bg-slate-950 border border-amber-500/30 text-xs font-bold text-slate-200">♟ Chess</span>
-                <span className="px-2.5 py-1 rounded-lg bg-slate-950 border border-blue-500/30 text-xs font-bold text-slate-200">🥏 Carrom Pool</span>
-              </div>
-
-              {/* Countdown Box */}
+              {/* Live Real Countdown Box */}
               <div className="pt-2">
-                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
-                  Registration Closes In:
+                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                  <Clock className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>REGISTRATION CLOSES IN FOR {selectedTrn?.game?.toUpperCase() || 'THIS MATCH'}:</span>
                 </p>
                 <div className="flex items-center gap-3">
+                  {countdown.days > 0 && (
+                    <>
+                      <div className="bg-slate-950 px-3.5 py-2 rounded-xl border border-purple-500/30 text-center">
+                        <span className="font-mono font-black text-xl text-purple-400">
+                          {String(countdown.days).padStart(2, '0')}
+                        </span>
+                        <span className="block text-[9px] text-slate-500 uppercase font-bold">Days</span>
+                      </div>
+                      <span className="text-lg font-bold text-purple-500">:</span>
+                    </>
+                  )}
                   <div className="bg-slate-950 px-3.5 py-2 rounded-xl border border-purple-500/30 text-center">
                     <span className="font-mono font-black text-xl text-purple-400">
                       {String(countdown.hours).padStart(2, '0')}
@@ -290,30 +355,40 @@ export default function Home() {
             <div className="lg:col-span-5">
               <div className="p-6 rounded-2xl bg-slate-950/90 border border-purple-500/30 space-y-4">
                 <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                  <span className="text-xs font-bold text-slate-400 uppercase">Selected Game</span>
+                  <span className="font-heading font-extrabold text-base text-cyan-300 flex items-center gap-1.5">
+                    <span>{selectedTrn?.gameIcon || '🎮'}</span>
+                    <span>{selectedTrn?.game || 'Multi-Game'}</span>
+                  </span>
+                </div>
+                <div className="flex items-center justify-between pb-3 border-b border-slate-800">
                   <span className="text-xs font-bold text-slate-400 uppercase">Announced Prize Pool</span>
-                  <span className="font-mono font-black text-2xl text-amber-400">₹2,500</span>
+                  <span className="font-mono font-black text-2xl text-amber-400">₹{(selectedTrn?.prizePool || 2500).toLocaleString()}</span>
                 </div>
                 <div className="flex items-center justify-between pb-3 border-b border-slate-800">
                   <span className="text-xs font-bold text-slate-400 uppercase">Entry Fee</span>
-                  <span className="font-mono font-bold text-lg text-emerald-400">₹100</span>
+                  <span className="font-mono font-bold text-lg text-emerald-400">₹{selectedTrn?.entryFee || 100}</span>
                 </div>
                 <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                  <span className="text-xs font-bold text-slate-400 uppercase">Fixed Slots</span>
-                  <span className="font-mono font-bold text-sm text-purple-300">32 Slots Total</span>
+                  <span className="text-xs font-bold text-slate-400 uppercase">Slot Capacity</span>
+                  <span className="font-mono font-bold text-sm text-purple-300">
+                    {selectedTrn?.registeredSlots || 0} / {selectedTrn?.totalSlots || 32} Slots Booked
+                  </span>
                 </div>
 
                 <button
-                  onClick={() => navigateTo('tournaments')}
-                  className="w-full py-3.5 rounded-xl font-heading font-black text-sm text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-lg shadow-purple-500/30 transition-all flex items-center justify-center gap-2"
+                  onClick={() => openRegistrationModal(selectedTrn)}
+                  className="w-full py-3.5 rounded-xl font-heading font-black text-sm text-white bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 shadow-lg shadow-purple-500/30 transition-all flex items-center justify-center gap-2 uppercase tracking-wider cursor-pointer"
                 >
-                  JOIN ESPORTS EVENT (₹100)
+                  <Gamepad2 className="w-4 h-4" />
+                  JOIN {selectedTrn?.game?.toUpperCase() || 'EVENT'} (₹{selectedTrn?.entryFee || 100})
                 </button>
                 
                 <button
-                  onClick={() => navigateTo('how-it-works')}
-                  className="w-full py-2.5 rounded-xl text-xs font-bold text-slate-400 bg-slate-900 border border-slate-800 hover:text-white transition-all text-center"
+                  onClick={() => openTournamentDetail(selectedTrn)}
+                  className="w-full py-2.5 rounded-xl text-xs font-bold text-slate-400 bg-slate-900 border border-slate-800 hover:text-white transition-all text-center cursor-pointer"
                 >
-                  VIEW RULES & ELIGIBILITY
+                  VIEW FULL RULES & MATCH DETAILS
                 </button>
               </div>
             </div>

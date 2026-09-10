@@ -1,4 +1,183 @@
-export const INITIAL_TOURNAMENTS = [];
+const getTodayStr = () => {
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+};
+
+export const INITIAL_TOURNAMENTS = [
+  {
+    id: 'trn-bgmi-01',
+    title: 'DD BGMI Battle Royale Championship',
+    game: 'BGMI',
+    gameCode: 'bgmi',
+    gameIcon: '🎯',
+    banner: '/assets/banners/bgmi_banner.jpg',
+    date: getTodayStr(),
+    time: '08:00 PM IST',
+    entryFee: 150,
+    totalSlots: 100,
+    registeredSlots: 48,
+    prizePool: 5000,
+    status: 'Registration Open',
+    registrationStartDate: getTodayStr(),
+    registrationStartTime: '10:00 AM IST',
+    format: 'Squad Custom Room',
+    mode: 'Standard',
+    entryType: 'Squad',
+    teamSize: 4,
+    description: 'BGMI Battle Royale Squad Tournament. Complete custom room match with live stream coverage.',
+    rules: ['1. No emulators allowed.', '2. Submit victory screenshot at match end.'],
+    prizes: [
+      { rank: '1st Place (Chicken Dinner)', amount: 3000 },
+      { rank: '2nd Place', amount: 1200 },
+      { rank: '3rd Place', amount: 800 }
+    ],
+    isFeatured: true
+  },
+  {
+    id: 'trn-8ball-01',
+    title: 'DD 8 Ball Pool Super Clash',
+    game: '8 Ball Pool',
+    gameCode: '8ball',
+    gameIcon: '🎱',
+    banner: '/assets/banners/8ball_banner.jpg',
+    date: getTodayStr(),
+    time: '08:30 PM IST',
+    entryFee: 100,
+    totalSlots: 32,
+    registeredSlots: 18,
+    prizePool: 2500,
+    status: 'Registration Open',
+    registrationStartDate: getTodayStr(),
+    registrationStartTime: '10:00 AM IST',
+    format: '1v1 Knockout',
+    mode: 'Standard',
+    entryType: 'Solo',
+    teamSize: 1,
+    description: 'Official DD 8 Ball Pool 1v1 Elimination Tournament. High stakes cue showdown.',
+    rules: ['1. Standard Miniclip 8 Ball Pool rules.', '2. Winner submits victory screenshot.'],
+    prizes: [
+      { rank: '1st Place', amount: 1600 },
+      { rank: '2nd Place', amount: 900 }
+    ],
+    isFeatured: true,
+    is8BallSpecial: true
+  },
+  {
+    id: 'trn-freefire-01',
+    title: 'DD Free Fire Booyah Showcase',
+    game: 'Free Fire',
+    gameCode: 'freefire',
+    gameIcon: '🔥',
+    banner: '/assets/banners/freefire_banner.jpg',
+    date: getTodayStr(),
+    time: '09:00 PM IST',
+    entryFee: 80,
+    totalSlots: 48,
+    registeredSlots: 22,
+    prizePool: 3000,
+    status: 'Registration Open',
+    registrationStartDate: getTodayStr(),
+    registrationStartTime: '10:00 AM IST',
+    format: 'Duo & Squad Clash',
+    mode: 'Standard',
+    entryType: 'Duo',
+    teamSize: 2,
+    description: 'Free Fire Booyah Clash. Survive to claim victory and guaranteed cash prizes.',
+    rules: ['1. Mobile devices only.', '2. Submit victory screenshot.'],
+    prizes: [
+      { rank: '1st Place (Booyah)', amount: 1800 },
+      { rank: '2nd Place', amount: 1200 }
+    ],
+    isFeatured: true
+  },
+  {
+    id: 'trn-ludo-01',
+    title: 'DD Ludo King Master Arena',
+    game: 'Ludo King',
+    gameCode: 'ludo',
+    gameIcon: '🎲',
+    banner: '/assets/banners/ludo_banner.jpg',
+    date: getTodayStr(),
+    time: '07:30 PM IST',
+    entryFee: 50,
+    totalSlots: 16,
+    registeredSlots: 9,
+    prizePool: 1000,
+    status: 'Registration Open',
+    registrationStartDate: getTodayStr(),
+    registrationStartTime: '10:00 AM IST',
+    format: '4-Player Board Elimination',
+    mode: 'Standard',
+    entryType: 'Solo',
+    teamSize: 1,
+    description: 'Ludo King 4-player multiplayer board contest. Fast roll matches.',
+    rules: ['1. Classic Ludo rules.', '2. Winner submits victory screenshot.'],
+    prizes: [
+      { rank: '1st Place', amount: 700 },
+      { rank: '2nd Place', amount: 300 }
+    ],
+    isFeatured: false
+  },
+  {
+    id: 'trn-chess-01',
+    title: 'DD Chess Grandmaster Clash',
+    game: 'Chess',
+    gameCode: 'chess',
+    gameIcon: '♟',
+    banner: '/assets/banners/chess_banner.jpg',
+    date: getTodayStr(),
+    time: '09:30 PM IST',
+    entryFee: 60,
+    totalSlots: 32,
+    registeredSlots: 12,
+    prizePool: 1500,
+    status: 'Registration Open',
+    registrationStartDate: getTodayStr(),
+    registrationStartTime: '10:00 AM IST',
+    format: '1v1 Blitz Arena',
+    mode: 'Standard',
+    entryType: 'Solo',
+    teamSize: 1,
+    description: 'Chess 1v1 Blitz Tournament. Checkmate your opponent for instant cash rewards.',
+    rules: ['1. 5 min blitz game format.', '2. Winner submits victory screenshot.'],
+    prizes: [
+      { rank: '1st Place', amount: 1000 },
+      { rank: '2nd Place', amount: 500 }
+    ],
+    isFeatured: false
+  },
+  {
+    id: 'trn-carrom-01',
+    title: 'DD Carrom Pool Striker Series',
+    game: 'Carrom Pool',
+    gameCode: 'carrom',
+    gameIcon: '🥏',
+    banner: '/assets/banners/carrom_banner.jpg',
+    date: getTodayStr(),
+    time: '08:15 PM IST',
+    entryFee: 40,
+    totalSlots: 16,
+    registeredSlots: 6,
+    prizePool: 1200,
+    status: 'Registration Open',
+    registrationStartDate: getTodayStr(),
+    registrationStartTime: '10:00 AM IST',
+    format: '1v1 Board Strike',
+    mode: 'Standard',
+    entryType: 'Solo',
+    teamSize: 1,
+    description: 'Carrom Pool 1v1 Board Tournament. Pocket all pieces to take the cash pool.',
+    rules: ['1. Standard Carrom Pool rules.', '2. Winner submits victory screenshot.'],
+    prizes: [
+      { rank: '1st Place', amount: 800 },
+      { rank: '2nd Place', amount: 400 }
+    ],
+    isFeatured: false
+  }
+];
 
 export const GAMES_LIST = [
   {
