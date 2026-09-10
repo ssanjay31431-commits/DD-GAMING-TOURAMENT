@@ -48,6 +48,7 @@ export default function Login() {
   const triggerGoogleOAuth = useGoogleLogin({
     flow: 'implicit',
     ux_mode: 'popup',
+    prompt: 'select_account',
     onSuccess: (tokenResponse) => {
       setIsLoadingGoogle(false);
       googleLogin(tokenResponse);

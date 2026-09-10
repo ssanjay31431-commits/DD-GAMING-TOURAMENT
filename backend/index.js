@@ -307,6 +307,53 @@ app.get('/api/tournaments', async (req, res) => {
   res.json(INITIAL_TOURNAMENTS);
 });
 
+// HELPER: Generate guaranteed unique Player ID
+async function generateUniquePlayerId() {
+  let isUnique = false;
+  let playerId = '';
+  let attempts = 0;
+  while (!isUnique && attempts < 100) {
+    attempts++;
+    const randomNum = Math.floor(100000 + Math.random() * 900000);
+    playerId = `DD-GAME-${randomNum}`;
+    if (isDbConnected && mongoose.connection.readyState === 1) {
+      const existing = await User.findOne({ playerId });
+      if (!existing) isUnique = true;
+    } else {
+      isUnique = true;
+    }
+  }
+  if (!isUnique) {
+    playerId = `DD-GAME-${Date.now()}`;
+  }
+  return playerId;
+}
+
+// HELPER: Generate guaranteed unique Gaming Username for Google sign ups
+async function generateUniqueGamingUsername(baseName) {
+  const clean = (baseName || 'Player').replace(/[^a-zA-Z0-9_]/g, '_').substring(0, 15);
+  let candidate = `${clean}_DD`;
+  let isUnique = false;
+  let attempts = 0;
+  while (!isUnique && attempts < 100) {
+    attempts++;
+    if (isDbConnected && mongoose.connection.readyState === 1) {
+      const existing = await User.findOne({ gamingUsername: candidate });
+      if (!existing) {
+        isUnique = true;
+      } else {
+        candidate = `${clean}_${Math.floor(1000 + Math.random() * 9000)}`;
+      }
+    } else {
+      isUnique = true;
+    }
+  }
+  if (!isUnique) {
+    candidate = `${clean}_${Date.now().toString().slice(-4)}`;
+  }
+  return candidate;
+}
+
 // AUTH: Register
 app.post('/api/auth/register', async (req, res) => {
   try {
@@ -343,7 +390,7 @@ app.post('/api/auth/register', async (req, res) => {
       }
 
       const hashedPassword = await bcrypt.hash(password, 10);
-      const playerId = `DD-8B-${Math.floor(1000 + Math.random() * 9000)}`;
+      const playerId = await generateUniquePlayerId();
 
       const newUser = new User({
         name: fullName || normalizedEmail.split('@')[0],
@@ -356,7 +403,16 @@ app.post('/api/auth/register', async (req, res) => {
         lastLoginAt: now
       });
 
-      await newUser.save();
+      try {
+        await newUser.save();
+      } catch (saveErr) {
+        if (saveErr.code === 11000) {
+          newUser.playerId = `DD-GAME-${Date.now()}`;
+          await newUser.save();
+        } else {
+          throw saveErr;
+        }
+      }
       const token = jwt.sign({ userId: newUser._id, email: newUser.email }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
       return res.status(201).json({ token, user: newUser });
     }
@@ -553,9 +609,9 @@ app.post('/api/auth/google', async (req, res) => {
         console.log(`✅ Existing Google User updated in MongoDB: ${user.email} (lastLoginAt: ${now.toISOString()})`);
       } else {
         // First-time sign in -> Create new User document in MongoDB
-        const playerId = `DD-8B-${Math.floor(1000 + Math.random() * 9000)}`;
         const cleanName = name || normalizedEmail.split('@')[0];
-        const gamingUsername = `${cleanName.replace(/\s+/g, '_')}_8Ball`;
+        const playerId = await generateUniquePlayerId();
+        const gamingUsername = await generateUniqueGamingUsername(cleanName);
 
         user = new User({
           name: cleanName,
@@ -572,7 +628,19 @@ app.post('/api/auth/google', async (req, res) => {
           ddPoints: 50,
           rank: 'UNRANKED'
         });
-        await user.save();
+
+        try {
+          await user.save();
+        } catch (saveErr) {
+          if (saveErr.code === 11000) {
+            console.warn('⚠️ Duplicate key collision caught on new Google user save. Retrying with fallback IDs:', saveErr.message);
+            user.playerId = `DD-GAME-${Date.now()}`;
+            user.gamingUsername = `${cleanName.replace(/[^a-zA-Z0-9_]/g, '_')}_${Date.now().toString().slice(-4)}`;
+            await user.save();
+          } else {
+            throw saveErr;
+          }
+        }
         console.log(`✅ New Google User created & saved in MongoDB: ${user.email} (ID: ${user._id})`);
       }
 
