@@ -536,7 +536,7 @@ app.post('/api/auth/google', async (req, res) => {
     let avatar = reqAvatar;
     let googleId = reqSub || '';
 
-    // Verify Google ID Token / Credential
+    // 1. Verify Google ID Token / Access Token
     if (credential) {
       try {
         const ticket = await googleClient.verifyIdToken({
@@ -579,162 +579,86 @@ app.post('/api/auth/google', async (req, res) => {
       }
     }
 
+    // 2. Validate Google Identity - return 401 if credential invalid or email missing
     if (!email) {
-      return res.status(400).json({ message: 'Google authentication failed: No verified email returned by Google.' });
+      return res.status(401).json({ message: 'Invalid or expired Google authentication credentials.' });
+    }
+
+    // 3. Ensure Database Availability - return 500 if DB unavailable
+    if (!isDbConnected || mongoose.connection.readyState !== 1) {
+      console.error('❌ Database connection unavailable during Google Auth attempt');
+      return res.status(500).json({ message: 'Database service temporarily unavailable. Please try again later.' });
     }
 
     const normalizedEmail = email.toLowerCase().trim();
     const now = new Date();
 
-    if (isDbConnected && mongoose.connection.readyState === 1) {
-      // Find existing user by googleId OR normalized email to prevent duplicate documents
-      let queryConditions = [{ email: normalizedEmail }];
-      if (googleId) {
-        queryConditions.push({ googleId });
-      }
-
-      let user = await User.findOne({ $or: queryConditions });
-
-      if (user) {
-        // User already exists -> Update lastLoginAt, googleId, avatar, profilePicture
-        user.lastLoginAt = now;
-        user.provider = user.provider || 'google';
-        if (googleId && !user.googleId) user.googleId = googleId;
-        if (avatar) {
-          user.avatar = avatar;
-          user.profilePicture = avatar;
-        }
-        if (name && (!user.name || user.name === 'Player Account')) {
-          user.name = name;
-        }
-        if (!user.playerId) {
-          user.playerId = await generateUniquePlayerId();
-        }
-        if (!user.gamingUsername) {
-          user.gamingUsername = await generateUniqueGamingUsername(name || user.email.split('@')[0]);
-        }
-        try {
-          await user.save();
-        } catch (saveErr) {
-          if (saveErr.code === 11000) {
-            console.warn('⚠️ Duplicate key notice on existing user update:', saveErr.message);
-            user.playerId = `DD-GAME-${Date.now()}`;
-            await user.save().catch(e => console.warn('Secondary save notice:', e.message));
-          } else {
-            console.warn('⚠️ Notice updating existing user document:', saveErr.message);
-          }
-        }
-        console.log(`✅ Existing Google User updated in MongoDB: ${user.email} (lastLoginAt: ${now.toISOString()})`);
-      } else {
-        // First-time sign in -> Create new User document in MongoDB
-        const cleanName = name || normalizedEmail.split('@')[0];
-        const playerId = await generateUniquePlayerId();
-        const gamingUsername = await generateUniqueGamingUsername(cleanName);
-
-        user = new User({
-          name: cleanName,
-          email: normalizedEmail,
-          googleId: googleId || '',
-          password: '',
-          gamingUsername,
-          playerId,
-          avatar: avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
-          profilePicture: avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
-          provider: 'google',
-          hasSeenWelcome: false,
-          lastLoginAt: now,
-          ddPoints: 50,
-          rank: 'UNRANKED'
-        });
-
-        try {
-          await user.save();
-        } catch (saveErr) {
-          if (saveErr.code === 11000) {
-            console.warn('⚠️ Duplicate key collision caught on new Google user save. Retrying with fallback IDs:', saveErr.message);
-            user.playerId = `DD-GAME-${Date.now()}`;
-            user.gamingUsername = `${cleanName.replace(/[^a-zA-Z0-9_]/g, '_')}_${Date.now().toString().slice(-4)}`;
-            await user.save();
-          } else {
-            throw saveErr;
-          }
-        }
-        console.log(`✅ New Google User created & saved in MongoDB: ${user.email} (ID: ${user._id})`);
-      }
-
-      const token = jwt.sign({ userId: user._id, email: user.email }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
-      return res.json({ token, user });
+    // 4. Search existing user by googleId OR normalized email in MongoDB
+    let queryConditions = [{ email: normalizedEmail }];
+    if (googleId) {
+      queryConditions.push({ googleId });
     }
 
-    // Offline / Memory Store fallback
-    let stored = memoryUsers.get(normalizedEmail);
-    let googleUser;
+    let user = await User.findOne({ $or: queryConditions });
 
-    if (stored) {
-      stored.user.lastLoginAt = now;
-      stored.user.provider = 'google';
-      if (googleId) stored.user.googleId = googleId;
+    if (user) {
+      // Existing User -> Update fields and backfill missing unique IDs safely
+      user.lastLoginAt = now;
+      user.provider = user.provider || 'google';
+      if (googleId && !user.googleId) user.googleId = googleId;
       if (avatar) {
-        stored.user.avatar = avatar;
-        stored.user.profilePicture = avatar;
+        user.avatar = avatar;
+        user.profilePicture = avatar;
       }
-      googleUser = stored.user;
+      if (name && (!user.name || user.name === 'Player Account')) {
+        user.name = name;
+      }
+      if (!user.playerId) {
+        user.playerId = await generateUniquePlayerId();
+      }
+      if (!user.gamingUsername) {
+        user.gamingUsername = await generateUniqueGamingUsername(name || user.email.split('@')[0]);
+      }
+
+      await user.save();
+      console.log(`✅ Existing Google User updated in MongoDB: ${user.email} (lastLoginAt: ${now.toISOString()})`);
     } else {
+      // First-time sign in -> Create new User document in MongoDB
       const cleanName = name || normalizedEmail.split('@')[0];
-      googleUser = {
-        id: `usr-google-${Date.now()}`,
+      const playerId = await generateUniquePlayerId();
+      const gamingUsername = await generateUniqueGamingUsername(cleanName);
+
+      user = new User({
         name: cleanName,
-        gamingUsername: `${cleanName.replace(/\s+/g, '_')}_8Ball`,
-        playerId: `DD-8B-${Math.floor(1000 + Math.random() * 9000)}`,
         email: normalizedEmail,
         googleId: googleId || '',
-        phone: '',
+        password: '',
+        gamingUsername,
+        playerId,
         avatar: avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
         profilePicture: avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
         provider: 'google',
         hasSeenWelcome: false,
-        createdAt: now,
         lastLoginAt: now,
-        rank: 'UNRANKED',
         ddPoints: 50,
-        totalTournamentsPlayed: 0,
-        wins: 0,
-        losses: 0,
-        totalWinnings: 0,
-        registeredTournaments: []
-      };
-      memoryUsers.set(normalizedEmail, { user: googleUser, passwordHash: '' });
+        rank: 'UNRANKED'
+      });
+
+      await user.save();
+      console.log(`✅ New Google User created & saved in MongoDB: ${user.email} (ID: ${user._id})`);
     }
 
-    res.json({
-      token: `google-jwt-token-${Date.now()}`,
-      user: googleUser
-    });
+    // 5. Generate JWT token ONLY AFTER successful Google verification & DB save
+    const token = jwt.sign(
+      { userId: user._id, email: user.email },
+      process.env.JWT_SECRET || 'secret',
+      { expiresIn: '7d' }
+    );
+    return res.json({ token, user });
+
   } catch (err) {
-    console.error('❌ Error processing Google auth in backend, using safe session response:', err.stack || err.message);
-    const cleanName = req.body?.name || (req.body?.email ? req.body.email.split('@')[0] : 'Player');
-    const safeUser = {
-      _id: `usr-google-${Date.now()}`,
-      name: cleanName,
-      gamingUsername: `${cleanName.replace(/\s+/g, '_')}_DD`,
-      playerId: `DD-GAME-${Math.floor(100000 + Math.random() * 900000)}`,
-      email: req.body?.email || 'player@gmail.com',
-      googleId: req.body?.sub || '',
-      avatar: req.body?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
-      profilePicture: req.body?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
-      provider: 'google',
-      hasSeenWelcome: false,
-      lastLoginAt: new Date(),
-      ddPoints: 50,
-      rank: 'UNRANKED',
-      totalTournamentsPlayed: 0,
-      wins: 0,
-      losses: 0,
-      totalWinnings: 0,
-      registeredTournaments: []
-    };
-    const token = jwt.sign({ userId: safeUser._id, email: safeUser.email }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
-    return res.json({ token, user: safeUser });
+    console.error('❌ Google authentication error:', err.message || err);
+    return res.status(500).json({ message: 'Authentication service error. Please try again.' });
   }
 });
 
