@@ -869,7 +869,7 @@ export default function Admin() {
                         </div>
                       )}
 
-                      {/* QUICK ROOM ID & PASSWORD CONTROLS */}
+                      {/* QUICK ROOM ID, PASSWORD & LIVE STREAM CONTROLS */}
                       <div className="space-y-2 pt-1">
                         <div className="grid grid-cols-2 gap-2">
                           <div>
@@ -898,6 +898,20 @@ export default function Admin() {
                           </div>
                         </div>
 
+                        <div>
+                          <label className="block text-[9px] font-bold text-rose-300 uppercase mb-0.5">YouTube Live Stream URL / Video ID (Optional)</label>
+                          <input
+                            type="text"
+                            placeholder="e.g. https://www.youtube.com/watch?v=... or Video ID"
+                            value={trn.liveStreamUrl || trn.youtubeVideoId || ''}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              adminUpdateTournament(trn.id, { ...trn, liveStreamUrl: val, youtubeVideoId: val });
+                            }}
+                            className="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs font-mono font-bold text-rose-300"
+                          />
+                        </div>
+
                         <button
                           type="button"
                           onClick={async () => {
@@ -905,9 +919,9 @@ export default function Admin() {
                               showToast('Please enter a valid Room ID first!', 'error');
                               return;
                             }
-                            const res = await adminUpdateRoomIdAPI(trn.id, trn.roomId, trn.roomPassword);
+                            const res = await adminUpdateRoomIdAPI(trn.id, trn.roomId, trn.roomPassword, trn.liveStreamUrl || trn.youtubeVideoId || '');
                             if (res && res.success) {
-                              showToast('🟢 ROOM ID UPDATED! 30-Minute Joining Window Started!', 'success');
+                              showToast('🟢 ROOM ID & STREAM UPDATED! 30-Minute Window Started!', 'success');
                               adminUpdateTournament(trn.id, res.tournament || {
                                 ...trn,
                                 roomPublishedAt: new Date(),

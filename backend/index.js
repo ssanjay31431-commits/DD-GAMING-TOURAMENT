@@ -1757,12 +1757,28 @@ app.get('/api/tournaments/:id/live-access', async (req, res) => {
         }
       }
 
-      const defaultEmbed = tournament.liveEmbedUrl || (tournament.youtubeVideoId ? `https://www.youtube.com/embed/${tournament.youtubeVideoId}?autoplay=1&rel=0` : `https://www.youtube.com/embed/live_stream?channel=UC_DD_GAMING`);
+      let parsedEmbed = '';
+      const rawUrl = tournament.liveEmbedUrl || tournament.liveStreamUrl || '';
+      const videoId = tournament.youtubeVideoId || '';
+      if (videoId && /^[a-zA-Z0-9_-]{11}$/.test(videoId.trim())) {
+        parsedEmbed = `https://www.youtube.com/embed/${videoId.trim()}?autoplay=1&rel=0`;
+      } else if (rawUrl) {
+        const match = rawUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/live\/)([a-zA-Z0-9_-]{11})/);
+        if (match && match[1]) {
+          parsedEmbed = `https://www.youtube.com/embed/${match[1]}?autoplay=1&rel=0`;
+        } else if (rawUrl.includes('youtube.com/embed/')) {
+          parsedEmbed = rawUrl;
+        }
+      }
+
+      const streamUrl = tournament.liveStreamUrl || (videoId ? `https://www.youtube.com/watch?v=${videoId}` : 'https://www.youtube.com/@wheelchair_boy_yt/live');
+
       return res.json({
         hasAccess: true,
-        embedUrl: defaultEmbed,
+        embedUrl: parsedEmbed,
+        streamUrl: streamUrl,
         youtubeChannelUrl: tournament.youtubeChannelUrl || 'https://www.youtube.com/@wheelchair_boy_yt',
-        videoId: tournament.youtubeVideoId || '',
+        videoId: videoId,
         tournamentTitle: tournament.title,
         date: tournament.date,
         time: tournament.time,
@@ -1866,7 +1882,7 @@ app.put('/api/admin/tournaments/:id/live-stream', async (req, res) => {
 const handleUpdateRoomId = async (req, res) => {
   try {
     const { id } = req.params;
-    const { roomId, roomPassword } = req.body;
+    const { roomId, roomPassword, liveStreamUrl } = req.body;
 
     if (roomId === undefined || roomId === null || String(roomId).trim() === '') {
       return res.status(400).json({
@@ -1891,6 +1907,11 @@ const handleUpdateRoomId = async (req, res) => {
       registrationClosed: true,
       joiningClosed: false
     };
+
+    if (liveStreamUrl !== undefined && String(liveStreamUrl).trim()) {
+      updatePayload.liveStreamUrl = String(liveStreamUrl).trim();
+      updatePayload.liveEmbedUrl = String(liveStreamUrl).trim();
+    }
 
     let updatedTrn = null;
     if (isDbConnected && mongoose.connection.readyState === 1) {
