@@ -7,6 +7,7 @@ import {
 import { useApp } from '../context/AppContext';
 import { getGameBanner } from '../utils/gameBanners';
 import AdminLogin from '../components/AdminLogin';
+import { adminUpdateRoomIdAPI } from '../utils/api';
 import { touchProps } from '../utils/touchHelper';
 
 export default function Admin() {
@@ -26,6 +27,7 @@ export default function Admin() {
     adminLogout,
     adminMarkPrizePaid,
     adminDeleteAllData,
+    getTournamentJoiningState,
     showToast
   } = useApp();
 
@@ -110,6 +112,8 @@ export default function Admin() {
   const [time, setTime] = useState(() => getCurrentTimeString(60));
   const [description, setDescription] = useState('Special esports tournament managed by DD Gaming Admin.');
   const [rulesInput, setRulesInput] = useState('1. Fair play rules apply.\n2. Submit match victory screenshot.');
+  const [createRoomId, setCreateRoomId] = useState('');
+  const [createRoomPassword, setCreateRoomPassword] = useState('');
   
   // Profit Configuration Mode
   const [profitMode, setProfitMode] = useState('manual'); // 'manual' | 'targetProfit'
@@ -252,6 +256,8 @@ export default function Admin() {
       killReward: Number(killReward),
       date,
       time,
+      roomId: createRoomId,
+      roomPassword: createRoomPassword,
       description,
       rules,
       status: 'Registration Open',
@@ -609,6 +615,28 @@ export default function Admin() {
                 className="w-full px-4 py-2.5 rounded-xl glass-input text-sm"
               />
             </div>
+
+            <div>
+              <label className="block text-xs font-bold text-cyan-300 mb-1">Room ID (Optional at creation)</label>
+              <input
+                type="text"
+                value={createRoomId}
+                onChange={(e) => setCreateRoomId(e.target.value)}
+                placeholder="e.g. 12345678"
+                className="w-full px-4 py-2.5 rounded-xl glass-input text-sm font-mono text-cyan-200"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-emerald-300 mb-1">Room Password (Optional at creation)</label>
+              <input
+                type="text"
+                value={createRoomPassword}
+                onChange={(e) => setCreateRoomPassword(e.target.value)}
+                placeholder="e.g. 999"
+                className="w-full px-4 py-2.5 rounded-xl glass-input text-sm font-mono text-emerald-200"
+              />
+            </div>
           </div>
 
           {/* AUTOMATIC COLLECTION DISPLAY */}
@@ -775,49 +803,102 @@ export default function Admin() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {tournaments
               .filter(t => tournamentFilter === 'all' || t.status === tournamentFilter)
-              .map((trn) => (
-                <div key={trn.id} className="p-6 rounded-3xl glass-panel border border-slate-800 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-white bg-purple-600/30 px-3 py-1 rounded-md border border-purple-500/40">
-                      {trn.gameIcon} {trn.game}
-                    </span>
-                    <select
-                      value={trn.status}
-                      onChange={(e) => adminUpdateTournamentStatus(trn.id, e.target.value)}
-                      className="px-3 py-1 rounded-xl bg-slate-950 border border-slate-700 text-xs font-bold text-slate-200"
-                    >
-                      <option value="Registration Open">Registration Open</option>
-                      <option value="Registration Closed">Registration Closed</option>
-                      <option value="Live">Live</option>
-                      <option value="Result Pending">Result Pending</option>
-                      <option value="Completed">Completed</option>
-                      <option value="Expired">Expired</option>
-                    </select>
-                  </div>
+              .map((trn) => {
+                const joiningState = getTournamentJoiningState ? getTournamentJoiningState(trn) : { joiningStatus: 'BEFORE_30M', joiningOpenTimeStr: '' };
+                return (
+                  <div key={trn.id} className="p-6 rounded-3xl glass-panel border border-slate-800 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-white bg-purple-600/30 px-3 py-1 rounded-md border border-purple-500/40">
+                        {trn.gameIcon} {trn.game}
+                      </span>
+                      <select
+                        value={trn.status}
+                        onChange={(e) => adminUpdateTournamentStatus(trn.id, e.target.value)}
+                        className="px-3 py-1 rounded-xl bg-slate-950 border border-slate-700 text-xs font-bold text-slate-200"
+                      >
+                        <option value="Registration Open">Registration Open</option>
+                        <option value="JOINING_OPEN">JOINING_OPEN (Room Live)</option>
+                        <option value="Registration Closed">Registration Closed</option>
+                        <option value="Live">Live</option>
+                        <option value="Result Pending">Result Pending</option>
+                        <option value="Completed">Completed</option>
+                        <option value="Expired">Expired</option>
+                      </select>
+                    </div>
 
-                  <div>
-                    <h4 className="font-heading font-black text-xl text-white">{trn.title}</h4>
-                    <p className="text-xs text-slate-400">{trn.date} at {trn.time} • Mode: {trn.mode || 'Standard'}</p>
-                  </div>
+                    <div>
+                      <h4 className="font-heading font-black text-xl text-white">{trn.title}</h4>
+                      <p className="text-xs text-slate-400">{trn.date} at {trn.time} • Mode: {trn.mode || 'Standard'}</p>
+                    </div>
 
-                  <div className="grid grid-cols-4 gap-2 text-xs bg-slate-950 p-3 rounded-2xl text-center">
-                    <div>
-                      <span className="text-slate-400 block text-[9px] uppercase font-bold">Fee</span>
-                      <span className="font-bold text-emerald-400">₹{trn.entryFee}</span>
+                    {/* DYNAMIC JOINING WINDOW BADGE */}
+                    <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-slate-400 font-bold uppercase text-[10px]">30-Min Window Status:</span>
+                        {joiningState.joiningStatus === 'BEFORE_30M' && (
+                          <span className="text-amber-400 font-bold text-[10px] bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/30">
+                            🔒 Room Details Hidden (Opens {joiningState.joiningOpenTimeStr})
+                          </span>
+                        )}
+                        {joiningState.joiningStatus === 'JOINING_OPEN' && (
+                          <span className="text-emerald-300 font-extrabold text-[10px] bg-emerald-500/20 px-2 py-0.5 rounded border border-emerald-500/40 animate-pulse">
+                            🟢 JOINING OPEN (Room Visible)
+                          </span>
+                        )}
+                        {joiningState.joiningStatus === 'LIVE' && (
+                          <span className="text-rose-400 font-extrabold text-[10px] bg-rose-500/20 px-2 py-0.5 rounded border border-rose-500/40">
+                            🔴 LIVE MATCH (Window Closed)
+                          </span>
+                        )}
+                      </div>
+
+                      {/* QUICK ROOM ID & PASSWORD CONTROLS */}
+                      <div className="grid grid-cols-2 gap-2 pt-1">
+                        <div>
+                          <label className="block text-[9px] font-bold text-cyan-300 uppercase mb-0.5">Room ID</label>
+                          <input
+                            type="text"
+                            placeholder="Set Room ID"
+                            value={trn.roomId || ''}
+                            onChange={(e) => {
+                              adminUpdateTournament(trn.id, { ...trn, roomId: e.target.value });
+                            }}
+                            className="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs font-mono font-bold text-cyan-300"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[9px] font-bold text-emerald-300 uppercase mb-0.5">Room Password</label>
+                          <input
+                            type="text"
+                            placeholder="Set Password"
+                            value={trn.roomPassword || ''}
+                            onChange={(e) => {
+                              adminUpdateTournament(trn.id, { ...trn, roomPassword: e.target.value });
+                            }}
+                            className="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs font-mono font-bold text-emerald-300"
+                          />
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <span className="text-slate-400 block text-[9px] uppercase font-bold">Prize</span>
-                      <span className="font-bold text-amber-400">₹{trn.totalPrize || trn.prizePool}</span>
+
+                    <div className="grid grid-cols-4 gap-2 text-xs bg-slate-950 p-3 rounded-2xl text-center">
+                      <div>
+                        <span className="text-slate-400 block text-[9px] uppercase font-bold">Fee</span>
+                        <span className="font-bold text-emerald-400">₹{trn.entryFee}</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[9px] uppercase font-bold">Prize</span>
+                        <span className="font-bold text-amber-400">₹{trn.totalPrize || trn.prizePool}</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[9px] uppercase font-bold">Profit</span>
+                        <span className="font-bold text-purple-300">₹{trn.profit || 0}</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[9px] uppercase font-bold">Slots</span>
+                        <span className="font-bold text-cyan-300">{trn.registeredSlots}/{trn.totalSlots}</span>
+                      </div>
                     </div>
-                    <div>
-                      <span className="text-slate-400 block text-[9px] uppercase font-bold">Profit</span>
-                      <span className="font-bold text-purple-300">₹{trn.profit || 0}</span>
-                    </div>
-                    <div>
-                      <span className="text-slate-400 block text-[9px] uppercase font-bold">Slots</span>
-                      <span className="font-bold text-cyan-300">{trn.registeredSlots}/{trn.totalSlots}</span>
-                    </div>
-                  </div>
 
                   <div className="flex items-center justify-between pt-2 border-t border-slate-800">
                     <button
@@ -832,9 +913,10 @@ export default function Admin() {
                     >
                       <Trash2 className="w-3.5 h-3.5" /> Delete
                     </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
           </div>
         </div>
       )}

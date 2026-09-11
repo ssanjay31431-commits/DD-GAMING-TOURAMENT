@@ -5,7 +5,7 @@ import { useApp } from '../context/AppContext';
 import { getGameBanner } from '../utils/gameBanners';
 
 export default function TournamentDetailModal() {
-  const { selectedTournamentDetail, closeTournamentDetail, openRegistrationModal, isAlreadyRegisteredForTournament, navigateTo, showToast } = useApp();
+  const { selectedTournamentDetail, closeTournamentDetail, openRegistrationModal, isAlreadyRegisteredForTournament, getTournamentJoiningState, navigateTo, showToast } = useApp();
 
   useEffect(() => {
     if (selectedTournamentDetail) {
@@ -19,6 +19,7 @@ export default function TournamentDetailModal() {
   if (!selectedTournamentDetail) return null;
 
   const trn = selectedTournamentDetail;
+  const joiningState = getTournamentJoiningState ? getTournamentJoiningState(trn) : { joiningStatus: 'BEFORE_30M' };
   const fillPercentage = Math.min(100, Math.round((trn.registeredSlots / trn.totalSlots) * 100));
   const isRegistered = isAlreadyRegisteredForTournament(trn.id);
 
@@ -106,35 +107,57 @@ export default function TournamentDetailModal() {
                 </div>
               )}
 
-              {(trn.status === 'Live' || trn.isLiveStreaming || trn.roomId) && (
-                <div className="p-4 rounded-2xl bg-gradient-to-r from-purple-950 via-slate-900 to-indigo-950 border-2 border-cyan-500/50 space-y-3 shadow-lg">
+              {/* DYNAMIC 30-MINUTE JOINING WINDOW & ROOM ACCESS */}
+              {joiningState.joiningStatus === 'BEFORE_30M' && (
+                <div className="p-4 rounded-2xl bg-amber-950/40 border border-amber-500/40 space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="px-2.5 py-0.5 rounded-full bg-rose-600 text-white font-extrabold text-[10px] uppercase tracking-wider flex items-center gap-1.5 animate-pulse">
-                      <span className="w-2 h-2 rounded-full bg-white animate-ping" /> 🔴 MATCH ROOM ACCESS
+                    <span className="text-amber-300 font-extrabold text-[10px] uppercase tracking-wider flex items-center gap-1.5">
+                      🔒 ROOM DETAILS HIDDEN
                     </span>
-                    {trn.roomId ? (
-                      <span className="px-3 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 font-mono font-black text-sm border border-emerald-500/40">
-                        ROOM ID: {trn.roomId}
-                      </span>
-                    ) : (
-                      <span className="px-2.5 py-1 rounded-lg bg-slate-800 text-amber-300 font-semibold text-xs border border-amber-500/30">
-                        Room ID will be available soon.
-                      </span>
-                    )}
+                    <span className="text-amber-400 font-mono text-xs font-bold bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/30">
+                      Opens in: {joiningState.formattedTimeUntilOpen}
+                    </span>
+                  </div>
+                  <p className="text-xs text-amber-200/90 leading-relaxed font-semibold">
+                    🔒 Room details will be available 30 minutes before game start. (Window opens at {joiningState.joiningOpenTimeStr})
+                  </p>
+                </div>
+              )}
+
+              {joiningState.joiningStatus === 'JOINING_OPEN' && (
+                <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-950 via-slate-900 to-cyan-950 border-2 border-emerald-500/60 space-y-3 shadow-xl">
+                  <div className="flex items-center justify-between">
+                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-extrabold text-[10px] uppercase tracking-wider flex items-center gap-1.5 border border-emerald-500/40 animate-pulse">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" /> 🟢 JOINING OPEN NOW
+                    </span>
+                    <span className="text-cyan-300 font-mono text-xs font-bold bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/30">
+                      Starts in: {joiningState.formattedTimeUntilStart}
+                    </span>
                   </div>
 
-                  {trn.roomId ? (
+                  <div className="grid grid-cols-2 gap-2 bg-slate-950/80 p-3 rounded-xl border border-emerald-500/30">
+                    <div>
+                      <span className="text-slate-400 text-[9px] font-bold uppercase block mb-0.5">ROOM ID</span>
+                      <span className="font-mono font-black text-emerald-400 text-sm block">{trn.roomId || 'Available'}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 text-[9px] font-bold uppercase block mb-0.5">ROOM PASSWORD</span>
+                      <span className="font-mono font-black text-cyan-300 text-sm block">{trn.roomPassword || 'NO PASS'}</span>
+                    </div>
+                  </div>
+
+                  {trn.roomId && (
                     <button
                       type="button"
                       onClick={() => {
                         navigator.clipboard.writeText(trn.roomId);
                         if (showToast) showToast('Room ID copied to clipboard!', 'success');
                       }}
-                      className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-heading font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg cursor-pointer active:scale-98 transition-all"
+                      className="w-full py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs uppercase flex items-center justify-center gap-1.5 shadow cursor-pointer active:scale-95 transition-all"
                     >
-                      <Copy className="w-4 h-4" /> JOIN GAME / COPY ROOM ID
+                      <Copy className="w-4 h-4" /> COPY ROOM ID
                     </button>
-                  ) : null}
+                  )}
                 </div>
               )}
               

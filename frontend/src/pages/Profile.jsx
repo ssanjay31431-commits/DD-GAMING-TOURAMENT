@@ -4,9 +4,15 @@ import { useApp } from '../context/AppContext';
 import { checkUsernameAvailabilityAPI, updateUserProfileAPI } from '../utils/api';
 
 export default function Profile({ initialTab = 'overview' }) {
-  const { userProfile, updateUserProfile, tournaments, navigateTo, showToast } = useApp();
+  const { userProfile, updateUserProfile, tournaments, getTournamentJoiningState, navigateTo, showToast } = useApp();
   const [activeTab, setActiveTab] = useState(initialTab || 'overview');
+  const [nowTick, setNowTick] = useState(Date.now());
   const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    const timer = setInterval(() => setNowTick(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     if (initialTab) {
@@ -577,57 +583,137 @@ export default function Profile({ initialTab = 'overview' }) {
                     </div>
                   </div>
 
-                  {/* ROOM ID & LIVE MATCH SECTION */}
-                  {(reg.tournamentStatus === 'Live' || reg.isLiveStreaming) ? (
-                    <div className="p-4 rounded-2xl bg-gradient-to-r from-purple-950 via-slate-900 to-indigo-950 border-2 border-cyan-500/50 space-y-3 shadow-lg">
-                      <div className="flex items-center justify-between">
-                        <span className="px-2.5 py-0.5 rounded-full bg-rose-600 text-white font-extrabold text-[10px] uppercase tracking-wider flex items-center gap-1.5 animate-pulse">
-                          <span className="w-2 h-2 rounded-full bg-white animate-ping" /> 🔴 LIVE
-                        </span>
-                        {reg.roomId ? (
-                          <span className="px-3 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 font-mono font-black text-sm border border-emerald-500/40">
-                            ROOM ID: {reg.roomId}
-                          </span>
-                        ) : (
-                          <span className="px-2.5 py-1 rounded-lg bg-slate-800 text-amber-300 font-semibold text-xs border border-amber-500/30">
-                            Room ID will be available soon.
-                          </span>
-                        )}
-                      </div>
+                  {/* 30-MINUTE JOINING WINDOW & ROOM ID / PASS SECTION */}
+                  {(() => {
+                    const trn = (tournaments || []).find(t => t.id === reg.tournamentId || String(t.id) === String(reg.tournamentId)) || reg;
+                    const joiningState = getTournamentJoiningState ? getTournamentJoiningState(trn) : { joiningStatus: 'BEFORE_30M', isOpen: false, isLive: false, isMissed: false, formattedTimeUntilOpen: '00:00:00', formattedTimeUntilStart: '00:00:00' };
 
-                      {reg.roomId ? (
+                    const displayRoomId = trn.roomId || reg.roomId;
+                    const displayRoomPassword = trn.roomPassword || reg.roomPassword;
+
+                    if (joiningState.joiningStatus === 'BEFORE_30M') {
+                      return (
+                        <div className="p-4 rounded-2xl bg-amber-950/40 border border-amber-500/40 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-amber-300 font-extrabold text-[10px] uppercase tracking-wider flex items-center gap-1.5">
+                              🔒 ROOM DETAILS HIDDEN
+                            </span>
+                            <span className="text-amber-400 font-mono text-xs font-bold bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/30">
+                              Opens in: {joiningState.formattedTimeUntilOpen}
+                            </span>
+                          </div>
+                          <p className="text-xs text-amber-200/90 leading-relaxed font-semibold">
+                            🔒 Room details will be available 30 minutes before game start.
+                          </p>
+                          <div className="flex items-center justify-between text-xs pt-1 border-t border-amber-500/20 font-mono text-amber-300">
+                            <span>Room ID: ••••••••</span>
+                            <span>Pass: ••••</span>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    if (joiningState.joiningStatus === 'JOINING_OPEN') {
+                      return (
+                        <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-950 via-slate-900 to-cyan-950 border-2 border-emerald-500/60 space-y-3 shadow-xl">
+                          <div className="flex items-center justify-between">
+                            <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-extrabold text-[10px] uppercase tracking-wider flex items-center gap-1.5 border border-emerald-500/40 animate-pulse">
+                              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" /> 🟢 JOINING OPEN NOW
+                            </span>
+                            <span className="text-cyan-300 font-mono text-xs font-bold bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/30">
+                              Starts in: {joiningState.formattedTimeUntilStart}
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-2 bg-slate-950/80 p-3 rounded-xl border border-emerald-500/30">
+                            <div>
+                              <span className="text-slate-400 text-[9px] font-bold uppercase block mb-0.5">ROOM ID</span>
+                              <span className="font-mono font-black text-emerald-400 text-sm block">{displayRoomId || 'Available'}</span>
+                            </div>
+                            <div>
+                              <span className="text-slate-400 text-[9px] font-bold uppercase block mb-0.5">ROOM PASSWORD</span>
+                              <span className="font-mono font-black text-cyan-300 text-sm block">{displayRoomPassword || 'NO PASS'}</span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            {displayRoomId && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(displayRoomId);
+                                  showToast('Room ID copied to clipboard!', 'success');
+                                }}
+                                className="flex-1 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs uppercase flex items-center justify-center gap-1.5 shadow cursor-pointer active:scale-95 transition-all"
+                              >
+                                <Copy className="w-3.5 h-3.5" /> COPY ROOM ID
+                              </button>
+                            )}
+                            {displayRoomPassword && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(displayRoomPassword);
+                                  showToast('Room Password copied!', 'success');
+                                }}
+                                className="flex-1 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs uppercase flex items-center justify-center gap-1.5 shadow cursor-pointer active:scale-95 transition-all"
+                              >
+                                <Copy className="w-3.5 h-3.5" /> COPY PASS
+                              </button>
+                            )}
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (displayRoomId) navigator.clipboard.writeText(displayRoomId);
+                              showToast('Entering Game Room...', 'info');
+                              navigateTo('live');
+                            }}
+                            className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-heading font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/25 cursor-pointer active:scale-98 transition-all"
+                          >
+                            <Play className="w-4 h-4 fill-slate-950" /> JOIN NOW / ENTER ROOM
+                          </button>
+                        </div>
+                      );
+                    }
+
+                    if (joiningState.isMissed) {
+                      return (
+                        <div className="p-4 rounded-2xl bg-rose-950/80 border-2 border-rose-500/60 space-y-2">
+                          <div className="flex items-center gap-2 text-rose-300 font-extrabold text-xs uppercase tracking-wider">
+                            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                            <span>JOINING WINDOW OVER</span>
+                          </div>
+                          <p className="text-xs text-rose-200 font-semibold leading-relaxed">
+                            ⏰ JOINING TIME OVER. You missed the 30-minute joining window. No refund available.
+                          </p>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div className="p-4 rounded-2xl bg-gradient-to-r from-purple-950 via-slate-900 to-indigo-950 border-2 border-cyan-500/50 space-y-3 shadow-lg">
+                        <div className="flex items-center justify-between">
+                          <span className="px-2.5 py-0.5 rounded-full bg-rose-600 text-white font-extrabold text-[10px] uppercase tracking-wider flex items-center gap-1.5 animate-pulse">
+                            <span className="w-2 h-2 rounded-full bg-white animate-ping" /> 🔴 LIVE MATCH IN PROGRESS
+                          </span>
+                          {displayRoomId && (
+                            <span className="px-3 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 font-mono font-black text-xs border border-emerald-500/40">
+                              ROOM: {displayRoomId}
+                            </span>
+                          )}
+                        </div>
                         <button
                           type="button"
-                          onClick={() => {
-                            navigator.clipboard.writeText(reg.roomId);
-                            showToast('Room ID copied!', 'success');
-                          }}
-                          className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-heading font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg cursor-pointer active:scale-98 transition-all"
+                          onClick={() => navigateTo('live')}
+                          className="w-full py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-rose-600 hover:from-purple-500 hover:to-rose-500 text-white font-heading font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg cursor-pointer transition-all"
                         >
-                          <Copy className="w-4 h-4" /> JOIN GAME / COPY ROOM ID
-                        </button>
-                      ) : null}
-                    </div>
-                  ) : reg.roomId ? (
-                    <div className="p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 flex items-center justify-between text-xs">
-                      <span className="text-slate-400 font-bold text-[10px] uppercase flex items-center gap-1">
-                        <Key className="w-3.5 h-3.5 text-cyan-400" /> ROOM ID
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono font-bold text-emerald-400 text-sm">{reg.roomId}</span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            navigator.clipboard.writeText(reg.roomId);
-                            showToast('Room ID copied!', 'success');
-                          }}
-                          className="px-2.5 py-1 rounded-lg bg-purple-600/40 hover:bg-purple-600 text-purple-200 hover:text-white text-xs font-bold border border-purple-400/40 cursor-pointer flex items-center gap-1 transition-all"
-                        >
-                          <Copy className="w-3.5 h-3.5" /> COPY ROOM ID
+                          <Play className="w-4 h-4" /> WATCH LIVE ARENA STREAM
                         </button>
                       </div>
-                    </div>
-                  ) : null}
+                    );
+                  })()}
 
                   <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px]">
                     <span className="text-slate-400 font-mono">Issued by DD GAMING ESPORTS</span>

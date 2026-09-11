@@ -39,6 +39,7 @@ const tournamentSchema = new mongoose.Schema({
   liveEmbedUrl: { type: String, default: '' },
   isLiveStreaming: { type: Boolean, default: false },
   roomId: { type: String, default: '' },
+  roomPassword: { type: String, default: '' },
   liveStartTime: { type: String, default: '' },
   resultState: { type: String, default: 'NOT_READY' }, // 'NOT_READY' | 'DRAFT' | 'PUBLISHED'
   bracket: { type: Array, default: [] },

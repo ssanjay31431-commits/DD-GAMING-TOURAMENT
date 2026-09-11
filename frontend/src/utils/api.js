@@ -358,12 +358,12 @@ export async function adminLoginAPI({ username, password }) {
   }
 }
 
-export async function adminUpdateRoomIdAPI(id, roomId) {
+export async function adminUpdateRoomIdAPI(id, roomId, roomPassword = '') {
   try {
     const res = await fetch(`${API_BASE_URL}/tournaments/${id}/room-id`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ roomId })
+      body: JSON.stringify({ roomId, roomPassword })
     });
     return await res.json();
   } catch (err) {

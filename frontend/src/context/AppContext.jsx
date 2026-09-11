@@ -42,6 +42,127 @@ import {
   adminDeleteAllDataAPI
 } from '../utils/api';
 
+export function parseMatchStartDateTime(dateStr, timeStr) {
+  if (!dateStr) return null;
+  if (typeof dateStr === 'object' && dateStr instanceof Date) return dateStr;
+
+  const dateParts = String(dateStr).split('T')[0].split('-').map(Number);
+  if (dateParts.length !== 3 || isNaN(dateParts[0])) {
+    const fallback = new Date(dateStr);
+    return isNaN(fallback.getTime()) ? null : fallback;
+  }
+
+  const year = dateParts[0];
+  const month = dateParts[1] - 1;
+  const day = dateParts[2];
+
+  let hours = 0;
+  let minutes = 0;
+
+  if (timeStr) {
+    const match = String(timeStr).match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+    if (match) {
+      hours = parseInt(match[1], 10);
+      minutes = parseInt(match[2], 10);
+      const ampm = match[3] ? match[3].toUpperCase() : null;
+      if (ampm === 'PM' && hours < 12) hours += 12;
+      if (ampm === 'AM' && hours === 12) hours = 0;
+    }
+  }
+
+  return new Date(year, month, day, hours, minutes, 0, 0);
+}
+
+export function getTournamentJoiningState(trn) {
+  if (!trn) {
+    return {
+      status: 'Upcoming',
+      joiningStatus: 'BEFORE_30M',
+      isOpen: false,
+      isLive: false,
+      isMissed: false,
+      timeUntilOpenMs: 0,
+      timeUntilStartMs: 0,
+      formattedTimeUntilOpen: '00:00:00',
+      formattedTimeUntilStart: '00:00:00'
+    };
+  }
+
+  const matchStart = parseMatchStartDateTime(trn.date, trn.time);
+  const nowMs = Date.now();
+
+  if (!matchStart) {
+    return {
+      status: trn.status || 'Upcoming',
+      joiningStatus: 'BEFORE_30M',
+      isOpen: false,
+      isLive: trn.status === 'Live',
+      isMissed: false,
+      timeUntilOpenMs: 0,
+      timeUntilStartMs: 0,
+      formattedTimeUntilOpen: '00:00:00',
+      formattedTimeUntilStart: '00:00:00'
+    };
+  }
+
+  const startMs = matchStart.getTime();
+  const joiningOpenMs = startMs - (30 * 60 * 1000);
+
+  const isTerminal = ['Completed', 'Expired', 'Result Pending', 'Cancelled'].includes(trn.status);
+
+  let joiningStatus = 'BEFORE_30M';
+  let status = trn.status || 'Upcoming';
+
+  if (!isTerminal) {
+    if (nowMs < joiningOpenMs) {
+      joiningStatus = 'BEFORE_30M';
+    } else if (nowMs >= joiningOpenMs && nowMs < startMs) {
+      joiningStatus = 'JOINING_OPEN';
+      status = 'JOINING_OPEN';
+    } else if (nowMs >= startMs) {
+      joiningStatus = 'LIVE';
+      status = 'Live';
+    }
+  }
+
+  const timeUntilOpenMs = Math.max(0, joiningOpenMs - nowMs);
+  const timeUntilStartMs = Math.max(0, startMs - nowMs);
+
+  const formatMs = (ms) => {
+    const totalSec = Math.floor(ms / 1000);
+    const hrs = String(Math.floor(totalSec / 3600)).padStart(2, '0');
+    const mins = String(Math.floor((totalSec % 3600) / 60)).padStart(2, '0');
+    const secs = String(totalSec % 60).padStart(2, '0');
+    return hrs !== '00' ? `${hrs}:${mins}:${secs}` : `${mins}:${secs}`;
+  };
+
+  return {
+    status,
+    joiningStatus,
+    isOpen: joiningStatus === 'JOINING_OPEN',
+    isLive: joiningStatus === 'LIVE' || status === 'Live',
+    isMissed: nowMs >= startMs && joiningStatus !== 'LIVE' && !isTerminal,
+    timeUntilOpenMs,
+    timeUntilStartMs,
+    formattedTimeUntilOpen: formatMs(timeUntilOpenMs),
+    formattedTimeUntilStart: formatMs(timeUntilStartMs),
+    joiningOpenTimeStr: new Date(joiningOpenMs).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
+    startTimeStr: matchStart.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })
+  };
+}
+
+function processTournamentsWithAutoOpen(dataList) {
+  if (!Array.isArray(dataList)) return [];
+  return dataList.map(trn => {
+    const timing = getTournamentJoiningState(trn);
+    return {
+      ...trn,
+      computedStatus: timing.status,
+      joiningStatus: timing.joiningStatus
+    };
+  });
+}
+
 const AppContext = createContext();
 
 export function AppProvider({ children }) {
@@ -200,44 +321,6 @@ export function AppProvider({ children }) {
   const [tournaments, setTournaments] = useState(() => {
     return INITIAL_TOURNAMENTS;
   });
-
-function getRegistrationStartDateTime(startDate, startTime) {
-  if (!startDate) return null;
-  if (typeof startDate === 'object' && startDate instanceof Date) {
-    return startDate;
-  }
-
-  const dateParts = String(startDate).split('T')[0].split('-').map(Number);
-  if (dateParts.length !== 3 || isNaN(dateParts[0])) {
-    const fallback = new Date(startDate);
-    return isNaN(fallback.getTime()) ? null : fallback;
-  }
-
-  const year = dateParts[0];
-  const month = dateParts[1] - 1;
-  const day = dateParts[2];
-
-  let hours = 0;
-  let minutes = 0;
-
-  if (startTime) {
-    const match = String(startTime).match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
-    if (match) {
-      hours = parseInt(match[1], 10);
-      minutes = parseInt(match[2], 10);
-      const ampm = match[3] ? match[3].toUpperCase() : null;
-      if (ampm === 'PM' && hours < 12) hours += 12;
-      if (ampm === 'AM' && hours === 12) hours = 0;
-    }
-  }
-
-  return new Date(year, month, day, hours, minutes, 0, 0);
-}
-
-function processTournamentsWithAutoOpen(dataList) {
-  if (!Array.isArray(dataList)) return [];
-  return dataList;
-}
 
   // Fetch & Auto-Sync Tournaments from MongoDB backend
   useEffect(() => {
@@ -840,6 +923,8 @@ function processTournamentsWithAutoOpen(dataList) {
         adminLogin,
         adminLogout,
         isAlreadyRegisteredForTournament,
+        getTournamentJoiningState,
+        parseMatchStartDateTime,
         playClickSound,
         playPoolCueHitSound,
         playTabSelectSound,

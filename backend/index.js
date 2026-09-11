@@ -473,18 +473,92 @@ async function autoCheckUpcomingTournaments() {
 // Status is 100% managed by Admin Control Panel
 // setInterval(autoCheckUpcomingTournaments, 10000);
 
+function getMatchStartDateTime(dateStr, timeStr) {
+  if (!dateStr) return null;
+  if (typeof dateStr === 'object' && dateStr instanceof Date) return dateStr;
+
+  const dateParts = String(dateStr).split('T')[0].split('-').map(Number);
+  if (dateParts.length !== 3 || isNaN(dateParts[0])) {
+    const fallback = new Date(dateStr);
+    return isNaN(fallback.getTime()) ? null : fallback;
+  }
+
+  const year = dateParts[0];
+  const month = dateParts[1] - 1;
+  const day = dateParts[2];
+
+  let hours = 0;
+  let minutes = 0;
+
+  if (timeStr) {
+    const match = String(timeStr).match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+    if (match) {
+      hours = parseInt(match[1], 10);
+      minutes = parseInt(match[2], 10);
+      const ampm = match[3] ? match[3].toUpperCase() : null;
+      if (ampm === 'PM' && hours < 12) hours += 12;
+      if (ampm === 'AM' && hours === 12) hours = 0;
+    }
+  }
+
+  return new Date(year, month, day, hours, minutes, 0, 0);
+}
+
+function computeTournamentLiveStatus(trn, isAdmin = false) {
+  if (!trn) return trn;
+  const trnObj = typeof trn.toObject === 'function' ? trn.toObject() : { ...trn };
+
+  const matchStart = getMatchStartDateTime(trnObj.date, trnObj.time);
+  const nowMs = Date.now();
+
+  if (matchStart) {
+    const startMs = matchStart.getTime();
+    const joiningOpenMs = startMs - (30 * 60 * 1000); // 30 mins before game start
+
+    trnObj.matchStartMs = startMs;
+    trnObj.joiningOpenMs = joiningOpenMs;
+
+    // Do not override manual terminal states set by admin
+    if (!['Completed', 'Expired', 'Result Pending', 'Cancelled'].includes(trnObj.status)) {
+      if (nowMs < joiningOpenMs) {
+        trnObj.joiningStatus = 'BEFORE_30M';
+      } else if (nowMs >= joiningOpenMs && nowMs < startMs) {
+        trnObj.joiningStatus = 'JOINING_OPEN';
+        trnObj.status = 'JOINING_OPEN';
+      } else if (nowMs >= startMs) {
+        trnObj.joiningStatus = 'LIVE';
+        trnObj.status = 'Live';
+      }
+    }
+    
+    // Mask room ID & password if game joining window hasn't opened yet AND non-admin request
+    if (nowMs < joiningOpenMs && !isAdmin) {
+      trnObj.roomIdMasked = true;
+      trnObj.roomId = '';
+      trnObj.roomPassword = '';
+    } else {
+      trnObj.roomIdMasked = false;
+    }
+  }
+
+  return trnObj;
+}
+
 // GET all tournaments
 app.get('/api/tournaments', async (req, res) => {
   try {
     await autoCheckUpcomingTournaments();
+    const isAdmin = req.headers['authorization']?.includes('admin') || req.query.admin === 'true';
     if (isDbConnected && mongoose.connection.readyState === 1) {
       const tournaments = await Tournament.find();
-      return res.json(tournaments);
+      const processed = tournaments.map(t => computeTournamentLiveStatus(t, isAdmin));
+      return res.json(processed);
     }
   } catch (err) {
     console.warn('DB fetch tournaments warning:', err.message);
   }
-  res.json(INITIAL_TOURNAMENTS);
+  const processed = INITIAL_TOURNAMENTS.map(t => computeTournamentLiveStatus(t, false));
+  res.json(processed);
 });
 
 // HELPER: Generate guaranteed unique custom Application ID ('id')
