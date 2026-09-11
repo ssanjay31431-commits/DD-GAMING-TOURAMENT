@@ -110,11 +110,24 @@ export default function Profile({ initialTab = 'overview' }) {
     const trnInfo = (tournaments || []).find(t => t.id === reg.tournamentId || String(t.id) === String(reg.tournamentId));
     const isTournamentDeleted = !trnInfo;
     const paymentStatus = reg.status || 'Confirmed';
-    const tournamentStatus = isTournamentDeleted ? 'Completed' : (trnInfo.status || 'Registration Open');
+    const tournamentStatus = isTournamentDeleted ? 'Completed' : (trnInfo?.status || 'Registration Open');
+
+    const game = reg.game || trnInfo?.game || 'Esports Match';
+    const gameIcon = reg.gameIcon || trnInfo?.gameIcon || '🎮';
+    const title = reg.tournamentTitle || reg.title || trnInfo?.title || trnInfo?.name || `${game} Match`;
+    const date = reg.date || trnInfo?.date || 'Schedule Announced Soon';
+    const time = reg.time || trnInfo?.time || '';
+    const entryFee = reg.entryFee !== undefined ? reg.entryFee : trnInfo?.entryFee;
 
     return {
       ...(trnInfo || {}),
       ...reg,
+      game,
+      gameIcon,
+      title,
+      date,
+      time,
+      entryFee,
       isTournamentDeleted,
       paymentStatus,
       tournamentStatus,
@@ -544,7 +557,7 @@ export default function Profile({ initialTab = 'overview' }) {
 
                   <div className="space-y-1">
                     <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-wider bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/30 inline-block">
-                      {reg.gameIcon || '🎱'} {reg.game || '8 Ball Pool'}
+                      {reg.gameIcon || '🎮'} {reg.game || 'Esports Match'}
                     </span>
                     <h4 className="font-heading font-black text-xl text-white">{reg.title}</h4>
                   </div>

@@ -1171,6 +1171,11 @@ app.post('/api/registrations', rateLimiter({ windowMs: 60 * 1000, maxRequests: 2
         id: regId,
         tournamentId: tournament.id,
         tournamentTitle: tournament.title,
+        game: tournament.game || 'Multi-Game',
+        gameIcon: tournament.gameIcon || '🎮',
+        gameCode: tournament.gameCode || '',
+        date: tournament.date || '',
+        time: tournament.time || '',
         playerName: fullName,
         gamingId: cleanGamingId,
         phone: phone || '',
@@ -1192,6 +1197,13 @@ app.post('/api/registrations', rateLimiter({ windowMs: 60 * 1000, maxRequests: 2
           user.totalTournamentsPlayed += 1;
           user.registeredTournaments.unshift({
             tournamentId: tournament.id,
+            tournamentTitle: tournament.title,
+            game: tournament.game || 'Multi-Game',
+            gameIcon: tournament.gameIcon || '🎮',
+            gameCode: tournament.gameCode || '',
+            date: tournament.date || '',
+            time: tournament.time || '',
+            entryFee: tournament.entryFee || 0,
             registrationId: regId,
             registeredAt: new Date().toLocaleDateString(),
             status: newReg.status,
@@ -1217,6 +1229,11 @@ app.post('/api/registrations', rateLimiter({ windowMs: 60 * 1000, maxRequests: 2
       id: `REG-DD-${Math.floor(1000 + Math.random() * 9000)}`,
       tournamentId: tournament.id,
       tournamentTitle: tournament.title,
+      game: tournament.game || 'Multi-Game',
+      gameIcon: tournament.gameIcon || '🎮',
+      gameCode: tournament.gameCode || '',
+      date: tournament.date || '',
+      time: tournament.time || '',
       playerName: fullName,
       gamingId: cleanGamingId,
       phone: phone || '',
@@ -1261,7 +1278,7 @@ app.put('/api/users/profile', async (req, res) => {
           if (taken) {
             const base = gamingUsername.trim().replace(/_\d+$/, '');
             const suggestions = [
-              `${base}_8Ball_${Math.floor(10 + Math.random() * 89)}`,
+              `${base}_Gamer_${Math.floor(10 + Math.random() * 89)}`,
               `${base}_Pro`,
               `${base}_DD_${Math.floor(100 + Math.random() * 899)}`
             ];
