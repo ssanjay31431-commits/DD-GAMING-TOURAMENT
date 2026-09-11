@@ -40,6 +40,11 @@ const tournamentSchema = new mongoose.Schema({
   isLiveStreaming: { type: Boolean, default: false },
   roomId: { type: String, default: '' },
   roomPassword: { type: String, default: '' },
+  roomPublishedAt: { type: Date, default: null },
+  joiningWindowStart: { type: Date, default: null },
+  joiningWindowEnd: { type: Date, default: null },
+  registrationClosed: { type: Boolean, default: false },
+  joiningClosed: { type: Boolean, default: false },
   liveStartTime: { type: String, default: '' },
   resultState: { type: String, default: 'NOT_READY' }, // 'NOT_READY' | 'DRAFT' | 'PUBLISHED'
   bracket: { type: Array, default: [] },

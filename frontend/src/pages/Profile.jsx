@@ -586,24 +586,24 @@ export default function Profile({ initialTab = 'overview' }) {
                   {/* 30-MINUTE JOINING WINDOW & ROOM ID / PASS SECTION */}
                   {(() => {
                     const trn = (tournaments || []).find(t => t.id === reg.tournamentId || String(t.id) === String(reg.tournamentId)) || reg;
-                    const joiningState = getTournamentJoiningState ? getTournamentJoiningState(trn) : { joiningStatus: 'BEFORE_30M', isOpen: false, isLive: false, isMissed: false, formattedTimeUntilOpen: '00:00:00', formattedTimeUntilStart: '00:00:00' };
+                    const joiningState = getTournamentJoiningState ? getTournamentJoiningState(trn) : { joiningStatus: 'WAITING_FOR_ROOM', isOpen: false, isLive: false, isMissed: false, formattedTimeUntilEnd: '30:00' };
 
                     const displayRoomId = trn.roomId || reg.roomId;
                     const displayRoomPassword = trn.roomPassword || reg.roomPassword;
 
-                    if (joiningState.joiningStatus === 'BEFORE_30M') {
+                    if (joiningState.joiningStatus === 'WAITING_FOR_ROOM') {
                       return (
                         <div className="p-4 rounded-2xl bg-amber-950/40 border border-amber-500/40 space-y-2">
                           <div className="flex items-center justify-between">
                             <span className="text-amber-300 font-extrabold text-[10px] uppercase tracking-wider flex items-center gap-1.5">
-                              🔒 ROOM DETAILS HIDDEN
+                              🔒 ROOM DETAILS PENDING
                             </span>
                             <span className="text-amber-400 font-mono text-xs font-bold bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/30">
-                              Opens in: {joiningState.formattedTimeUntilOpen}
+                              Waiting for Admin
                             </span>
                           </div>
                           <p className="text-xs text-amber-200/90 leading-relaxed font-semibold">
-                            🔒 Room details will be available 30 minutes before game start.
+                            🔒 ROOM DETAILS WILL BE AVAILABLE SOON. (30-minute joining window starts when Admin publishes Room ID).
                           </p>
                           <div className="flex items-center justify-between text-xs pt-1 border-t border-amber-500/20 font-mono text-amber-300">
                             <span>Room ID: ••••••••</span>
@@ -621,7 +621,7 @@ export default function Profile({ initialTab = 'overview' }) {
                               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" /> 🟢 JOINING OPEN NOW
                             </span>
                             <span className="text-cyan-300 font-mono text-xs font-bold bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/30">
-                              Starts in: {joiningState.formattedTimeUntilStart}
+                              Window Ends: {joiningState.formattedTimeUntilEnd}
                             </span>
                           </div>
 
@@ -672,7 +672,7 @@ export default function Profile({ initialTab = 'overview' }) {
                             }}
                             className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-heading font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/25 cursor-pointer active:scale-98 transition-all"
                           >
-                            <Play className="w-4 h-4 fill-slate-950" /> JOIN NOW / ENTER ROOM
+                            <Play className="w-4 h-4 fill-slate-950" /> ENTER GAME NOW
                           </button>
                         </div>
                       );
@@ -680,14 +680,21 @@ export default function Profile({ initialTab = 'overview' }) {
 
                     if (joiningState.isMissed) {
                       return (
-                        <div className="p-4 rounded-2xl bg-rose-950/80 border-2 border-rose-500/60 space-y-2">
+                        <div className="p-4 rounded-2xl bg-rose-950/80 border-2 border-rose-500/60 space-y-3 shadow-xl">
                           <div className="flex items-center gap-2 text-rose-300 font-extrabold text-xs uppercase tracking-wider">
                             <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
-                            <span>JOINING WINDOW OVER</span>
+                            <span>⏰ JOINING TIME OVER</span>
                           </div>
                           <p className="text-xs text-rose-200 font-semibold leading-relaxed">
-                            ⏰ JOINING TIME OVER. You missed the 30-minute joining window. No refund available.
+                            You missed the 30-minute joining window for this tournament. The game has already started. No refund is available.
                           </p>
+                          <button
+                            type="button"
+                            onClick={() => navigateTo('tournaments')}
+                            className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-purple-300 font-heading font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow border border-slate-700 cursor-pointer transition-all"
+                          >
+                            <ChevronRight className="w-4 h-4 text-purple-400" /> TRY NEXT TIME • BROWSE TOURNAMENTS
+                          </button>
                         </div>
                       );
                     }

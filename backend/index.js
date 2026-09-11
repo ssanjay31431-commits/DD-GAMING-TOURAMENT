@@ -507,37 +507,44 @@ function getMatchStartDateTime(dateStr, timeStr) {
 function computeTournamentLiveStatus(trn, isAdmin = false) {
   if (!trn) return trn;
   const trnObj = typeof trn.toObject === 'function' ? trn.toObject() : { ...trn };
-
-  const matchStart = getMatchStartDateTime(trnObj.date, trnObj.time);
   const nowMs = Date.now();
 
-  if (matchStart) {
-    const startMs = matchStart.getTime();
-    const joiningOpenMs = startMs - (30 * 60 * 1000); // 30 mins before game start
+  if (trnObj.roomPublishedAt) {
+    const startMs = new Date(trnObj.roomPublishedAt).getTime();
+    const endMs = trnObj.joiningWindowEnd ? new Date(trnObj.joiningWindowEnd).getTime() : (startMs + (30 * 60 * 1000));
 
-    trnObj.matchStartMs = startMs;
-    trnObj.joiningOpenMs = joiningOpenMs;
+    trnObj.joiningWindowStartMs = startMs;
+    trnObj.joiningWindowEndMs = endMs;
+    trnObj.registrationClosed = true;
 
-    // Do not override manual terminal states set by admin
     if (!['Completed', 'Expired', 'Result Pending', 'Cancelled'].includes(trnObj.status)) {
-      if (nowMs < joiningOpenMs) {
-        trnObj.joiningStatus = 'BEFORE_30M';
-      } else if (nowMs >= joiningOpenMs && nowMs < startMs) {
+      if (nowMs >= startMs && nowMs < endMs) {
         trnObj.joiningStatus = 'JOINING_OPEN';
         trnObj.status = 'JOINING_OPEN';
-      } else if (nowMs >= startMs) {
+        trnObj.joiningClosed = false;
+      } else if (nowMs >= endMs) {
         trnObj.joiningStatus = 'LIVE';
         trnObj.status = 'Live';
+        trnObj.joiningClosed = true;
       }
     }
-    
-    // Mask room ID & password if game joining window hasn't opened yet AND non-admin request
-    if (nowMs < joiningOpenMs && !isAdmin) {
+
+    if (nowMs < startMs && !isAdmin) {
       trnObj.roomIdMasked = true;
       trnObj.roomId = '';
       trnObj.roomPassword = '';
     } else {
       trnObj.roomIdMasked = false;
+    }
+  } else {
+    trnObj.joiningStatus = 'WAITING_FOR_ROOM';
+    if (!['Completed', 'Expired', 'Result Pending', 'Cancelled', 'Registration Closed'].includes(trnObj.status)) {
+      trnObj.status = trnObj.status || 'Registration Open';
+    }
+    if (!isAdmin) {
+      trnObj.roomIdMasked = true;
+      trnObj.roomId = '';
+      trnObj.roomPassword = '';
     }
   }
 
@@ -1118,16 +1125,10 @@ app.post('/api/registrations', rateLimiter({ windowMs: 60 * 1000, maxRequests: 2
       // 0. Verify tournament registration status strictly
       const targetTrn = await Tournament.findOne({ id: tournament.id });
       if (targetTrn) {
-        if (targetTrn.status === 'Upcoming') {
+        if (targetTrn.roomPublishedAt || targetTrn.registrationClosed || targetTrn.status === 'JOINING_OPEN' || targetTrn.status === 'Live' || targetTrn.status === 'Registration Closed' || targetTrn.status === 'Completed') {
           return res.status(400).json({
             success: false,
-            message: `Registration for "${targetTrn.title}" has NOT opened yet! Check start date & time.`
-          });
-        }
-        if (targetTrn.status === 'Registration Closed' || targetTrn.status === 'Completed') {
-          return res.status(400).json({
-            success: false,
-            message: `Registration is currently closed for "${targetTrn.title}".`
+            message: `Joining is currently available only for registered players. New registration for "${targetTrn.title}" is closed.`
           });
         }
       }
@@ -1743,6 +1744,19 @@ app.get('/api/tournaments/:id/live-access', async (req, res) => {
     }
 
     if (isRegisteredOrPaid) {
+      const nowMs = Date.now();
+      if (tournament.roomPublishedAt) {
+        const windowEndMs = tournament.joiningWindowEnd ? new Date(tournament.joiningWindowEnd).getTime() : (new Date(tournament.roomPublishedAt).getTime() + 30 * 60 * 1000);
+        if (nowMs >= windowEndMs && !['Completed', 'Expired', 'Result Pending'].includes(tournament.status)) {
+          return res.json({
+            hasAccess: false,
+            reason: 'JOINING_TIME_OVER',
+            message: '⏰ JOINING TIME OVER\n\nYou missed the joining window for this tournament.\nThe game has already started.\nNo refund is available for missed joining.\n\nPlease try again in the next tournament.',
+            isLiveStreaming: true
+          });
+        }
+      }
+
       const defaultEmbed = tournament.liveEmbedUrl || (tournament.youtubeVideoId ? `https://www.youtube.com/embed/${tournament.youtubeVideoId}?autoplay=1&rel=0` : `https://www.youtube.com/embed/live_stream?channel=UC_DD_GAMING`);
       return res.json({
         hasAccess: true,
@@ -1852,7 +1866,7 @@ app.put('/api/admin/tournaments/:id/live-stream', async (req, res) => {
 const handleUpdateRoomId = async (req, res) => {
   try {
     const { id } = req.params;
-    const { roomId } = req.body;
+    const { roomId, roomPassword } = req.body;
 
     if (roomId === undefined || roomId === null || String(roomId).trim() === '') {
       return res.status(400).json({
@@ -1862,7 +1876,21 @@ const handleUpdateRoomId = async (req, res) => {
     }
 
     const cleanRoomId = String(roomId).trim();
-    const updatePayload = { roomId: cleanRoomId };
+    const cleanRoomPassword = roomPassword !== undefined ? String(roomPassword).trim() : '';
+
+    const now = new Date();
+    const windowEnd = new Date(now.getTime() + 30 * 60 * 1000);
+
+    const updatePayload = {
+      roomId: cleanRoomId,
+      roomPassword: cleanRoomPassword,
+      roomPublishedAt: now,
+      joiningWindowStart: now,
+      joiningWindowEnd: windowEnd,
+      status: 'JOINING_OPEN',
+      registrationClosed: true,
+      joiningClosed: false
+    };
 
     let updatedTrn = null;
     if (isDbConnected && mongoose.connection.readyState === 1) {
@@ -1879,13 +1907,26 @@ const handleUpdateRoomId = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Tournament not found' });
     }
 
-    addAuditLog('Room ID Updated', `Updated Room ID for tournament ${updatedTrn.title} (${updatedTrn.id}) to "${cleanRoomId}".`);
+    addAuditLog('Room ID Published', `Admin updated Room ID for tournament "${updatedTrn.title}" (${updatedTrn.id}). 30-minute joining window activated until ${windowEnd.toLocaleTimeString()}.`);
+
+    await createNotification({
+      title: `🟢 JOINING OPEN NOW: ${updatedTrn.title}`,
+      message: `Room ID has been published for ${updatedTrn.title}! Registered players have 30 minutes to join. Game starts at ${windowEnd.toLocaleTimeString()}.`,
+      type: 'tournament',
+      tournamentId: updatedTrn.id
+    });
+
+    const processed = computeTournamentLiveStatus(updatedTrn, true);
 
     return res.json({
       success: true,
-      message: 'Room ID updated successfully!',
-      tournament: updatedTrn,
-      roomId: cleanRoomId
+      message: 'Room ID updated & 30-Minute Joining Window Started!',
+      tournament: processed,
+      roomId: cleanRoomId,
+      roomPassword: cleanRoomPassword,
+      roomPublishedAt: now,
+      joiningWindowStart: now,
+      joiningWindowEnd: windowEnd
     });
   } catch (err) {
     return res.status(500).json({ success: false, message: err.message });

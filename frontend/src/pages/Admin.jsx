@@ -831,53 +831,97 @@ export default function Admin() {
                       <p className="text-xs text-slate-400">{trn.date} at {trn.time} • Mode: {trn.mode || 'Standard'}</p>
                     </div>
 
-                    {/* DYNAMIC JOINING WINDOW BADGE */}
-                    <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+                    {/* DYNAMIC JOINING WINDOW BADGE & ROOM CONTROLS */}
+                    <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2.5">
                       <div className="flex items-center justify-between text-xs">
-                        <span className="text-slate-400 font-bold uppercase text-[10px]">30-Min Window Status:</span>
-                        {joiningState.joiningStatus === 'BEFORE_30M' && (
+                        <span className="text-slate-400 font-bold uppercase text-[10px]">Joining Window Status:</span>
+                        {joiningState.joiningStatus === 'WAITING_FOR_ROOM' && (
                           <span className="text-amber-400 font-bold text-[10px] bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/30">
-                            🔒 Room Details Hidden (Opens {joiningState.joiningOpenTimeStr})
+                            🔒 Waiting for Admin Room ID
                           </span>
                         )}
                         {joiningState.joiningStatus === 'JOINING_OPEN' && (
                           <span className="text-emerald-300 font-extrabold text-[10px] bg-emerald-500/20 px-2 py-0.5 rounded border border-emerald-500/40 animate-pulse">
-                            🟢 JOINING OPEN (Room Visible)
+                            🟢 JOINING OPEN (Starts {joiningState.gameStartTimeStr})
                           </span>
                         )}
                         {joiningState.joiningStatus === 'LIVE' && (
                           <span className="text-rose-400 font-extrabold text-[10px] bg-rose-500/20 px-2 py-0.5 rounded border border-rose-500/40">
-                            🔴 LIVE MATCH (Window Closed)
+                            🔴 LIVE MATCH (Joining & Reg Closed)
                           </span>
                         )}
                       </div>
 
+                      {joiningState.joiningStatus === 'JOINING_OPEN' && (
+                        <div className="p-2.5 rounded-xl bg-emerald-950/40 border border-emerald-500/30 text-xs font-mono grid grid-cols-3 gap-2 text-center">
+                          <div>
+                            <span className="text-slate-400 block text-[9px] uppercase">Published</span>
+                            <span className="font-bold text-slate-200">{joiningState.publishedTimeStr}</span>
+                          </div>
+                          <div>
+                            <span className="text-slate-400 block text-[9px] uppercase">Game Start</span>
+                            <span className="font-bold text-emerald-400">{joiningState.gameStartTimeStr}</span>
+                          </div>
+                          <div>
+                            <span className="text-slate-400 block text-[9px] uppercase">Remaining</span>
+                            <span className="font-black text-amber-400">{joiningState.formattedTimeUntilEnd}</span>
+                          </div>
+                        </div>
+                      )}
+
                       {/* QUICK ROOM ID & PASSWORD CONTROLS */}
-                      <div className="grid grid-cols-2 gap-2 pt-1">
-                        <div>
-                          <label className="block text-[9px] font-bold text-cyan-300 uppercase mb-0.5">Room ID</label>
-                          <input
-                            type="text"
-                            placeholder="Set Room ID"
-                            value={trn.roomId || ''}
-                            onChange={(e) => {
-                              adminUpdateTournament(trn.id, { ...trn, roomId: e.target.value });
-                            }}
-                            className="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs font-mono font-bold text-cyan-300"
-                          />
+                      <div className="space-y-2 pt-1">
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-[9px] font-bold text-cyan-300 uppercase mb-0.5">Room ID</label>
+                            <input
+                              type="text"
+                              placeholder="Enter Room ID"
+                              value={trn.roomId || ''}
+                              onChange={(e) => {
+                                adminUpdateTournament(trn.id, { ...trn, roomId: e.target.value });
+                              }}
+                              className="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs font-mono font-bold text-cyan-300"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[9px] font-bold text-emerald-300 uppercase mb-0.5">Room Password</label>
+                            <input
+                              type="text"
+                              placeholder="Enter Password"
+                              value={trn.roomPassword || ''}
+                              onChange={(e) => {
+                                adminUpdateTournament(trn.id, { ...trn, roomPassword: e.target.value });
+                              }}
+                              className="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs font-mono font-bold text-emerald-300"
+                            />
+                          </div>
                         </div>
-                        <div>
-                          <label className="block text-[9px] font-bold text-emerald-300 uppercase mb-0.5">Room Password</label>
-                          <input
-                            type="text"
-                            placeholder="Set Password"
-                            value={trn.roomPassword || ''}
-                            onChange={(e) => {
-                              adminUpdateTournament(trn.id, { ...trn, roomPassword: e.target.value });
-                            }}
-                            className="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs font-mono font-bold text-emerald-300"
-                          />
-                        </div>
+
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            if (!trn.roomId || !trn.roomId.trim()) {
+                              showToast('Please enter a valid Room ID first!', 'error');
+                              return;
+                            }
+                            const res = await adminUpdateRoomIdAPI(trn.id, trn.roomId, trn.roomPassword);
+                            if (res && res.success) {
+                              showToast('🟢 ROOM ID UPDATED! 30-Minute Joining Window Started!', 'success');
+                              adminUpdateTournament(trn.id, res.tournament || {
+                                ...trn,
+                                roomPublishedAt: new Date(),
+                                status: 'JOINING_OPEN',
+                                registrationClosed: true
+                              });
+                            } else {
+                              showToast(res?.message || 'Failed to update Room ID', 'error');
+                            }
+                          }}
+                          className="w-full py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-heading font-extrabold text-xs uppercase tracking-wider shadow-lg flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-98"
+                        >
+                          <Lock className="w-3.5 h-3.5" /> UPDATE ROOM & START 30m WINDOW
+                        </button>
                       </div>
                     </div>
 

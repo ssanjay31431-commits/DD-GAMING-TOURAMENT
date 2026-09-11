@@ -5,7 +5,7 @@ import { useApp } from '../context/AppContext';
 import { getGameBanner } from '../utils/gameBanners';
 
 export default function Tournaments() {
-  const { tournaments, openTournamentDetail, openRegistrationModal, navigateTo, isAlreadyRegisteredForTournament } = useApp();
+  const { tournaments, openTournamentDetail, openRegistrationModal, navigateTo, isAlreadyRegisteredForTournament, getTournamentJoiningState } = useApp();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGame, setSelectedGame] = useState('all');
@@ -148,6 +148,9 @@ export default function Tournaments() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredTournaments.map((trn) => {
             const fillPct = Math.min(100, Math.round((trn.registeredSlots / trn.totalSlots) * 100));
+            const js = getTournamentJoiningState ? getTournamentJoiningState(trn) : {};
+            const isReg = isAlreadyRegisteredForTournament(trn.id);
+
             return (
               <motion.div
                 key={trn.id}
@@ -176,11 +179,15 @@ export default function Tournaments() {
 
                     <div className="absolute top-3 right-3">
                       <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase text-white shadow ${
+                        js.joiningStatus === 'JOINING_OPEN' ? 'bg-emerald-600 border border-emerald-400/50 shadow-emerald-500/40 animate-pulse' :
+                        js.joiningStatus === 'LIVE' || trn.status === 'Live' ? 'bg-rose-600 border border-rose-400/50 shadow-rose-500/40 animate-pulse' :
                         trn.status === 'Upcoming' ? 'bg-purple-600 border border-purple-400/50 shadow-purple-500/40' :
                         trn.status === 'Registration Open' ? 'bg-emerald-600 animate-pulse' :
                         trn.status === 'Almost Full' ? 'bg-amber-600 animate-pulse' : 'bg-purple-600'
                       }`}>
-                        {trn.status === 'Upcoming' ? '🗓️ UPCOMING' : trn.status}
+                        {js.joiningStatus === 'JOINING_OPEN' ? `⚡ JOINING OPEN (${js.formattedTimeUntilEnd})` :
+                         js.joiningStatus === 'LIVE' || trn.status === 'Live' ? '🔴 LIVE NOW' :
+                         trn.status === 'Upcoming' ? '🗓️ UPCOMING' : trn.status}
                       </span>
                     </div>
                   </div>
@@ -241,25 +248,39 @@ export default function Tournaments() {
                     </span>
                   </div>
 
-                  {(trn.status === 'Live' || trn.isLiveStreaming || trn.liveStreamUrl) && (
+                  {js.joiningStatus === 'LIVE' || trn.status === 'Live' ? (
                     <button
                       onClick={() => navigateTo('live')}
                       className="w-full min-h-[44px] py-3 rounded-xl bg-gradient-to-r from-rose-600 via-red-600 to-rose-700 hover:from-rose-500 hover:to-red-500 text-white font-heading font-black text-xs uppercase tracking-wider shadow-lg shadow-rose-500/30 flex items-center justify-center gap-2 animate-pulse cursor-pointer border border-rose-400/50 touch-manipulation active:scale-95"
                     >
                       <Play className="w-4 h-4 fill-white" /> 🔴 WATCH LIVE MATCH NOW
                     </button>
-                  )}
-
-                  {isAlreadyRegisteredForTournament(trn.id) ? (
-                    <button
-                      onClick={() => navigateTo('my-tournaments')}
-                      className="w-full min-h-[44px] py-3 rounded-xl font-heading font-extrabold text-xs uppercase tracking-wider transition-all shadow-lg bg-slate-900 border-2 border-emerald-500/60 text-emerald-300 hover:bg-slate-800 cursor-pointer shadow-emerald-500/20 flex items-center justify-center gap-1.5 touch-manipulation active:scale-95"
-                    >
-                      ✅ ALREADY REGISTERED (VIEW TICKET)
-                    </button>
+                  ) : isReg ? (
+                    js.joiningStatus === 'JOINING_OPEN' ? (
+                      <button
+                        onClick={() => openTournamentDetail(trn)}
+                        className="w-full min-h-[44px] py-3 rounded-xl font-heading font-extrabold text-xs uppercase tracking-wider transition-all shadow-lg bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer shadow-emerald-500/30 flex items-center justify-center gap-1.5 animate-pulse touch-manipulation active:scale-95"
+                      >
+                        🔑 JOIN MATCH (ROOM ID ACTIVE)
+                      </button>
+                    ) : js.isMissed ? (
+                      <button
+                        onClick={() => navigateTo('my-tournaments')}
+                        className="w-full min-h-[44px] py-3 rounded-xl font-heading font-extrabold text-xs uppercase tracking-wider transition-all bg-slate-900 border border-red-500/50 text-rose-300 hover:bg-slate-800 cursor-pointer flex items-center justify-center gap-1.5 touch-manipulation active:scale-95"
+                      >
+                        ⏰ JOINING TIME OVER (MISSED)
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => navigateTo('my-tournaments')}
+                        className="w-full min-h-[44px] py-3 rounded-xl font-heading font-extrabold text-xs uppercase tracking-wider transition-all shadow-lg bg-slate-900 border-2 border-emerald-500/60 text-emerald-300 hover:bg-slate-800 cursor-pointer shadow-emerald-500/20 flex items-center justify-center gap-1.5 touch-manipulation active:scale-95"
+                      >
+                        ✅ ALREADY REGISTERED (VIEW TICKET)
+                      </button>
+                    )
                   ) : (
                     <button
-                      disabled={trn.status === 'Completed' || trn.status === 'Expired' || trn.status === 'Registration Closed'}
+                      disabled={trn.status === 'Completed' || trn.status === 'Expired' || trn.status === 'Registration Closed' || js.joiningStatus === 'JOINING_OPEN' || Boolean(trn.roomPublishedAt) || Boolean(trn.registrationClosed)}
                       onClick={() => {
                         if (trn.status === 'Upcoming') {
                           openTournamentDetail(trn);
@@ -276,7 +297,7 @@ export default function Tournaments() {
                           ? 'bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 border border-purple-500/40 text-purple-200 cursor-pointer'
                           : trn.status === 'Result Pending'
                           ? 'bg-gradient-to-r from-amber-600 to-purple-600 hover:from-amber-500 text-white cursor-pointer'
-                          : trn.status === 'Registration Closed'
+                          : trn.status === 'Registration Closed' || js.joiningStatus === 'JOINING_OPEN' || trn.roomPublishedAt || trn.registrationClosed
                           ? 'bg-slate-800 text-slate-400 cursor-not-allowed border border-slate-700'
                           : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-purple-500/25 cursor-pointer'
                       }`}
@@ -284,7 +305,7 @@ export default function Tournaments() {
                       {trn.status === 'Completed' || trn.status === 'Expired' ? '🏆 Tournament Ended (Expired)' :
                        trn.status === 'Upcoming' ? `🗓️ Reg Starts ${trn.registrationStartDate || trn.date}` :
                        trn.status === 'Result Pending' ? '⏳ Wait for Result' :
-                       trn.status === 'Registration Closed' ? 'Registration Closed' :
+                       trn.status === 'Registration Closed' || js.joiningStatus === 'JOINING_OPEN' || trn.roomPublishedAt || trn.registrationClosed ? 'Registration Closed' :
                        'Join Tournament'}
                     </button>
                   )}

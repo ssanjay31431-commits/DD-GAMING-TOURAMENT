@@ -77,77 +77,81 @@ export function getTournamentJoiningState(trn) {
   if (!trn) {
     return {
       status: 'Upcoming',
-      joiningStatus: 'BEFORE_30M',
+      joiningStatus: 'WAITING_FOR_ROOM',
       isOpen: false,
       isLive: false,
       isMissed: false,
-      timeUntilOpenMs: 0,
-      timeUntilStartMs: 0,
-      formattedTimeUntilOpen: '00:00:00',
-      formattedTimeUntilStart: '00:00:00'
+      isRegistrationAllowed: true,
+      timeUntilEndMs: 0,
+      formattedTimeUntilEnd: '30:00',
+      publishedTimeStr: '',
+      gameStartTimeStr: ''
     };
   }
 
-  const matchStart = parseMatchStartDateTime(trn.date, trn.time);
   const nowMs = Date.now();
-
-  if (!matchStart) {
-    return {
-      status: trn.status || 'Upcoming',
-      joiningStatus: 'BEFORE_30M',
-      isOpen: false,
-      isLive: trn.status === 'Live',
-      isMissed: false,
-      timeUntilOpenMs: 0,
-      timeUntilStartMs: 0,
-      formattedTimeUntilOpen: '00:00:00',
-      formattedTimeUntilStart: '00:00:00'
-    };
-  }
-
-  const startMs = matchStart.getTime();
-  const joiningOpenMs = startMs - (30 * 60 * 1000);
-
   const isTerminal = ['Completed', 'Expired', 'Result Pending', 'Cancelled'].includes(trn.status);
 
-  let joiningStatus = 'BEFORE_30M';
-  let status = trn.status || 'Upcoming';
-
-  if (!isTerminal) {
-    if (nowMs < joiningOpenMs) {
-      joiningStatus = 'BEFORE_30M';
-    } else if (nowMs >= joiningOpenMs && nowMs < startMs) {
-      joiningStatus = 'JOINING_OPEN';
-      status = 'JOINING_OPEN';
-    } else if (nowMs >= startMs) {
-      joiningStatus = 'LIVE';
-      status = 'Live';
-    }
-  }
-
-  const timeUntilOpenMs = Math.max(0, joiningOpenMs - nowMs);
-  const timeUntilStartMs = Math.max(0, startMs - nowMs);
-
   const formatMs = (ms) => {
-    const totalSec = Math.floor(ms / 1000);
+    const totalSec = Math.max(0, Math.floor(ms / 1000));
     const hrs = String(Math.floor(totalSec / 3600)).padStart(2, '0');
     const mins = String(Math.floor((totalSec % 3600) / 60)).padStart(2, '0');
     const secs = String(totalSec % 60).padStart(2, '0');
     return hrs !== '00' ? `${hrs}:${mins}:${secs}` : `${mins}:${secs}`;
   };
 
+  const roomPublishedTimestamp = trn.roomPublishedAt || trn.joiningWindowStart;
+
+  if (roomPublishedTimestamp) {
+    const startMs = new Date(roomPublishedTimestamp).getTime();
+    const endMs = trn.joiningWindowEnd ? new Date(trn.joiningWindowEnd).getTime() : (startMs + (30 * 60 * 1000));
+
+    const timeUntilEndMs = Math.max(0, endMs - nowMs);
+    const publishedTimeStr = new Date(startMs).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+    const gameStartTimeStr = new Date(endMs).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+    let joiningStatus = 'JOINING_OPEN';
+    let status = trn.status || 'JOINING_OPEN';
+
+    if (!isTerminal) {
+      if (nowMs < startMs) {
+        joiningStatus = 'WAITING_FOR_ROOM';
+      } else if (nowMs >= startMs && nowMs < endMs) {
+        joiningStatus = 'JOINING_OPEN';
+        status = 'JOINING_OPEN';
+      } else if (nowMs >= endMs) {
+        joiningStatus = 'LIVE';
+        status = 'Live';
+      }
+    }
+
+    return {
+      status,
+      joiningStatus,
+      isOpen: joiningStatus === 'JOINING_OPEN',
+      isLive: joiningStatus === 'LIVE' || status === 'Live',
+      isMissed: nowMs >= endMs && !isTerminal,
+      isRegistrationAllowed: false,
+      timeUntilEndMs,
+      formattedTimeUntilEnd: formatMs(timeUntilEndMs),
+      publishedTimeStr,
+      gameStartTimeStr
+    };
+  }
+
+  // Room ID has NOT been published by Admin yet
+  const isRegistrationClosed = Boolean(trn.registrationClosed || trn.status === 'Registration Closed' || trn.status === 'Completed');
   return {
-    status,
-    joiningStatus,
-    isOpen: joiningStatus === 'JOINING_OPEN',
-    isLive: joiningStatus === 'LIVE' || status === 'Live',
-    isMissed: nowMs >= startMs && joiningStatus !== 'LIVE' && !isTerminal,
-    timeUntilOpenMs,
-    timeUntilStartMs,
-    formattedTimeUntilOpen: formatMs(timeUntilOpenMs),
-    formattedTimeUntilStart: formatMs(timeUntilStartMs),
-    joiningOpenTimeStr: new Date(joiningOpenMs).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
-    startTimeStr: matchStart.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })
+    status: trn.status || 'Registration Open',
+    joiningStatus: 'WAITING_FOR_ROOM',
+    isOpen: false,
+    isLive: trn.status === 'Live',
+    isMissed: false,
+    isRegistrationAllowed: !isRegistrationClosed && !isTerminal,
+    timeUntilEndMs: 0,
+    formattedTimeUntilEnd: '30:00',
+    publishedTimeStr: '',
+    gameStartTimeStr: trn.time || ''
   };
 }
 
@@ -619,6 +623,11 @@ export function AppProvider({ children }) {
       setSelectedTournamentRegister(null);
       setSelectedTournamentDetail(null);
       navigateTo('my-tournaments');
+      return;
+    }
+    const joiningState = tournament ? getTournamentJoiningState(tournament) : null;
+    if (joiningState && (joiningState.joiningStatus === 'JOINING_OPEN' || joiningState.joiningStatus === 'LIVE' || tournament?.roomPublishedAt || tournament?.registrationClosed)) {
+      showToast(`Registration is CLOSED for "${tournament.title || 'this tournament'}". Room ID was published for registered players.`, 'error');
       return;
     }
     if (tournament?.status === 'Upcoming') {

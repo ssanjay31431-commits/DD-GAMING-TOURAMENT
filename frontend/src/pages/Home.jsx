@@ -7,19 +7,22 @@ import { touchProps } from '../utils/touchHelper';
 import FloatingAdsCarousel from '../components/FloatingAdsCarousel';
 
 export default function Home() {
-  const { tournaments, navigateTo, openTournamentDetail, openRegistrationModal, faqs, isAlreadyRegisteredForTournament } = useApp();
+  const { tournaments, navigateTo, openTournamentDetail, openRegistrationModal, faqs, isAlreadyRegisteredForTournament, getTournamentJoiningState, showToast } = useApp();
 
   const [selectedActiveId, setSelectedActiveId] = useState(null);
 
-  // Active tournaments with Open or Upcoming status
-  const activeTournaments = tournaments.filter(t => 
-    t.status === 'Registration Open' || t.status === 'Almost Full' || t.status === 'Upcoming'
-  );
+  // Active tournaments with Open, Upcoming, JOINING_OPEN or Live status
+  const activeTournaments = tournaments.filter(t => {
+    const js = getTournamentJoiningState ? getTournamentJoiningState(t) : {};
+    return t.status === 'Registration Open' || t.status === 'Almost Full' || t.status === 'Upcoming' || js.joiningStatus === 'JOINING_OPEN' || js.joiningStatus === 'LIVE' || t.status === 'Live';
+  });
 
   const displayList = activeTournaments.length > 0 ? activeTournaments : tournaments;
 
   // Selected tournament to highlight in Showcase Hero
   const selectedTrn = displayList.find(t => t.id === selectedActiveId) || displayList[0];
+  const selectedJoiningState = selectedTrn && getTournamentJoiningState ? getTournamentJoiningState(selectedTrn) : {};
+  const isSelectedRegistered = selectedTrn ? isAlreadyRegisteredForTournament(selectedTrn.id) : false;
 
   const featuredTournaments = tournaments.slice(0, 3);
 
@@ -294,10 +297,18 @@ export default function Home() {
               <div className="flex flex-wrap items-center gap-2">
                 <span className="px-3 py-1 rounded-full text-xs font-black bg-purple-500/20 text-purple-300 border border-purple-500/40 uppercase tracking-wider inline-flex items-center gap-1.5">
                   <span>{selectedTrn?.gameIcon || '🎮'}</span>
-                  <span>{selectedTrn?.game?.toUpperCase() || 'MULTI-GAME'} REGISTRATION</span>
+                  <span>{selectedTrn?.game?.toUpperCase() || 'MULTI-GAME'}</span>
                 </span>
-                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 uppercase">
-                  🟢 {selectedTrn?.status || 'Registration Open'}
+                <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-extrabold uppercase ${
+                  selectedJoiningState.joiningStatus === 'JOINING_OPEN'
+                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 animate-pulse'
+                    : selectedJoiningState.joiningStatus === 'LIVE' || selectedTrn?.status === 'Live'
+                    ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40 animate-pulse'
+                    : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                }`}>
+                  {selectedJoiningState.joiningStatus === 'JOINING_OPEN' ? '⚡ JOINING OPEN (30M WINDOW)' :
+                   selectedJoiningState.joiningStatus === 'LIVE' || selectedTrn?.status === 'Live' ? '🔴 LIVE NOW' :
+                   `🟢 ${selectedTrn?.status || 'Registration Open'}`}
                 </span>
               </div>
 
@@ -306,48 +317,69 @@ export default function Home() {
               </h2>
 
               <p className="text-sm text-slate-300 leading-relaxed">
-                Official tournament for <strong className="text-purple-300">{selectedTrn?.game || 'Esports'}</strong>. Match scheduled for <strong className="text-cyan-300">{selectedTrn?.date || 'Today'} at {selectedTrn?.time || '08:00 PM IST'}</strong>. Lock in your slot now!
+                Official tournament for <strong className="text-purple-300">{selectedTrn?.game || 'Esports'}</strong>. Match scheduled for <strong className="text-cyan-300">{selectedTrn?.date || 'Today'} at {selectedTrn?.time || '08:00 PM IST'}</strong>.
               </p>
 
               {/* Live Real Countdown Box */}
               <div className="pt-2">
-                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-2">
-                  <Clock className="w-3.5 h-3.5 text-cyan-400" />
-                  <span>REGISTRATION CLOSES IN FOR {selectedTrn?.game?.toUpperCase() || 'THIS MATCH'}:</span>
-                </p>
-                <div className="flex items-center gap-3">
-                  {countdown.days > 0 && (
-                    <>
+                {selectedJoiningState.joiningStatus === 'JOINING_OPEN' ? (
+                  <div className="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-950 via-slate-950 to-cyan-950 border border-emerald-500/40 space-y-1">
+                    <p className="text-[11px] font-bold text-emerald-300 uppercase tracking-wider flex items-center gap-2">
+                      <Clock className="w-3.5 h-3.5 text-emerald-400 animate-spin" />
+                      <span>30-MINUTE JOINING WINDOW CLOSES IN:</span>
+                    </p>
+                    <div className="font-mono font-black text-3xl text-emerald-400">
+                      {selectedJoiningState.formattedTimeUntilEnd}
+                    </div>
+                  </div>
+                ) : selectedJoiningState.joiningStatus === 'LIVE' || selectedTrn?.status === 'Live' ? (
+                  <div className="p-3.5 rounded-2xl bg-rose-950/60 border border-rose-500/40 space-y-1">
+                    <p className="text-[11px] font-bold text-rose-300 uppercase tracking-wider flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping" />
+                      <span>MATCH CURRENTLY LIVE IN ARENA</span>
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                      <Clock className="w-3.5 h-3.5 text-cyan-400" />
+                      <span>REGISTRATION CLOSES IN FOR {selectedTrn?.game?.toUpperCase() || 'THIS MATCH'}:</span>
+                    </p>
+                    <div className="flex items-center gap-3">
+                      {countdown.days > 0 && (
+                        <>
+                          <div className="bg-slate-950 px-3.5 py-2 rounded-xl border border-purple-500/30 text-center">
+                            <span className="font-mono font-black text-xl text-purple-400">
+                              {String(countdown.days).padStart(2, '0')}
+                            </span>
+                            <span className="block text-[9px] text-slate-500 uppercase font-bold">Days</span>
+                          </div>
+                          <span className="text-lg font-bold text-purple-500">:</span>
+                        </>
+                      )}
                       <div className="bg-slate-950 px-3.5 py-2 rounded-xl border border-purple-500/30 text-center">
                         <span className="font-mono font-black text-xl text-purple-400">
-                          {String(countdown.days).padStart(2, '0')}
+                          {String(countdown.hours).padStart(2, '0')}
                         </span>
-                        <span className="block text-[9px] text-slate-500 uppercase font-bold">Days</span>
+                        <span className="block text-[9px] text-slate-500 uppercase font-bold">Hours</span>
                       </div>
                       <span className="text-lg font-bold text-purple-500">:</span>
-                    </>
-                  )}
-                  <div className="bg-slate-950 px-3.5 py-2 rounded-xl border border-purple-500/30 text-center">
-                    <span className="font-mono font-black text-xl text-purple-400">
-                      {String(countdown.hours).padStart(2, '0')}
-                    </span>
-                    <span className="block text-[9px] text-slate-500 uppercase font-bold">Hours</span>
-                  </div>
-                  <span className="text-lg font-bold text-purple-500">:</span>
-                  <div className="bg-slate-950 px-3.5 py-2 rounded-xl border border-purple-500/30 text-center">
-                    <span className="font-mono font-black text-xl text-cyan-400">
-                      {String(countdown.minutes).padStart(2, '0')}
-                    </span>
-                    <span className="block text-[9px] text-slate-500 uppercase font-bold">Mins</span>
-                  </div>
-                  <span className="text-lg font-bold text-cyan-500">:</span>
-                  <div className="bg-slate-950 px-3.5 py-2 rounded-xl border border-purple-500/30 text-center">
-                    <span className="font-mono font-black text-xl text-pink-400">
-                      {String(countdown.seconds).padStart(2, '0')}
-                    </span>
-                    <span className="block text-[9px] text-slate-500 uppercase font-bold">Secs</span>
-                  </div>
-                </div>
+                      <div className="bg-slate-950 px-3.5 py-2 rounded-xl border border-purple-500/30 text-center">
+                        <span className="font-mono font-black text-xl text-cyan-400">
+                          {String(countdown.minutes).padStart(2, '0')}
+                        </span>
+                        <span className="block text-[9px] text-slate-500 uppercase font-bold">Mins</span>
+                      </div>
+                      <span className="text-lg font-bold text-cyan-500">:</span>
+                      <div className="bg-slate-950 px-3.5 py-2 rounded-xl border border-purple-500/30 text-center">
+                        <span className="font-mono font-black text-xl text-pink-400">
+                          {String(countdown.seconds).padStart(2, '0')}
+                        </span>
+                        <span className="block text-[9px] text-slate-500 uppercase font-bold">Secs</span>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 
@@ -376,13 +408,40 @@ export default function Home() {
                   </span>
                 </div>
 
-                <button
-                  onClick={() => openRegistrationModal(selectedTrn)}
-                  className="w-full py-3.5 rounded-xl font-heading font-black text-sm text-white bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 shadow-lg shadow-purple-500/30 transition-all flex items-center justify-center gap-2 uppercase tracking-wider cursor-pointer"
-                >
-                  <Gamepad2 className="w-4 h-4" />
-                  JOIN {selectedTrn?.game?.toUpperCase() || 'EVENT'} (₹{selectedTrn?.entryFee || 100})
-                </button>
+                {selectedJoiningState.joiningStatus === 'JOINING_OPEN' ? (
+                  isSelectedRegistered ? (
+                    <button
+                      onClick={() => openTournamentDetail(selectedTrn)}
+                      className="w-full py-3.5 rounded-xl font-heading font-black text-sm text-white bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-500 hover:from-emerald-500 shadow-lg shadow-emerald-500/30 transition-all flex items-center justify-center gap-2 uppercase tracking-wider cursor-pointer animate-pulse"
+                    >
+                      <Gamepad2 className="w-4 h-4" />
+                      🔑 ENTER GAME (ROOM ID READY)
+                    </button>
+                  ) : (
+                    <button
+                      disabled
+                      className="w-full py-3.5 rounded-xl font-heading font-extrabold text-xs text-slate-400 bg-slate-800 border border-slate-700 transition-all flex items-center justify-center gap-2 uppercase tracking-wider cursor-not-allowed text-center"
+                    >
+                      🔒 REGISTRATION CLOSED (ROOM PUBLISHED)
+                    </button>
+                  )
+                ) : selectedJoiningState.joiningStatus === 'LIVE' || selectedTrn?.status === 'Live' ? (
+                  <button
+                    onClick={() => navigateTo('live')}
+                    className="w-full py-3.5 rounded-xl font-heading font-black text-sm text-white bg-gradient-to-r from-rose-600 via-red-600 to-rose-700 hover:from-rose-500 shadow-lg shadow-rose-500/30 transition-all flex items-center justify-center gap-2 uppercase tracking-wider cursor-pointer animate-pulse"
+                  >
+                    <Play className="w-4 h-4 fill-white" />
+                    🔴 WATCH LIVE MATCH NOW
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => openRegistrationModal(selectedTrn)}
+                    className="w-full py-3.5 rounded-xl font-heading font-black text-sm text-white bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 shadow-lg shadow-purple-500/30 transition-all flex items-center justify-center gap-2 uppercase tracking-wider cursor-pointer"
+                  >
+                    <Gamepad2 className="w-4 h-4" />
+                    JOIN {selectedTrn?.game?.toUpperCase() || 'EVENT'} (₹{selectedTrn?.entryFee || 100})
+                  </button>
+                )}
                 
                 <button
                   onClick={() => openTournamentDetail(selectedTrn)}
@@ -419,102 +478,148 @@ export default function Home() {
 
         {/* Tournaments Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {featuredTournaments.map((trn) => (
-            <motion.div
-              key={trn.id}
-              whileHover={{ y: -6 }}
-              className="glass-panel glass-panel-hover rounded-2xl overflow-hidden flex flex-col justify-between border border-white/10"
-            >
-              <div>
-                <div className="relative h-40 w-full overflow-hidden">
-                  <img
-                    src={getGameBanner(trn.game, trn.banner)}
-                    alt={trn.title}
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src = getGameBanner(trn.game);
-                    }}
-                    className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent" />
-                  
-                  <div className="absolute top-3 left-3">
-                    <span className="px-2.5 py-1 rounded-md bg-slate-950/80 backdrop-blur-md text-xs font-bold text-white border border-white/10">
-                      {trn.gameIcon} {trn.game}
-                    </span>
+          {featuredTournaments.map((trn) => {
+            const js = getTournamentJoiningState ? getTournamentJoiningState(trn) : {};
+            const isReg = isAlreadyRegisteredForTournament(trn.id);
+
+            return (
+              <motion.div
+                key={trn.id}
+                whileHover={{ y: -6 }}
+                className="glass-panel glass-panel-hover rounded-2xl overflow-hidden flex flex-col justify-between border border-white/10"
+              >
+                <div>
+                  <div className="relative h-40 w-full overflow-hidden">
+                    <img
+                      src={getGameBanner(trn.game, trn.banner)}
+                      alt={trn.title}
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = getGameBanner(trn.game);
+                      }}
+                      className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent" />
+                    
+                    <div className="absolute top-3 left-3">
+                      <span className="px-2.5 py-1 rounded-md bg-slate-950/80 backdrop-blur-md text-xs font-bold text-white border border-white/10">
+                        {trn.gameIcon} {trn.game}
+                      </span>
+                    </div>
+
+                    <div className="absolute top-3 right-3 flex items-center gap-1.5">
+                      {js.joiningStatus === 'JOINING_OPEN' ? (
+                        <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase text-emerald-200 bg-emerald-600 border border-emerald-400/50 shadow animate-pulse">
+                          ⚡ JOINING OPEN ({js.formattedTimeUntilEnd})
+                        </span>
+                      ) : js.joiningStatus === 'LIVE' || trn.status === 'Live' ? (
+                        <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase text-rose-200 bg-rose-600 border border-rose-400/50 shadow animate-pulse">
+                          🔴 LIVE NOW
+                        </span>
+                      ) : trn.status === 'Upcoming' ? (
+                        <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase text-purple-200 bg-purple-600 border border-purple-400/50 shadow">
+                          🗓️ UPCOMING
+                        </span>
+                      ) : (
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase text-white shadow ${
+                          trn.entryFee === 0 ? 'bg-indigo-600' : 'bg-emerald-600'
+                        }`}>
+                          {trn.entryFee === 0 ? 'FREE ENTRY' : 'PAID EVENT'}
+                        </span>
+                      )}
+                    </div>
                   </div>
 
-                  <div className="absolute top-3 right-3 flex items-center gap-1.5">
+                  <div className="p-5 space-y-3">
+                    <h3 className="font-heading font-bold text-base text-white">
+                      {trn.title}
+                    </h3>
+
                     {trn.status === 'Upcoming' && (
-                      <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase text-purple-200 bg-purple-600 border border-purple-400/50 shadow">
-                        🗓️ UPCOMING
-                      </span>
+                      <div className="p-2 rounded-lg bg-purple-950/70 border border-purple-500/30 text-[11px] font-semibold text-purple-200 flex items-center justify-between">
+                        <span>Reg Starts:</span>
+                        <span className="font-bold text-amber-300 font-mono">
+                          {trn.registrationStartDate || trn.date} @ {trn.registrationStartTime || trn.time}
+                        </span>
+                      </div>
                     )}
-                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase text-white shadow ${
-                      trn.entryFee === 0 ? 'bg-indigo-600' : 'bg-emerald-600'
-                    }`}>
-                      {trn.entryFee === 0 ? 'FREE ENTRY' : 'PAID EVENT'}
-                    </span>
+
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div className="bg-slate-950 p-2 rounded-lg border border-white/5">
+                        <span className="text-slate-400 block text-[10px] uppercase font-bold">Entry Fee</span>
+                        <span className="font-black text-emerald-400 text-sm">
+                          {trn.entryFee === 0 ? 'FREE' : `₹${trn.entryFee}`}
+                        </span>
+                      </div>
+                      <div className="bg-slate-950 p-2 rounded-lg border border-white/5">
+                        <span className="text-slate-400 block text-[10px] uppercase font-bold">Prize Pool</span>
+                        <span className="font-black text-amber-400 text-sm">
+                          ₹{trn.prizePool.toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                <div className="p-5 space-y-3">
-                  <h3 className="font-heading font-bold text-base text-white">
-                    {trn.title}
-                  </h3>
-
-                  {trn.status === 'Upcoming' && (
-                    <div className="p-2 rounded-lg bg-purple-950/70 border border-purple-500/30 text-[11px] font-semibold text-purple-200 flex items-center justify-between">
-                      <span>Reg Starts:</span>
-                      <span className="font-bold text-amber-300 font-mono">
-                        {trn.registrationStartDate || trn.date} @ {trn.registrationStartTime || trn.time}
-                      </span>
-                    </div>
+                <div className="p-5 pt-0 space-y-2">
+                  {js.joiningStatus === 'LIVE' || trn.status === 'Live' ? (
+                    <button
+                      onClick={() => navigateTo('live')}
+                      className="w-full py-2.5 rounded-xl font-heading font-extrabold text-xs uppercase tracking-wider transition-all shadow-md bg-rose-600 hover:bg-rose-500 text-white animate-pulse"
+                    >
+                      🔴 WATCH LIVE MATCH NOW
+                    </button>
+                  ) : js.joiningStatus === 'JOINING_OPEN' ? (
+                    isReg ? (
+                      <button
+                        onClick={() => openTournamentDetail(trn)}
+                        className="w-full py-2.5 rounded-xl font-heading font-extrabold text-xs uppercase tracking-wider transition-all shadow-md bg-emerald-600 hover:bg-emerald-500 text-white animate-pulse"
+                      >
+                        🔑 JOIN MATCH ({js.formattedTimeUntilEnd})
+                      </button>
+                    ) : (
+                      <button
+                        disabled
+                        className="w-full py-2.5 rounded-xl font-heading font-extrabold text-xs uppercase tracking-wider transition-all bg-slate-800 text-slate-400 border border-slate-700 cursor-not-allowed"
+                      >
+                        🔒 REGISTRATION CLOSED
+                      </button>
+                    )
+                  ) : isReg ? (
+                    <button
+                      onClick={() => navigateTo('my-tournaments')}
+                      className="w-full py-2.5 rounded-xl font-heading font-extrabold text-xs uppercase tracking-wider transition-all shadow-md bg-slate-900 border border-emerald-500/60 text-emerald-300 hover:bg-slate-800"
+                    >
+                      ✅ ALREADY REGISTERED
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        if (trn.status === 'Upcoming') {
+                          openTournamentDetail(trn);
+                        } else {
+                          openRegistrationModal(trn);
+                        }
+                      }}
+                      className={`w-full py-2.5 rounded-xl font-heading font-extrabold text-xs uppercase tracking-wider transition-all shadow-md ${
+                        trn.status === 'Upcoming'
+                          ? 'bg-purple-950 text-purple-300 border border-purple-500/40 hover:bg-purple-900'
+                          : 'bg-purple-600 hover:bg-purple-500 text-white'
+                      }`}
+                    >
+                      {trn.status === 'Upcoming' ? `🗓️ Reg Starts ${trn.registrationStartDate || trn.date}` : 'Join Tournament'}
+                    </button>
                   )}
-
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div className="bg-slate-950 p-2 rounded-lg border border-white/5">
-                      <span className="text-slate-400 block text-[10px] uppercase font-bold">Entry Fee</span>
-                      <span className="font-black text-emerald-400 text-sm">
-                        {trn.entryFee === 0 ? 'FREE' : `₹${trn.entryFee}`}
-                      </span>
-                    </div>
-                    <div className="bg-slate-950 p-2 rounded-lg border border-white/5">
-                      <span className="text-slate-400 block text-[10px] uppercase font-bold">Prize Pool</span>
-                      <span className="font-black text-amber-400 text-sm">
-                        ₹{trn.prizePool.toLocaleString()}
-                      </span>
-                    </div>
-                  </div>
+                  <button
+                    onClick={() => openTournamentDetail(trn)}
+                    className="w-full py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 text-xs font-semibold hover:border-slate-700 cursor-pointer"
+                  >
+                    View Details & Rules
+                  </button>
                 </div>
-              </div>
-
-              <div className="p-5 pt-0 space-y-2">
-                <button
-                  onClick={() => {
-                    if (trn.status === 'Upcoming') {
-                      openTournamentDetail(trn);
-                    } else {
-                      openRegistrationModal(trn);
-                    }
-                  }}
-                  className={`w-full py-2.5 rounded-xl font-heading font-extrabold text-xs uppercase tracking-wider transition-all shadow-md ${
-                    trn.status === 'Upcoming'
-                      ? 'bg-purple-950 text-purple-300 border border-purple-500/40 hover:bg-purple-900'
-                      : 'bg-purple-600 hover:bg-purple-500 text-white'
-                  }`}
-                >
-                  {trn.status === 'Upcoming' ? `🗓️ Reg Starts ${trn.registrationStartDate || trn.date}` : 'Join Tournament'}
-                </button>
-                <button
-                  onClick={() => openTournamentDetail(trn)}
-                  className="w-full py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 text-xs font-semibold hover:border-slate-700"
-                >
-                  View Details & Rules
-                </button>
-              </div>
-            </motion.div>
-          ))}
+              </motion.div>
+            );
+          })}
         </div>
       </section>
 

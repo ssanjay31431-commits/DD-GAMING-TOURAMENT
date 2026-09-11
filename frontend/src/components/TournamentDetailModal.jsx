@@ -125,40 +125,51 @@ export default function TournamentDetailModal() {
               )}
 
               {joiningState.joiningStatus === 'JOINING_OPEN' && (
-                <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-950 via-slate-900 to-cyan-950 border-2 border-emerald-500/60 space-y-3 shadow-xl">
-                  <div className="flex items-center justify-between">
-                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-extrabold text-[10px] uppercase tracking-wider flex items-center gap-1.5 border border-emerald-500/40 animate-pulse">
-                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" /> 🟢 JOINING OPEN NOW
-                    </span>
-                    <span className="text-cyan-300 font-mono text-xs font-bold bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/30">
-                      Starts in: {joiningState.formattedTimeUntilStart}
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2 bg-slate-950/80 p-3 rounded-xl border border-emerald-500/30">
-                    <div>
-                      <span className="text-slate-400 text-[9px] font-bold uppercase block mb-0.5">ROOM ID</span>
-                      <span className="font-mono font-black text-emerald-400 text-sm block">{trn.roomId || 'Available'}</span>
+                isRegistered ? (
+                  <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-950 via-slate-900 to-cyan-950 border-2 border-emerald-500/60 space-y-3 shadow-xl">
+                    <div className="flex items-center justify-between">
+                      <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-extrabold text-[10px] uppercase tracking-wider flex items-center gap-1.5 border border-emerald-500/40 animate-pulse">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" /> 🟢 JOINING OPEN NOW
+                      </span>
+                      <span className="text-cyan-300 font-mono text-xs font-bold bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/30">
+                        Window closes in: {joiningState.formattedTimeUntilEnd}
+                      </span>
                     </div>
-                    <div>
-                      <span className="text-slate-400 text-[9px] font-bold uppercase block mb-0.5">ROOM PASSWORD</span>
-                      <span className="font-mono font-black text-cyan-300 text-sm block">{trn.roomPassword || 'NO PASS'}</span>
-                    </div>
-                  </div>
 
-                  {trn.roomId && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        navigator.clipboard.writeText(trn.roomId);
-                        if (showToast) showToast('Room ID copied to clipboard!', 'success');
-                      }}
-                      className="w-full py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs uppercase flex items-center justify-center gap-1.5 shadow cursor-pointer active:scale-95 transition-all"
-                    >
-                      <Copy className="w-4 h-4" /> COPY ROOM ID
-                    </button>
-                  )}
-                </div>
+                    <div className="grid grid-cols-2 gap-2 bg-slate-950/80 p-3 rounded-xl border border-emerald-500/30">
+                      <div>
+                        <span className="text-slate-400 text-[9px] font-bold uppercase block mb-0.5">ROOM ID</span>
+                        <span className="font-mono font-black text-emerald-400 text-sm block">{trn.roomId || 'Available'}</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 text-[9px] font-bold uppercase block mb-0.5">ROOM PASSWORD</span>
+                        <span className="font-mono font-black text-cyan-300 text-sm block">{trn.roomPassword || 'NO PASS'}</span>
+                      </div>
+                    </div>
+
+                    {trn.roomId && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(trn.roomId);
+                          if (showToast) showToast('Room ID copied to clipboard!', 'success');
+                        }}
+                        className="w-full py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs uppercase flex items-center justify-center gap-1.5 shadow cursor-pointer active:scale-95 transition-all"
+                      >
+                        <Copy className="w-4 h-4" /> COPY ROOM ID
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+                    <span className="px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 font-extrabold text-[10px] uppercase tracking-wider border border-rose-500/40">
+                      🔒 REGISTRATION CLOSED
+                    </span>
+                    <p className="text-xs text-slate-300 leading-relaxed font-semibold">
+                      Room details have been published by Admin. The 30-minute joining window is currently active for registered players only. New registrations are strictly closed.
+                    </p>
+                  </div>
+                )
               )}
               
               {/* Quick Info Grid */}
@@ -285,34 +296,69 @@ export default function TournamentDetailModal() {
                     </span>
                   </div>
 
-                  {isRegistered ? (
+                  {joiningState.joiningStatus === 'LIVE' || trn.status === 'Live' ? (
                     <button
                       onClick={() => {
                         closeTournamentDetail();
-                        navigateTo('my-tournaments');
+                        navigateTo('live');
                       }}
-                      className="w-full min-h-[44px] py-3.5 px-6 rounded-xl font-heading font-extrabold text-xs tracking-wider uppercase shadow-lg flex items-center justify-center gap-2 transition-all bg-slate-900 border-2 border-emerald-500/60 text-emerald-300 hover:bg-slate-800 cursor-pointer shadow-emerald-500/20 touch-manipulation active:scale-95"
+                      className="w-full min-h-[44px] py-3.5 px-6 rounded-xl font-heading font-extrabold text-xs tracking-wider uppercase shadow-lg flex items-center justify-center gap-2 transition-all bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 text-white cursor-pointer shadow-rose-500/30 animate-pulse touch-manipulation active:scale-95"
                     >
-                      ✅ ALREADY REGISTERED (VIEW TICKET)
+                      🔴 WATCH LIVE MATCH NOW
                       <ChevronRight className="w-5 h-5" />
                     </button>
+                  ) : isRegistered ? (
+                    joiningState.joiningStatus === 'JOINING_OPEN' ? (
+                      <button
+                        onClick={() => {
+                          closeTournamentDetail();
+                          navigateTo('my-tournaments');
+                        }}
+                        className="w-full min-h-[44px] py-3.5 px-6 rounded-xl font-heading font-extrabold text-xs tracking-wider uppercase shadow-lg flex items-center justify-center gap-2 transition-all bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer shadow-emerald-500/30 animate-pulse touch-manipulation active:scale-95"
+                      >
+                        🔑 JOIN MATCH (VIEW TICKET)
+                        <ChevronRight className="w-5 h-5" />
+                      </button>
+                    ) : joiningState.isMissed ? (
+                      <button
+                        onClick={() => {
+                          closeTournamentDetail();
+                          navigateTo('my-tournaments');
+                        }}
+                        className="w-full min-h-[44px] py-3.5 px-6 rounded-xl font-heading font-extrabold text-xs tracking-wider uppercase shadow-lg flex items-center justify-center gap-2 transition-all bg-slate-900 border border-red-500/50 text-rose-300 hover:bg-slate-800 cursor-pointer touch-manipulation active:scale-95"
+                      >
+                        ⏰ JOINING TIME OVER (VIEW STATUS)
+                        <ChevronRight className="w-5 h-5" />
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          closeTournamentDetail();
+                          navigateTo('my-tournaments');
+                        }}
+                        className="w-full min-h-[44px] py-3.5 px-6 rounded-xl font-heading font-extrabold text-xs tracking-wider uppercase shadow-lg flex items-center justify-center gap-2 transition-all bg-slate-900 border-2 border-emerald-500/60 text-emerald-300 hover:bg-slate-800 cursor-pointer shadow-emerald-500/20 touch-manipulation active:scale-95"
+                      >
+                        ✅ ALREADY REGISTERED (VIEW TICKET)
+                        <ChevronRight className="w-5 h-5" />
+                      </button>
+                    )
                   ) : (
                     <button
-                      disabled={trn.status === 'Registration Closed' || trn.status === 'Completed' || trn.status === 'Upcoming'}
+                      disabled={trn.status === 'Registration Closed' || trn.status === 'Completed' || trn.status === 'Upcoming' || joiningState.joiningStatus === 'JOINING_OPEN' || Boolean(trn.roomPublishedAt) || Boolean(trn.registrationClosed)}
                       onClick={() => {
                         if (trn.status === 'Upcoming') return;
                         closeTournamentDetail();
                         openRegistrationModal(trn);
                       }}
                       className={`w-full min-h-[44px] py-3.5 px-6 rounded-xl font-heading font-extrabold text-xs tracking-wider uppercase shadow-lg flex items-center justify-center gap-2 transition-all touch-manipulation active:scale-95 ${
-                        trn.status === 'Registration Closed' || trn.status === 'Completed'
+                        trn.status === 'Registration Closed' || trn.status === 'Completed' || joiningState.joiningStatus === 'JOINING_OPEN' || trn.roomPublishedAt || trn.registrationClosed
                           ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
                           : trn.status === 'Upcoming'
                           ? 'bg-slate-850 text-amber-300/80 cursor-not-allowed border border-amber-500/30 font-mono shadow-inner'
                           : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white border border-purple-400/50 shadow-purple-500/30 hover:scale-[1.02] cursor-pointer'
                       }`}
                     >
-                      {trn.status === 'Registration Closed' ? 'Registration Closed' :
+                      {trn.status === 'Registration Closed' || joiningState.joiningStatus === 'JOINING_OPEN' || trn.roomPublishedAt || trn.registrationClosed ? 'Registration Closed' :
                        trn.status === 'Completed' ? 'Tournament Ended' :
                        trn.status === 'Upcoming' ? `🗓️ REGISTRATION HAS NOT OPENED YET` :
                        'Join Tournament Now'}
