@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { User, Trophy, Award, Calendar, CheckCircle2, Clock, Settings, Save, Sparkles, Shield, Flame, ChevronRight, Camera, Upload, Check, AlertCircle, Eye, Play, Copy, Key } from 'lucide-react';
+import { User, Trophy, Award, Calendar, CheckCircle2, Clock, Settings, Save, Sparkles, Shield, Flame, ChevronRight, Camera, Upload, Check, AlertCircle, Eye, Play, Copy, Key, Gamepad2 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { checkUsernameAvailabilityAPI, updateUserProfileAPI } from '../utils/api';
 
@@ -106,26 +106,20 @@ export default function Profile({ initialTab = 'overview' }) {
     showToast('Profile details updated successfully!', 'success');
   };
 
-  const userRegistrations = userProfile.registeredTournaments.map((reg) => {
-    const trnInfo = tournaments.find(t => t.id === reg.tournamentId) || {
-      title: reg.tournamentTitle || 'DD Esports Tournament',
-      game: reg.game || 'Multi-Game',
-      gameIcon: reg.gameIcon || '🎮',
-      date: '2026-08-28',
-      time: '08:00 PM IST',
-      prizePool: 2500,
-      status: 'Registration Open',
-      resultState: 'NOT_READY'
-    };
+  const userRegistrations = (userProfile?.registeredTournaments || []).map((reg) => {
+    const trnInfo = (tournaments || []).find(t => t.id === reg.tournamentId || String(t.id) === String(reg.tournamentId));
+    const isTournamentDeleted = !trnInfo;
     const paymentStatus = reg.status || 'Confirmed';
-    const tournamentStatus = trnInfo.status || 'Registration Open';
+    const tournamentStatus = isTournamentDeleted ? 'Completed' : (trnInfo.status || 'Registration Open');
+
     return {
-      ...trnInfo,
+      ...(trnInfo || {}),
       ...reg,
+      isTournamentDeleted,
       paymentStatus,
       tournamentStatus,
-      isLiveStreaming: trnInfo.isLiveStreaming || false,
-      resultState: trnInfo.resultState || 'NOT_READY'
+      isLiveStreaming: trnInfo?.isLiveStreaming || false,
+      resultState: trnInfo?.resultState || 'NOT_READY'
     };
   });
 
@@ -585,7 +579,68 @@ export default function Profile({ initialTab = 'overview' }) {
 
                   {/* 30-MINUTE JOINING WINDOW & ROOM ID / PASS SECTION */}
                   {(() => {
-                    const trn = (tournaments || []).find(t => t.id === reg.tournamentId || String(t.id) === String(reg.tournamentId)) || reg;
+                    const trn = (tournaments || []).find(t => t.id === reg.tournamentId || String(t.id) === String(reg.tournamentId));
+                    const isDeleted = !trn;
+                    const trnStatus = isDeleted ? 'Completed' : (trn.status || 'Registration Open');
+
+                    // If tournament was DELETED by Admin or is COMPLETED / EXPIRED
+                    if (isDeleted || trnStatus === 'Completed' || trnStatus === 'Expired' || trnStatus === 'Ended') {
+                      return (
+                        <div className="p-4 rounded-2xl bg-slate-900/90 border border-purple-500/40 space-y-3 shadow-xl">
+                          <div className="flex items-center justify-between">
+                            <span className="px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-extrabold text-[10px] uppercase tracking-wider flex items-center gap-1.5 border border-purple-500/40">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-purple-400" /> 🏁 TOURNAMENT LIVE COMPLETED
+                            </span>
+                            <span className="text-slate-400 font-mono text-[10px] uppercase font-bold">
+                              Event Ended
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-300 font-semibold leading-relaxed">
+                            This live tournament match has completed & ended. Room details are closed. Register for a new available game below to compete!
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => navigateTo('tournaments')}
+                            className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-500 hover:from-purple-500 text-white font-heading font-black text-xs uppercase tracking-wider shadow-lg shadow-purple-500/25 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-98"
+                          >
+                            <Gamepad2 className="w-4 h-4" /> 🎮 NEW GAME AVAILABLE — REGISTER NOW
+                            <ChevronRight className="w-4 h-4" />
+                          </button>
+                        </div>
+                      );
+                    }
+
+                    if (trnStatus === 'Result Pending' || trnStatus === 'Wait for Result' || trnStatus === 'Waiting for Result') {
+                      return (
+                        <div className="p-4 rounded-2xl bg-amber-950/60 border border-amber-500/40 space-y-3 shadow-xl">
+                          <div className="flex items-center justify-between">
+                            <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-extrabold text-[10px] uppercase tracking-wider flex items-center gap-1.5 border border-amber-500/40 animate-pulse">
+                              <Clock className="w-3.5 h-3.5 text-amber-400" /> ⏳ MATCH COMPLETED — RESULT PENDING
+                            </span>
+                          </div>
+                          <p className="text-xs text-amber-200 font-semibold leading-relaxed">
+                            This match is completed! Admin is verifying official rankings and prizes.
+                          </p>
+                          <div className="flex flex-col sm:flex-row items-center gap-2 pt-1">
+                            <button
+                              type="button"
+                              onClick={() => navigateTo('winners')}
+                              className="w-full sm:w-1/2 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-heading font-bold text-xs uppercase flex items-center justify-center gap-1.5 cursor-pointer shadow"
+                            >
+                              <Trophy className="w-3.5 h-3.5" /> View Winner Leaderboard
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => navigateTo('tournaments')}
+                              className="w-full sm:w-1/2 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-heading font-bold text-xs uppercase flex items-center justify-center gap-1.5 cursor-pointer shadow"
+                            >
+                              🎮 Register New Game
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    }
+
                     const joiningState = getTournamentJoiningState ? getTournamentJoiningState(trn) : { joiningStatus: 'WAITING_FOR_ROOM', isOpen: false, isLive: false, isMissed: false, formattedTimeUntilEnd: '30:00' };
 
                     const displayRoomId = trn.roomId || reg.roomId;

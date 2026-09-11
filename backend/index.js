@@ -2124,11 +2124,25 @@ app.delete('/api/admin/tournaments/:id', async (req, res) => {
     }
     console.log(`ℹ️ [DELETE API] Removed ${memoryRemovedCount} item(s) from memory store.`);
 
+    // Also remove associated registrations from memory store
+    for (let i = memoryRegistrations.length - 1; i >= 0; i--) {
+      const reg = memoryRegistrations[i];
+      if (reg.tournamentId === id || String(reg.tournamentId) === String(id)) {
+        memoryRegistrations.splice(i, 1);
+      }
+    }
+
     if (isDbConnected && mongoose.connection.readyState === 1) {
       const query = buildTournamentQuery(id);
       console.log(`🔄 [DELETE API] Executing Mongoose deleteMany with query:`, JSON.stringify(query));
 
       const dbRes = await Tournament.deleteMany(query);
+      await Registration.deleteMany({
+        $or: [
+          { tournamentId: id },
+          { tournamentId: String(id) }
+        ]
+      });
       console.log(`✅ [DELETE API] MongoDB deletion result: deletedCount = ${dbRes.deletedCount}`);
       console.log(`==================================================\n`);
 
