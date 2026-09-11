@@ -154,7 +154,7 @@ export default function Login() {
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-md bg-slate-950/85 border-2 border-purple-500/50 rounded-3xl p-6 sm:p-8 shadow-[0_0_50px_rgba(168,85,247,0.3)] backdrop-blur-2xl relative overflow-hidden space-y-5 sm:space-y-6 z-10"
+        className="w-full max-w-md bg-slate-950/85 border-2 border-purple-500/50 rounded-3xl p-4 sm:p-8 shadow-[0_0_50px_rgba(168,85,247,0.3)] backdrop-blur-2xl relative overflow-hidden space-y-5 sm:space-y-6 z-10"
       >
         {/* Universal DD Gaming Logo Emblem Header */}
         <UniversalLogo variant="login" showSubtitle={true} />

@@ -131,7 +131,7 @@ function MainContent() {
     <div className="relative min-h-screen flex flex-col justify-between selection:bg-purple-500 selection:text-white overflow-x-hidden">
       <Navbar />
       
-      <main className={`flex-grow relative z-10 w-full overflow-hidden ${isLoggedIn && activePage !== 'login' ? 'pb-24 lg:pb-0' : 'pb-0'}`}>
+      <main className={`flex-grow relative z-10 w-full overflow-hidden ${isLoggedIn && activePage !== 'login' ? 'pb-28 lg:pb-0' : 'pb-0'}`}>
         <AnimatePresence mode="wait">
           <motion.div
             key={currentKey}

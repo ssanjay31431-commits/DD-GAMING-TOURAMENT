@@ -39,7 +39,7 @@ export default function TournamentDetailModal() {
           initial={{ opacity: 0, scale: 0.95, y: 30 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 30 }}
-          className="relative w-full max-w-4xl bg-slate-900 border-t-2 sm:border border-purple-500/30 rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden z-10 my-0 sm:my-8 max-h-[92vh] sm:max-h-none flex flex-col pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-0"
+          className="relative w-full max-w-4xl bg-slate-900 border-t-2 sm:border border-purple-500/30 rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-y-auto z-10 my-0 sm:my-8 max-h-[90vh] flex flex-col pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))]"
         >
           {/* Close Button */}
           <button

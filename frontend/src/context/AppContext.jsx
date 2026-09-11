@@ -336,6 +336,8 @@ function processTournamentsWithAutoOpen(dataList) {
   // Navigation Gateway (Allows public showcase page previewing; protects user profile & ticket management)
   const navigateTo = (page, param = null) => {
     playClickSound();
+    setSelectedTournamentDetail(null);
+    setSelectedTournamentRegister(null);
     
     const protectedPages = ['profile', 'my-tournaments', 'my-tickets'];
     
@@ -356,6 +358,8 @@ function processTournamentsWithAutoOpen(dataList) {
 
   // Helper for starting auth session securely with post-login transition
   const handleAuthSuccess = async (user, isNewRegistration = false) => {
+    setSelectedTournamentDetail(null);
+    setSelectedTournamentRegister(null);
     setUserProfile(user);
     setIsLoggedIn(true);
     localStorage.setItem('dd_logged_in', 'true');
@@ -430,6 +434,8 @@ function processTournamentsWithAutoOpen(dataList) {
   // FEATURE 6: PREVENT DATA MIXING ON ACCOUNT SWITCHING
   const logout = () => {
     playClickSound();
+    setSelectedTournamentDetail(null);
+    setSelectedTournamentRegister(null);
     setIsLoggedIn(false);
     setActivePage('login');
     setUserProfile(DEFAULT_USER_PROFILE);

@@ -69,7 +69,7 @@ export default function LoginSuccessTransitionModal() {
             scale: stage >= 1 ? 1.2 : 0.5
           }}
           transition={{ duration: 1.2, ease: 'easeOut' }}
-          className="absolute w-[500px] h-[500px] sm:w-[700px] sm:h-[700px] rounded-full bg-gradient-to-tr from-purple-900/50 via-indigo-900/40 to-cyan-500/30 blur-3xl pointer-events-none"
+          className="absolute w-[300px] h-[300px] sm:w-[700px] sm:h-[700px] max-w-full rounded-full bg-gradient-to-tr from-purple-900/50 via-indigo-900/40 to-cyan-500/30 blur-3xl pointer-events-none"
         />
 
         {/* Minimal Sparkling Particles */}

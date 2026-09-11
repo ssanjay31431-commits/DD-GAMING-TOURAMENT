@@ -4,10 +4,12 @@ import { CheckCircle2, AlertCircle, Info, X } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 export default function Toast() {
-  const { toast } = useApp();
+  const { toast, isLoggedIn, activePage } = useApp();
+
+  const isNavVisible = isLoggedIn && activePage !== 'login';
 
   return (
-    <div className="fixed bottom-20 sm:bottom-6 left-1/2 -translate-x-1/2 sm:left-auto sm:right-6 sm:translate-x-0 z-[250] pointer-events-none w-[min(92vw,420px)] max-w-[calc(100vw-24px)] px-2">
+    <div className={`fixed ${isNavVisible ? 'bottom-24 sm:bottom-6' : 'bottom-6 sm:bottom-6'} left-1/2 -translate-x-1/2 sm:left-auto sm:right-6 sm:translate-x-0 z-[250] pointer-events-none w-[min(92vw,420px)] max-w-[calc(100vw-24px)] px-2 transition-all`}>
       <AnimatePresence>
         {toast && (
           <motion.div
