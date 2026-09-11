@@ -3,7 +3,27 @@ import { Trophy, Gamepad2, ShieldCheck, Heart, Sparkles, Send, Twitter, Instagra
 import { useApp } from '../context/AppContext';
 
 export default function Footer() {
-  const { navigateTo, isLoggedIn } = useApp();
+  const { navigateTo, isLoggedIn, tournaments } = useApp();
+
+  const ecosystemGames = [
+    { code: '8ball', name: '8 Ball Pool', icon: '🎱', color: 'text-purple-300' },
+    { code: 'bgmi', name: 'BGMI', icon: '🎯', color: 'text-amber-300' },
+    { code: 'freefire', name: 'Free Fire', icon: '🔥', color: 'text-rose-300' },
+    { code: 'chess', name: 'Chess', icon: '♟', color: 'text-cyan-300' },
+    { code: 'ludo', name: 'Ludo King', icon: '🎲', color: 'text-emerald-300' },
+    { code: 'carrom', name: 'Carrom Pool', icon: '🥏', color: 'text-teal-300' }
+  ];
+
+  const getGameActiveCount = (code, name) => {
+    return (tournaments || []).filter(t => {
+      const gName = (t.game || '').toLowerCase();
+      const gCode = (t.gameCode || '').toLowerCase();
+      const targetName = name.toLowerCase();
+      const targetCode = code.toLowerCase();
+      const isNotEnded = !['Completed', 'Expired', 'Ended', 'Cancelled'].includes(t.status);
+      return (gName === targetName || gCode === targetCode || (targetCode === '8ball' && t.is8BallSpecial)) && isNotEnded;
+    }).length;
+  };
 
   return (
     <footer className="relative bg-slate-950 border-t border-slate-800/80 pt-12 pb-10 overflow-hidden text-slate-400">
@@ -85,30 +105,24 @@ export default function Footer() {
                   Games Ecosystem
                 </h4>
                 <ul className="space-y-2 text-xs">
-                  <li className="flex items-center justify-between font-bold text-purple-300">
-                    <span className="flex items-center gap-1.5"><span>🎱</span> 8 Ball Pool</span>
-                    <span className="text-[9px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded border border-emerald-500/40">ACTIVE</span>
-                  </li>
-                  <li className="flex items-center justify-between font-bold text-amber-300">
-                    <span className="flex items-center gap-1.5"><span>🎯</span> BGMI</span>
-                    <span className="text-[9px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded border border-emerald-500/40">ACTIVE</span>
-                  </li>
-                  <li className="flex items-center justify-between font-bold text-rose-300">
-                    <span className="flex items-center gap-1.5"><span>🔥</span> Free Fire</span>
-                    <span className="text-[9px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded border border-emerald-500/40">ACTIVE</span>
-                  </li>
-                  <li className="flex items-center justify-between font-bold text-cyan-300">
-                    <span className="flex items-center gap-1.5"><span>♟</span> Chess</span>
-                    <span className="text-[9px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded border border-emerald-500/40">ACTIVE</span>
-                  </li>
-                  <li className="flex items-center justify-between font-bold text-emerald-300">
-                    <span className="flex items-center gap-1.5"><span>🎲</span> Ludo King</span>
-                    <span className="text-[9px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded border border-emerald-500/40">ACTIVE</span>
-                  </li>
-                  <li className="flex items-center justify-between font-bold text-teal-300">
-                    <span className="flex items-center gap-1.5"><span>🥏</span> Carrom Pool</span>
-                    <span className="text-[9px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded border border-emerald-500/40">ACTIVE</span>
-                  </li>
+                  {ecosystemGames.map(g => {
+                    const count = getGameActiveCount(g.code, g.name);
+                    const isActive = count > 0;
+                    return (
+                      <li key={g.code} className={`flex items-center justify-between font-bold ${isActive ? g.color : 'text-slate-400 opacity-70'}`}>
+                        <span className="flex items-center gap-1.5"><span>{g.icon}</span> {g.name}</span>
+                        {isActive ? (
+                          <span className="text-[9px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded border border-emerald-500/40 font-black tracking-wider">
+                            ACTIVE ({count})
+                          </span>
+                        ) : (
+                          <span className="text-[9px] bg-amber-500/10 text-amber-400 px-1.5 py-0.5 rounded border border-amber-500/30 font-semibold tracking-wider">
+                            UPCOMING
+                          </span>
+                        )}
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
             </>
