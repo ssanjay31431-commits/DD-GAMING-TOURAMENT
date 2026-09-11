@@ -5,10 +5,10 @@ import { useApp } from '../context/AppContext';
 import { getGameBanner } from '../utils/gameBanners';
 
 export default function Tournaments() {
-  const { tournaments, openTournamentDetail, openRegistrationModal, navigateTo, isAlreadyRegisteredForTournament, getTournamentJoiningState } = useApp();
+  const { tournaments, pageParam, openTournamentDetail, openRegistrationModal, navigateTo, isAlreadyRegisteredForTournament, getTournamentJoiningState } = useApp();
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedGame, setSelectedGame] = useState('all');
+  const [selectedGame, setSelectedGame] = useState(() => pageParam || 'all');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [selectedFee, setSelectedFee] = useState('all');
   const [sortBy, setSortBy] = useState('date');
@@ -18,7 +18,15 @@ export default function Tournaments() {
       .filter(t => {
         const matchesSearch = t.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                               t.game.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesGame = selectedGame === 'all' || t.gameCode === selectedGame || (selectedGame === '8ball' && t.is8BallSpecial);
+        const tGameCode = (t.gameCode || '').toLowerCase();
+        const tGameName = (t.game || '').toLowerCase();
+        const selGame = selectedGame.toLowerCase();
+
+        const matchesGame = selGame === 'all' ||
+                            tGameCode === selGame ||
+                            tGameName.includes(selGame) ||
+                            (selGame === '8ball' && t.is8BallSpecial);
+
         const matchesStatus = selectedStatus === 'all' || t.status === selectedStatus || (selectedStatus === 'Completed' && (t.status === 'Expired' || t.status === 'Completed'));
         const matchesFee = selectedFee === 'all' ||
                            (selectedFee === 'free' && t.entryFee === 0) ||
@@ -69,13 +77,13 @@ export default function Tournaments() {
               onChange={(e) => setSelectedGame(e.target.value)}
               className="w-full px-3.5 py-2.5 rounded-xl glass-input text-sm font-semibold bg-slate-900"
             >
-              <option value="all">All Games (6)</option>
-              <option value="8ball">🎱 8 Ball Pool (Active)</option>
-              <option value="bgmi">🎯 BGMI (Soon)</option>
-              <option value="freefire">🔥 Free Fire (Soon)</option>
-              <option value="chess">♟ Chess (Soon)</option>
-              <option value="ludo">🎲 Ludo King (Soon)</option>
-              <option value="carrom">🥏 Carrom Pool (Soon)</option>
+              <option value="all">🎮 All Games (6)</option>
+              <option value="8ball">🎱 8 Ball Pool</option>
+              <option value="bgmi">🎯 BGMI</option>
+              <option value="freefire">🔥 Free Fire</option>
+              <option value="chess">♟ Chess</option>
+              <option value="ludo">🎲 Ludo King</option>
+              <option value="carrom">🥏 Carrom Pool</option>
             </select>
           </div>
 

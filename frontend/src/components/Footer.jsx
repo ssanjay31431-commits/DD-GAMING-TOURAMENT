@@ -85,23 +85,29 @@ export default function Footer() {
                   Games Ecosystem
                 </h4>
                 <ul className="space-y-2 text-xs">
-                  <li className="flex items-center gap-1.5 font-bold text-purple-300">
-                    <span>🎱</span> 8 Ball Pool <span className="text-[9px] bg-purple-500/30 px-1.5 py-0.2 rounded text-purple-200">ACTIVE</span>
+                  <li className="flex items-center justify-between font-bold text-purple-300">
+                    <span className="flex items-center gap-1.5"><span>🎱</span> 8 Ball Pool</span>
+                    <span className="text-[9px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded border border-emerald-500/40">ACTIVE</span>
                   </li>
-                  <li className="flex items-center gap-1.5 opacity-60">
-                    <span>🎯</span> BGMI (Expansion)
+                  <li className="flex items-center justify-between font-bold text-amber-300">
+                    <span className="flex items-center gap-1.5"><span>🎯</span> BGMI</span>
+                    <span className="text-[9px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded border border-emerald-500/40">ACTIVE</span>
                   </li>
-                  <li className="flex items-center gap-1.5 opacity-60">
-                    <span>🔥</span> Free Fire (Expansion)
+                  <li className="flex items-center justify-between font-bold text-rose-300">
+                    <span className="flex items-center gap-1.5"><span>🔥</span> Free Fire</span>
+                    <span className="text-[9px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded border border-emerald-500/40">ACTIVE</span>
                   </li>
-                  <li className="flex items-center gap-1.5 opacity-60">
-                    <span>♟</span> Chess (Expansion)
+                  <li className="flex items-center justify-between font-bold text-cyan-300">
+                    <span className="flex items-center gap-1.5"><span>♟</span> Chess</span>
+                    <span className="text-[9px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded border border-emerald-500/40">ACTIVE</span>
                   </li>
-                  <li className="flex items-center gap-1.5 opacity-60">
-                    <span>🎲</span> Ludo King (Expansion)
+                  <li className="flex items-center justify-between font-bold text-emerald-300">
+                    <span className="flex items-center gap-1.5"><span>🎲</span> Ludo King</span>
+                    <span className="text-[9px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded border border-emerald-500/40">ACTIVE</span>
                   </li>
-                  <li className="flex items-center gap-1.5 opacity-60">
-                    <span>🥏</span> Carrom Pool (Expansion)
+                  <li className="flex items-center justify-between font-bold text-teal-300">
+                    <span className="flex items-center gap-1.5"><span>🥏</span> Carrom Pool</span>
+                    <span className="text-[9px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded border border-emerald-500/40">ACTIVE</span>
                   </li>
                 </ul>
               </div>
