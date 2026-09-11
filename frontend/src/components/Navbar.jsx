@@ -14,7 +14,8 @@ import UniversalLogo from './UniversalLogo';
 export default function Navbar() {
   const { 
     activePage, navigateTo, isLoggedIn, logout, userProfile, soundActive, toggleSound, 
-    notifications, unreadNotificationCount, markNotificationRead, clearAllNotifications 
+    notifications, unreadNotificationCount, markNotificationRead, clearAllNotifications,
+    selectedTournamentDetail, selectedTournamentRegister
   } = useApp();
   
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -373,7 +374,7 @@ export default function Navbar() {
       {/* MOBILE FIXED BOTTOM ESPORTS NAVIGATION BAR (< 1024px) */}
       {/* STRICT AUTHENTICATION GUARD: VISIBLE ONLY AFTER AUTHENTICATION */}
       {/* ========================================================= */}
-      {isLoggedIn && activePage !== 'login' && (
+      {isLoggedIn && activePage !== 'login' && !selectedTournamentRegister && !selectedTournamentDetail && (
         <nav
           className="lg:hidden fixed bottom-0 left-0 right-0 z-[130] glass-panel border-t border-purple-500/30 bg-slate-950/95 backdrop-blur-2xl px-2 py-1.5 shadow-2xl touch-manipulation"
           style={{ paddingBottom: 'calc(0.6rem + env(safe-area-inset-bottom, 12px))' }}

@@ -24,14 +24,14 @@ export default function TournamentDetailModal() {
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-6 overflow-y-auto">
+      <div className="fixed inset-0 z-[160] flex items-end sm:items-center justify-center p-0 sm:p-6 overflow-hidden">
         {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={closeTournamentDetail}
-          className="fixed inset-0 bg-slate-950/80 backdrop-blur-md"
+          className="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[150]"
         />
 
         {/* Modal Content */}
@@ -39,7 +39,7 @@ export default function TournamentDetailModal() {
           initial={{ opacity: 0, scale: 0.95, y: 30 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 30 }}
-          className="relative w-full max-w-4xl bg-slate-900 border-t-2 sm:border border-purple-500/30 rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-y-auto z-10 my-0 sm:my-8 max-h-[90vh] flex flex-col pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))]"
+          className="relative w-full max-w-4xl bg-slate-900 border-t-2 sm:border border-purple-500/30 rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-y-auto z-[160] my-0 sm:my-8 max-h-[100dvh] sm:max-h-[90vh] flex flex-col pb-[calc(5rem+env(safe-area-inset-bottom,20px))] sm:pb-6"
         >
           {/* Close Button */}
           <button

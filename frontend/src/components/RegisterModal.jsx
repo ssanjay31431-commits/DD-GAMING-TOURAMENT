@@ -193,14 +193,14 @@ export default function RegisterModal() {
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-6 overflow-y-auto">
+      <div className="fixed inset-0 z-[160] flex items-end sm:items-center justify-center p-0 sm:p-6 overflow-hidden">
         {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={closeRegistrationModal}
-          className="fixed inset-0 bg-slate-950/85 backdrop-blur-md"
+          className="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[150]"
         />
 
         {/* Modal Container */}
@@ -208,68 +208,68 @@ export default function RegisterModal() {
           initial={{ opacity: 0, scale: 0.95, y: 30 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 30 }}
-          className="relative w-full max-w-xl bg-slate-900 border-t-2 sm:border border-purple-500/40 rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-y-auto z-10 max-h-[90vh] flex flex-col my-0 sm:my-8 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))]"
+          className="relative w-full max-w-xl bg-slate-900 border-t-2 sm:border border-purple-500/40 rounded-t-3xl sm:rounded-2xl shadow-2xl z-[160] max-h-[100dvh] sm:max-h-[90vh] flex flex-col overflow-hidden my-0 sm:my-8"
         >
           {/* Header */}
-          <div className="p-6 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
-            <div>
+          <div className="p-4 sm:p-6 bg-slate-950 border-b border-slate-800 flex items-center justify-between shrink-0">
+            <div className="min-w-0 flex-1 pr-2">
               <div className="flex items-center gap-2">
-                <span className="text-xl">{trn.gameIcon}</span>
-                <span className="text-xs font-extrabold uppercase text-purple-400 tracking-wider">
+                <span className="text-xl shrink-0">{trn.gameIcon}</span>
+                <span className="text-[11px] sm:text-xs font-extrabold uppercase text-purple-400 tracking-wider truncate">
                   Registration Portal
                 </span>
               </div>
-              <h3 className="font-heading font-black text-xl text-white mt-0.5">
+              <h3 className="font-heading font-black text-lg sm:text-xl text-white mt-0.5 truncate">
                 {trn.title}
               </h3>
             </div>
             <button
               onClick={closeRegistrationModal}
-              className="min-w-[44px] min-h-[44px] p-2 rounded-full bg-slate-900 border border-slate-700 text-slate-400 hover:text-white transition-colors flex items-center justify-center touch-manipulation cursor-pointer active:scale-95"
+              className="min-w-[44px] min-h-[44px] p-2 rounded-full bg-slate-900 border border-slate-700 text-slate-400 hover:text-white transition-colors flex items-center justify-center touch-manipulation cursor-pointer active:scale-95 shrink-0 ml-2"
+              title="Close Registration Portal"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
           {/* Stepper Header Bar */}
-          <div className="px-6 py-3 bg-slate-950/50 border-b border-slate-800 flex items-center justify-between text-xs font-bold">
-            <div className={`flex items-center gap-1.5 ${step >= 1 ? 'text-purple-400' : 'text-slate-500'}`}>
-              <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${step >= 1 ? 'bg-purple-600 text-white' : 'bg-slate-800'}`}>1</span>
+          <div className="px-3 sm:px-6 py-2.5 bg-slate-950/50 border-b border-slate-800 flex items-center justify-between text-[11px] sm:text-xs font-bold shrink-0">
+            <div className={`flex items-center gap-1 sm:gap-1.5 ${step >= 1 ? 'text-purple-400' : 'text-slate-500'}`}>
+              <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] shrink-0 ${step >= 1 ? 'bg-purple-600 text-white' : 'bg-slate-800'}`}>1</span>
               <span>Player Info</span>
             </div>
-            <div className="w-8 h-px bg-slate-800" />
-            <div className={`flex items-center gap-1.5 ${step >= 2 ? 'text-purple-400' : 'text-slate-500'}`}>
-              <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${step >= 2 ? 'bg-purple-600 text-white' : 'bg-slate-800'}`}>2</span>
+            <div className="w-4 sm:w-8 h-px bg-slate-800 shrink-0" />
+            <div className={`flex items-center gap-1 sm:gap-1.5 ${step >= 2 ? 'text-purple-400' : 'text-slate-500'}`}>
+              <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] shrink-0 ${step >= 2 ? 'bg-purple-600 text-white' : 'bg-slate-800'}`}>2</span>
               <span>Confirm</span>
             </div>
-            <div className="w-8 h-px bg-slate-800" />
-            <div className={`flex items-center gap-1.5 ${step >= 3 ? 'text-purple-400' : 'text-slate-500'}`}>
-              <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${step >= 3 ? 'bg-purple-600 text-white' : 'bg-slate-800'}`}>3</span>
+            <div className="w-4 sm:w-8 h-px bg-slate-800 shrink-0" />
+            <div className={`flex items-center gap-1 sm:gap-1.5 ${step >= 3 ? 'text-purple-400' : 'text-slate-500'}`}>
+              <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] shrink-0 ${step >= 3 ? 'bg-purple-600 text-white' : 'bg-slate-800'}`}>3</span>
               <span>Payment</span>
             </div>
           </div>
 
-          {errorMsg && (
-            <div className="mx-6 mt-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-semibold flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              <span>{errorMsg}</span>
-            </div>
-          )}
-
-          {trn.status === 'Upcoming' && (
-            <div className="mx-6 mt-4 p-4 rounded-xl bg-purple-950/80 border border-purple-500/40 text-purple-200 text-xs font-semibold space-y-1 shadow-lg">
-              <div className="flex items-center gap-2 font-bold text-amber-300">
-                <Clock className="w-4 h-4 text-amber-400 shrink-0" />
-                <span>Registration Opens Soon!</span>
+          {/* Modal Body Container with Smooth Scroll & Bottom Spacing */}
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 pb-[calc(5rem+env(safe-area-inset-bottom,20px))] sm:pb-6">
+            {errorMsg && (
+              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-semibold flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{errorMsg}</span>
               </div>
-              <p className="text-[11px] text-slate-300 leading-relaxed">
-                Registration for this tournament will automatically open on <strong>{trn.registrationStartDate || trn.date} at {trn.registrationStartTime || trn.time}</strong>. Slot booking will start automatically at that time!
-              </p>
-            </div>
-          )}
+            )}
 
-          {/* Modal Body */}
-          <div className="p-6">
+            {trn.status === 'Upcoming' && (
+              <div className="p-4 rounded-xl bg-purple-950/80 border border-purple-500/40 text-purple-200 text-xs font-semibold space-y-1 shadow-lg">
+                <div className="flex items-center gap-2 font-bold text-amber-300">
+                  <Clock className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span>Registration Opens Soon!</span>
+                </div>
+                <p className="text-[11px] text-slate-300 leading-relaxed">
+                  Registration for this tournament will automatically open on <strong>{trn.registrationStartDate || trn.date} at {trn.registrationStartTime || trn.time}</strong>. Slot booking will start automatically at that time!
+                </p>
+              </div>
+            )}
             
             {/* STEP 1: Player / Team Details */}
             {step === 1 && (
