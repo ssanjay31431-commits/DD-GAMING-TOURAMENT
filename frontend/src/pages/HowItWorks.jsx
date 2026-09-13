@@ -43,11 +43,11 @@ const STEPS = [
     borderColor: 'border-cyan-500/40',
     shadowColor: 'shadow-cyan-500/20',
     badge: 'Multi-Game Events',
-    description: 'Browse active esports contests across BGMI, Free Fire, Ludo King, 8 Ball Pool, Chess, and Carrom Pool. Click "Join Tournament" and enter your payment UTR / Transaction ID.',
+    description: 'Browse active esports contests across BGMI, Free Fire, Ludo King, 8 Ball Pool, Chess, and Carrom Pool. Click "Join Tournament" and complete secure payment checkout via Razorpay.',
     points: [
       'Guaranteed cash prize pool tournaments across all titles',
       'Transparent entry fees with fixed player/team slots',
-      'Instant slot confirmation after payment verification'
+      'Instant slot confirmation after Razorpay payment verification'
     ]
   },
   {

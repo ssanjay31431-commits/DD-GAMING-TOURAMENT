@@ -5,6 +5,8 @@ import dotenv from 'dotenv';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { OAuth2Client } from 'google-auth-library';
+import Razorpay from 'razorpay';
+import crypto from 'crypto';
 
 import User from './models/User.js';
 import Tournament from './models/Tournament.js';
@@ -508,6 +510,16 @@ function computeTournamentLiveStatus(trn, isAdmin = false) {
   if (!trn) return trn;
   const trnObj = typeof trn.toObject === 'function' ? trn.toObject() : { ...trn };
   const nowMs = Date.now();
+  trnObj.serverTime = new Date().toISOString();
+
+  // Slot Calculations (Solo = player slots, Duo/Team = team slots)
+  const totalCapacity = Number(trnObj.totalSlots || 0);
+  const registeredCount = Number(trnObj.registeredSlots || 0);
+  const joinedCount = Number(trnObj.joinedCount || 0);
+
+  trnObj.remainingSlots = Math.max(0, totalCapacity - registeredCount);
+  trnObj.remainingJoiningSlots = Math.max(0, registeredCount - joinedCount);
+  trnObj.joinedCount = joinedCount;
 
   if (trnObj.roomPublishedAt) {
     const startMs = new Date(trnObj.roomPublishedAt).getTime();
@@ -515,6 +527,7 @@ function computeTournamentLiveStatus(trn, isAdmin = false) {
 
     trnObj.joiningWindowStartMs = startMs;
     trnObj.joiningWindowEndMs = endMs;
+    trnObj.remainingWindowMs = Math.max(0, endMs - nowMs);
     trnObj.registrationClosed = true;
 
     if (!['Completed', 'Expired', 'Result Pending', 'Cancelled'].includes(trnObj.status)) {
@@ -523,8 +536,10 @@ function computeTournamentLiveStatus(trn, isAdmin = false) {
         trnObj.status = 'JOINING_OPEN';
         trnObj.joiningClosed = false;
       } else if (nowMs >= endMs) {
-        trnObj.joiningStatus = 'LIVE';
-        trnObj.status = 'Live';
+        trnObj.joiningStatus = 'JOINING_CLOSED';
+        if (trnObj.status === 'JOINING_OPEN' || trnObj.status === 'Registration Open' || trnObj.status === 'Almost Full') {
+          trnObj.status = 'Live';
+        }
         trnObj.joiningClosed = true;
       }
     }
@@ -538,6 +553,7 @@ function computeTournamentLiveStatus(trn, isAdmin = false) {
     }
   } else {
     trnObj.joiningStatus = 'WAITING_FOR_ROOM';
+    trnObj.remainingWindowMs = 0;
     if (!['Completed', 'Expired', 'Result Pending', 'Cancelled', 'Registration Closed'].includes(trnObj.status)) {
       trnObj.status = trnObj.status || 'Registration Open';
     }
@@ -1253,6 +1269,372 @@ app.post('/api/registrations', rateLimiter({ windowMs: 60 * 1000, maxRequests: 2
   }
 });
 
+// ==============================================================================
+// RAZORPAY PAYMENT GATEWAY ENDPOINTS (SERVER-SIDE ORDER CREATION & SIGNATURE VERIFICATION)
+// ==============================================================================
+
+const getRazorpayInstance = () => {
+  const key_id = process.env.RAZORPAY_KEY_ID || 'rzp_test_YOUR_KEY_ID';
+  const key_secret = process.env.RAZORPAY_KEY_SECRET || 'YOUR_KEY_SECRET';
+  return new Razorpay({ key_id, key_secret });
+};
+
+// 1. CREATE RAZORPAY ORDER
+app.post('/api/payment/create-order', rateLimiter({ windowMs: 60 * 1000, maxRequests: 30 }), async (req, res) => {
+  try {
+    const { tournament, fullName, gamingId, phone, email, teamName, teamMembers, entryType } = req.body || {};
+
+    if (!tournament || !tournament.id || !fullName || !gamingId || !email) {
+      return res.status(400).json({ success: false, message: 'Missing required registration details for payment order.' });
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
+    const cleanGamingId = gamingId.trim();
+    const entryFee = Number(tournament.entryFee || 0);
+
+    if (entryFee <= 0) {
+      return res.status(400).json({ success: false, message: 'This tournament is free. No Razorpay payment order required.' });
+    }
+
+    // 0. Verify tournament status
+    let targetTrn = null;
+    if (isDbConnected && mongoose.connection.readyState === 1) {
+      targetTrn = await Tournament.findOne({ id: tournament.id });
+    } else {
+      targetTrn = INITIAL_TOURNAMENTS.find(t => t.id === tournament.id || String(t.id) === String(tournament.id));
+    }
+
+    if (targetTrn) {
+      if (targetTrn.roomPublishedAt || targetTrn.registrationClosed || ['JOINING_OPEN', 'Live', 'Registration Closed', 'Completed'].includes(targetTrn.status)) {
+        return res.status(400).json({
+          success: false,
+          message: `Registration for "${targetTrn.title}" is closed.`
+        });
+      }
+      if (targetTrn.registeredSlots >= targetTrn.totalSlots) {
+        return res.status(400).json({
+          success: false,
+          message: 'Tournament registration slots are completely full!'
+        });
+      }
+    }
+
+    // Check for existing registration document
+    let existingReg = null;
+    if (isDbConnected && mongoose.connection.readyState === 1) {
+      existingReg = await Registration.findOne({
+        tournamentId: tournament.id,
+        $or: [{ email: normalizedEmail }, { gamingId: cleanGamingId }]
+      });
+    } else {
+      existingReg = memoryRegistrations.find(r =>
+        (r.tournamentId === tournament.id || String(r.tournamentId) === String(tournament.id)) &&
+        (r.email === normalizedEmail || r.gamingId === cleanGamingId)
+      );
+    }
+
+    // If existing registration is already confirmed / paid, reject duplicate order creation
+    if (existingReg && (existingReg.status === 'Confirmed' || existingReg.paymentStatus === 'PAID')) {
+      return res.status(400).json({
+        success: false,
+        message: 'You are already registered and confirmed for this tournament!'
+      });
+    }
+
+    const regId = existingReg ? existingReg.id : `REG-DD-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    // Convert amount in Rupees to Paise (₹399 -> 39900 paise)
+    const amountInPaise = Math.round(entryFee * 100);
+
+    const razorpay = getRazorpayInstance();
+    const orderOptions = {
+      amount: amountInPaise,
+      currency: 'INR',
+      receipt: regId,
+      notes: {
+        registrationId: regId,
+        tournamentId: tournament.id,
+        playerName: fullName,
+        email: normalizedEmail
+      }
+    };
+
+    const razorpayOrder = await razorpay.orders.create(orderOptions);
+
+    // Store or update Registration document with razorpayOrderId & PENDING paymentStatus
+    if (isDbConnected && mongoose.connection.readyState === 1) {
+      const user = await User.findOne({ email: normalizedEmail });
+      if (existingReg) {
+        existingReg.razorpayOrderId = razorpayOrder.id;
+        existingReg.paymentStatus = 'CREATED';
+        existingReg.playerName = fullName;
+        existingReg.gamingId = cleanGamingId;
+        existingReg.phone = phone || existingReg.phone;
+        await existingReg.save();
+      } else {
+        const newReg = new Registration({
+          id: regId,
+          tournamentId: tournament.id,
+          tournamentTitle: tournament.title,
+          game: tournament.game || 'Multi-Game',
+          gameIcon: tournament.gameIcon || '🎮',
+          gameCode: tournament.gameCode || '',
+          date: tournament.date || '',
+          time: tournament.time || '',
+          playerName: fullName,
+          gamingId: cleanGamingId,
+          phone: phone || '',
+          email: normalizedEmail,
+          userId: user ? user._id.toString() : '',
+          entryFee: entryFee,
+          entryType: entryType || tournament.entryType || 'Solo',
+          teamName: teamName || '',
+          teamMembers: teamMembers || [],
+          txnId: 'PENDING_RAZORPAY',
+          paymentScreenshot: '',
+          status: 'Payment Pending',
+          paymentStatus: 'CREATED',
+          razorpayOrderId: razorpayOrder.id
+        });
+        await newReg.save();
+      }
+    } else {
+      if (existingReg) {
+        existingReg.razorpayOrderId = razorpayOrder.id;
+        existingReg.paymentStatus = 'CREATED';
+      } else {
+        const fallbackReg = {
+          id: regId,
+          tournamentId: tournament.id,
+          tournamentTitle: tournament.title,
+          game: tournament.game || 'Multi-Game',
+          gameIcon: tournament.gameIcon || '🎮',
+          gameCode: tournament.gameCode || '',
+          date: tournament.date || '',
+          time: tournament.time || '',
+          playerName: fullName,
+          gamingId: cleanGamingId,
+          phone: phone || '',
+          email: normalizedEmail,
+          entryFee: entryFee,
+          txnId: 'PENDING_RAZORPAY',
+          status: 'Payment Pending',
+          paymentStatus: 'CREATED',
+          razorpayOrderId: razorpayOrder.id,
+          createdAt: new Date().toLocaleString()
+        };
+        memoryRegistrations.unshift(fallbackReg);
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      orderId: razorpayOrder.id,
+      amount: razorpayOrder.amount,
+      currency: razorpayOrder.currency || 'INR',
+      keyId: process.env.RAZORPAY_KEY_ID || 'rzp_test_YOUR_KEY_ID',
+      registrationId: regId,
+      tournamentTitle: tournament.title
+    });
+
+  } catch (err) {
+    console.error('❌ Razorpay order creation error:', err.message || err);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to create payment order with Razorpay: ' + (err.message || 'Server error')
+    });
+  }
+});
+
+// 2. VERIFY RAZORPAY PAYMENT SIGNATURE (SERVER-SIDE SECURE VERIFICATION)
+app.post('/api/payment/verify', rateLimiter({ windowMs: 60 * 1000, maxRequests: 20 }), async (req, res) => {
+  try {
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, registrationId } = req.body || {};
+
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !registrationId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid payment verification payload. Missing required Razorpay parameters.'
+      });
+    }
+
+    const keySecret = process.env.RAZORPAY_KEY_SECRET || 'YOUR_KEY_SECRET';
+    const hmac = crypto.createHmac('sha256', keySecret);
+    hmac.update(`${razorpay_order_id}|${razorpay_payment_id}`);
+    const expectedSignature = hmac.digest('hex');
+
+    const isSignatureValid = expectedSignature === razorpay_signature;
+
+    if (!isSignatureValid) {
+      console.warn(`⚠️ [Razorpay Security Warning] Payment signature mismatch for Order: ${razorpay_order_id}, Registration: ${registrationId}`);
+      
+      // Update DB registration status to Payment Failed
+      if (isDbConnected && mongoose.connection.readyState === 1) {
+        await Registration.findOneAndUpdate(
+          { $or: [{ id: registrationId }, { razorpayOrderId: razorpay_order_id }] },
+          { paymentStatus: 'FAILED', status: 'Payment Failed' }
+        );
+      }
+      return res.status(400).json({
+        success: false,
+        message: 'Payment verification failed. Signature mismatch. Please contact support if money was deducted.'
+      });
+    }
+
+    // Payment Verified Successfully! Update Registration and Confirm Slot
+    let updatedReg = null;
+
+    if (isDbConnected && mongoose.connection.readyState === 1) {
+      const reg = await Registration.findOne({
+        $or: [{ id: registrationId }, { razorpayOrderId: razorpay_order_id }]
+      });
+
+      if (!reg) {
+        return res.status(404).json({ success: false, message: 'Registration record not found for payment verification.' });
+      }
+
+      // Avoid duplicate slot incrementation if already paid
+      const wasAlreadyPaid = reg.status === 'Confirmed' || reg.paymentStatus === 'PAID';
+
+      reg.status = 'Confirmed';
+      reg.paymentStatus = 'PAID';
+      reg.razorpayOrderId = razorpay_order_id;
+      reg.razorpayPaymentId = razorpay_payment_id;
+      reg.razorpaySignature = razorpay_signature;
+      reg.txnId = razorpay_payment_id;
+      await reg.save();
+
+      if (!wasAlreadyPaid) {
+        // Increment slot count atomically
+        const updatedTournament = await Tournament.findOneAndUpdate(
+          { id: reg.tournamentId, registeredSlots: { $lt: 1000 } },
+          { $inc: { registeredSlots: 1 } },
+          { new: true }
+        );
+
+        if (updatedTournament) {
+          if (updatedTournament.registeredSlots >= updatedTournament.totalSlots) {
+            updatedTournament.status = 'Registration Closed';
+            await updatedTournament.save();
+          } else if (updatedTournament.totalSlots - updatedTournament.registeredSlots <= 3) {
+            updatedTournament.status = 'Almost Full';
+            await updatedTournament.save();
+          }
+        }
+
+        // Update User Document
+        const user = await User.findOne({ email: reg.email });
+        if (user) {
+          user.name = reg.playerName || user.name;
+          user.gamingUsername = reg.gamingId || user.gamingUsername;
+          user.phone = reg.phone || user.phone;
+          const alreadyInUser = (user.registeredTournaments || []).some(r => r.tournamentId === reg.tournamentId);
+          if (!alreadyInUser) {
+            user.totalTournamentsPlayed += 1;
+            user.registeredTournaments.unshift({
+              tournamentId: reg.tournamentId,
+              tournamentTitle: reg.tournamentTitle,
+              game: reg.game || 'Multi-Game',
+              gameIcon: reg.gameIcon || '🎮',
+              gameCode: reg.gameCode || '',
+              date: reg.date || '',
+              time: reg.time || '',
+              entryFee: reg.entryFee || 0,
+              registrationId: reg.id,
+              registeredAt: new Date().toLocaleDateString(),
+              status: 'Confirmed',
+              paymentTxnId: razorpay_payment_id
+            });
+            await user.save();
+          } else {
+            const userReg = user.registeredTournaments.find(r => r.tournamentId === reg.tournamentId);
+            if (userReg) {
+              userReg.status = 'Confirmed';
+              userReg.paymentTxnId = razorpay_payment_id;
+              await user.save();
+            }
+          }
+        }
+
+        // Asynchronously trigger confirmation email via Brevo
+        let targetTrn = await Tournament.findOne({ id: reg.tournamentId }).catch(() => null);
+        if (!targetTrn) targetTrn = INITIAL_TOURNAMENTS.find(t => t.id === reg.tournamentId);
+        sendSlotConfirmationEmail(reg, targetTrn).catch(e => console.error('Brevo confirmation email notice:', e.message));
+      }
+
+      updatedReg = reg;
+    } else {
+      const memReg = memoryRegistrations.find(r => r.id === registrationId || r.razorpayOrderId === razorpay_order_id);
+      if (memReg) {
+        memReg.status = 'Confirmed';
+        memReg.paymentStatus = 'PAID';
+        memReg.razorpayOrderId = razorpay_order_id;
+        memReg.razorpayPaymentId = razorpay_payment_id;
+        memReg.razorpaySignature = razorpay_signature;
+        memReg.txnId = razorpay_payment_id;
+        updatedReg = memReg;
+      }
+    }
+
+    console.log(`✅ [Razorpay Payment Verified] Reg ID: ${registrationId}, Payment ID: ${razorpay_payment_id}`);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Payment verified and slot officially confirmed!',
+      registration: updatedReg
+    });
+
+  } catch (err) {
+    console.error('❌ Razorpay payment verification error:', err.message || err);
+    return res.status(500).json({
+      success: false,
+      message: 'Server error verifying payment: ' + (err.message || 'Internal error')
+    });
+  }
+});
+
+// 3. SECURE RAZORPAY WEBHOOK HANDLER (IDEMPOTENT & DUPLICATE-SAFE)
+app.post('/api/payment/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  try {
+    const signature = req.headers['x-razorpay-signature'];
+    const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || process.env.RAZORPAY_KEY_SECRET;
+
+    if (webhookSecret && signature) {
+      const body = typeof req.body === 'string' || Buffer.isBuffer(req.body) ? req.body.toString() : JSON.stringify(req.body);
+      const expectedSignature = crypto.createHmac('sha256', webhookSecret).update(body).digest('hex');
+      if (expectedSignature !== signature) {
+        console.warn('⚠️ Webhook signature mismatch');
+        return res.status(400).json({ status: 'invalid_signature' });
+      }
+    }
+
+    const payload = typeof req.body === 'string' || Buffer.isBuffer(req.body) ? JSON.parse(req.body.toString()) : req.body;
+    const event = payload?.event;
+
+    if (event === 'order.paid' || event === 'payment.captured') {
+      const entity = payload?.payload?.payment?.entity || payload?.payload?.order?.entity;
+      const orderId = entity?.order_id || entity?.id;
+      const paymentId = entity?.id;
+
+      if (orderId && isDbConnected && mongoose.connection.readyState === 1) {
+        const reg = await Registration.findOne({ razorpayOrderId: orderId });
+        if (reg && reg.status !== 'Confirmed') {
+          reg.status = 'Confirmed';
+          reg.paymentStatus = 'PAID';
+          if (paymentId) reg.razorpayPaymentId = paymentId;
+          await reg.save();
+          console.log(`✅ Webhook updated registration ${reg.id} to Confirmed.`);
+        }
+      }
+    }
+
+    return res.status(200).json({ status: 'ok' });
+  } catch (err) {
+    console.warn('Webhook processing warning:', err.message);
+    return res.status(200).json({ status: 'error_handled' });
+  }
+});
+
 // UPDATE User Profile (With Username availability check & auto-create if missing)
 app.put('/api/users/profile', async (req, res) => {
   const { email, name, gamingUsername, phone, avatar, googleId } = req.body || {};
@@ -1899,7 +2281,7 @@ app.put('/api/admin/tournaments/:id/live-stream', async (req, res) => {
 const handleUpdateRoomId = async (req, res) => {
   try {
     const { id } = req.params;
-    const { roomId, roomPassword, liveStreamUrl } = req.body;
+    const { roomId, roomPassword, liveStreamUrl, resetTimer } = req.body;
 
     if (roomId === undefined || roomId === null || String(roomId).trim() === '') {
       return res.status(400).json({
@@ -1911,19 +2293,37 @@ const handleUpdateRoomId = async (req, res) => {
     const cleanRoomId = String(roomId).trim();
     const cleanRoomPassword = roomPassword !== undefined ? String(roomPassword).trim() : '';
 
+    let existingTrn = null;
+    if (isDbConnected && mongoose.connection.readyState === 1) {
+      existingTrn = await Tournament.findOne(buildTournamentQuery(id));
+    } else {
+      existingTrn = INITIAL_TOURNAMENTS.find(t => t.id === id || String(t.id) === String(id));
+    }
+
+    if (!existingTrn) {
+      return res.status(404).json({ success: false, message: 'Tournament not found' });
+    }
+
     const now = new Date();
-    const windowEnd = new Date(now.getTime() + 30 * 60 * 1000);
+    let isFirstTime = !existingTrn.roomPublishedAt;
+    let windowEnd = existingTrn.joiningWindowEnd ? new Date(existingTrn.joiningWindowEnd) : new Date(now.getTime() + 30 * 60 * 1000);
 
     const updatePayload = {
       roomId: cleanRoomId,
-      roomPassword: cleanRoomPassword,
-      roomPublishedAt: now,
-      joiningWindowStart: now,
-      joiningWindowEnd: windowEnd,
-      status: 'JOINING_OPEN',
-      registrationClosed: true,
-      joiningClosed: false
+      roomPassword: cleanRoomPassword
     };
+
+    // First time publication or explicit reset -> Start 30-min window
+    if (isFirstTime || resetTimer === true) {
+      windowEnd = new Date(now.getTime() + 30 * 60 * 1000);
+      updatePayload.roomPublishedAt = now;
+      updatePayload.joiningWindowStart = now;
+      updatePayload.joiningWindowEnd = windowEnd;
+      updatePayload.status = 'JOINING_OPEN';
+      updatePayload.joiningStatus = 'JOINING_OPEN';
+      updatePayload.registrationClosed = true;
+      updatePayload.joiningClosed = false;
+    }
 
     if (liveStreamUrl !== undefined && String(liveStreamUrl).trim()) {
       updatePayload.liveStreamUrl = String(liveStreamUrl).trim();
@@ -1941,30 +2341,28 @@ const handleUpdateRoomId = async (req, res) => {
       }
     }
 
-    if (!updatedTrn) {
-      return res.status(404).json({ success: false, message: 'Tournament not found' });
+    addAuditLog('Room ID Published', `Admin updated Room ID for tournament "${updatedTrn.title}" (${updatedTrn.id}). Window timer ${isFirstTime || resetTimer ? 'started 30 min countdown' : 'maintained existing countdown'}.`);
+
+    if (isFirstTime || resetTimer) {
+      await createNotification({
+        title: `🟢 JOINING OPEN NOW: ${updatedTrn.title}`,
+        message: `Room ID has been published for ${updatedTrn.title}! Registered players have 30 minutes to join. Game starts at ${windowEnd.toLocaleTimeString()}.`,
+        type: 'tournament',
+        tournamentId: updatedTrn.id
+      });
     }
-
-    addAuditLog('Room ID Published', `Admin updated Room ID for tournament "${updatedTrn.title}" (${updatedTrn.id}). 30-minute joining window activated until ${windowEnd.toLocaleTimeString()}.`);
-
-    await createNotification({
-      title: `🟢 JOINING OPEN NOW: ${updatedTrn.title}`,
-      message: `Room ID has been published for ${updatedTrn.title}! Registered players have 30 minutes to join. Game starts at ${windowEnd.toLocaleTimeString()}.`,
-      type: 'tournament',
-      tournamentId: updatedTrn.id
-    });
 
     const processed = computeTournamentLiveStatus(updatedTrn, true);
 
     return res.json({
       success: true,
-      message: 'Room ID updated & 30-Minute Joining Window Started!',
+      message: isFirstTime || resetTimer ? 'Room ID updated & 30-Minute Joining Window Started!' : 'Room ID details updated successfully.',
       tournament: processed,
       roomId: cleanRoomId,
       roomPassword: cleanRoomPassword,
-      roomPublishedAt: now,
-      joiningWindowStart: now,
-      joiningWindowEnd: windowEnd
+      roomPublishedAt: updatedTrn.roomPublishedAt,
+      joiningWindowStart: updatedTrn.joiningWindowStart,
+      joiningWindowEnd: updatedTrn.joiningWindowEnd
     });
   } catch (err) {
     return res.status(500).json({ success: false, message: err.message });
@@ -1973,6 +2371,292 @@ const handleUpdateRoomId = async (req, res) => {
 
 app.put('/api/tournaments/:id/room-id', handleUpdateRoomId);
 app.put('/api/admin/tournaments/:id/room-id', handleUpdateRoomId);
+
+// 2C. EXPLICIT ADMIN RESTART JOINING WINDOW
+app.post('/api/admin/tournaments/:id/restart-joining-window', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const now = new Date();
+    const windowEnd = new Date(now.getTime() + 30 * 60 * 1000);
+
+    const updatePayload = {
+      roomPublishedAt: now,
+      joiningWindowStart: now,
+      joiningWindowEnd: windowEnd,
+      status: 'JOINING_OPEN',
+      joiningStatus: 'JOINING_OPEN',
+      joiningClosed: false
+    };
+
+    let updatedTrn = null;
+    if (isDbConnected && mongoose.connection.readyState === 1) {
+      updatedTrn = await Tournament.findOneAndUpdate(buildTournamentQuery(id), updatePayload, { new: true });
+    } else {
+      const idx = INITIAL_TOURNAMENTS.findIndex(t => t.id === id || String(t.id) === String(id));
+      if (idx !== -1) {
+        INITIAL_TOURNAMENTS[idx] = { ...INITIAL_TOURNAMENTS[idx], ...updatePayload };
+        updatedTrn = INITIAL_TOURNAMENTS[idx];
+      }
+    }
+
+    if (!updatedTrn) return res.status(404).json({ success: false, message: 'Tournament not found' });
+
+    addAuditLog('Joining Window Restarted', `Admin restarted 30-minute joining window for tournament "${updatedTrn.title}" until ${windowEnd.toLocaleTimeString()}.`);
+
+    await createNotification({
+      title: `🔄 JOINING WINDOW RESTARTED: ${updatedTrn.title}`,
+      message: `Admin has restarted the 30-minute joining window for ${updatedTrn.title}! You have 30 minutes from now to join.`,
+      type: 'tournament',
+      tournamentId: updatedTrn.id
+    });
+
+    const processed = computeTournamentLiveStatus(updatedTrn, true);
+
+    return res.json({
+      success: true,
+      message: '30-Minute Joining Window Restarted Successfully!',
+      tournament: processed
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// 2D. PLAYER JOIN MATCH API (SERVER-TIME STRICT ENFORCEMENT & CONCURRENCY SAFE)
+app.post('/api/tournaments/:id/join', rateLimiter({ windowMs: 60 * 1000, maxRequests: 30 }), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { email, gamingId, memberIndex } = req.body || {};
+
+    if (!email && !gamingId) {
+      return res.status(400).json({ success: false, message: 'Player Email or Gaming ID is required to join.' });
+    }
+
+    const normalizedEmail = email ? email.toLowerCase().trim() : '';
+    const cleanGamingId = gamingId ? gamingId.trim() : '';
+
+    let tournament = null;
+    if (isDbConnected && mongoose.connection.readyState === 1) {
+      tournament = await Tournament.findOne(buildTournamentQuery(id));
+    } else {
+      tournament = INITIAL_TOURNAMENTS.find(t => t.id === id || String(t.id) === String(id));
+    }
+
+    if (!tournament) {
+      return res.status(404).json({ success: false, message: 'Tournament not found.' });
+    }
+
+    if (!tournament.roomPublishedAt) {
+      return res.status(400).json({ success: false, message: 'Room ID has not been published yet. Please wait for Admin to publish Room ID.' });
+    }
+
+    // Server-Time Strict Verification of 30-Minute Window
+    const nowMs = Date.now();
+    const windowEndMs = new Date(tournament.joiningWindowEnd).getTime();
+
+    if (nowMs > windowEndMs || tournament.joiningStatus === 'JOINING_CLOSED') {
+      return res.status(400).json({
+        success: false,
+        joiningStatus: 'MISSED',
+        message: '⏰ JOINING TIME OVER! The 30-minute joining window for this match has expired. Late joining is not allowed by backend. You can watch the live match stream.'
+      });
+    }
+
+    // Find Player Registration Document
+    let reg = null;
+    if (isDbConnected && mongoose.connection.readyState === 1) {
+      reg = await Registration.findOne({
+        $or: [
+          { tournamentId: tournament.id, email: normalizedEmail },
+          { tournamentId: tournament.id, gamingId: cleanGamingId },
+          { tournamentId: String(tournament.id), email: normalizedEmail }
+        ]
+      });
+    } else {
+      reg = memoryRegistrations.find(r =>
+        (r.tournamentId === tournament.id || String(r.tournamentId) === String(tournament.id)) &&
+        ((r.email && r.email.toLowerCase().trim() === normalizedEmail) || (r.gamingId && r.gamingId.trim() === cleanGamingId))
+      );
+    }
+
+    if (!reg) {
+      return res.status(404).json({ success: false, message: 'No active registration ticket found for this tournament.' });
+    }
+
+    // Verify Payment Confirmation Requirement
+    const isPaid = reg.status === 'Confirmed' || reg.paymentStatus === 'PAID' || Number(reg.entryFee || 0) === 0;
+    if (!isPaid) {
+      return res.status(403).json({ success: false, message: 'Your registration payment is pending confirmation. Only confirmed paid players can join.' });
+    }
+
+    const now = new Date();
+    const wasAlreadyJoined = reg.joined === true || reg.joiningStatus === 'JOINED';
+    let teamMembers = Array.isArray(reg.teamMembers) ? [...reg.teamMembers] : [];
+
+    // Format-based Joining Handling
+    const entryTypeLower = (tournament.entryType || reg.entryType || 'Solo').toLowerCase();
+
+    if (entryTypeLower.includes('duo') || entryTypeLower.includes('team') || entryTypeLower.includes('squad') || teamMembers.length > 0) {
+      if (memberIndex !== undefined && memberIndex !== null && teamMembers[memberIndex]) {
+        teamMembers[memberIndex] = {
+          ...teamMembers[memberIndex],
+          joined: true,
+          joinedAt: now,
+          joiningStatus: 'JOINED'
+        };
+      }
+      
+      const joinedMembersCount = teamMembers.filter(m => m.joined === true || m.joiningStatus === 'JOINED').length;
+      const totalMembersCount = teamMembers.length + 1; // Leader + Members
+      
+      reg.teamMembers = teamMembers;
+      reg.joined = true;
+      reg.joinedAt = reg.joinedAt || now;
+
+      if (joinedMembersCount + 1 >= totalMembersCount) {
+        reg.joiningStatus = 'JOINED';
+      } else {
+        reg.joiningStatus = 'PARTIALLY_JOINED';
+      }
+    } else {
+      reg.joined = true;
+      reg.joinedAt = reg.joinedAt || now;
+      reg.joiningStatus = 'JOINED';
+    }
+
+    // Save Registration Document
+    if (isDbConnected && mongoose.connection.readyState === 1) {
+      await reg.save();
+    }
+
+    // Atomically increment tournament joinedCount if first time joining
+    if (!wasAlreadyJoined) {
+      if (isDbConnected && mongoose.connection.readyState === 1) {
+        await Tournament.findOneAndUpdate({ id: tournament.id }, { $inc: { joinedCount: 1 } });
+      } else {
+        tournament.joinedCount = (tournament.joinedCount || 0) + 1;
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: '🎉 You have successfully joined the match!',
+      registration: reg,
+      joinedAt: now
+    });
+
+  } catch (err) {
+    console.error('❌ Error joining match:', err.message);
+    return res.status(500).json({ success: false, message: 'Server error joining match: ' + err.message });
+  }
+});
+
+// 2E. ADMIN PARTICIPANTS & JOINING STATUS LIST (SOLO / DUO / TEAM FORMAT ADAPTIVE)
+app.get('/api/admin/tournaments/:id/participants', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { search = '', status = 'all' } = req.query;
+
+    let tournament = null;
+    if (isDbConnected && mongoose.connection.readyState === 1) {
+      tournament = await Tournament.findOne(buildTournamentQuery(id));
+    } else {
+      tournament = INITIAL_TOURNAMENTS.find(t => t.id === id || String(t.id) === String(id));
+    }
+
+    if (!tournament) {
+      return res.status(404).json({ success: false, message: 'Tournament not found' });
+    }
+
+    const processedTrn = computeTournamentLiveStatus(tournament, true);
+    const nowMs = Date.now();
+    const isWindowClosed = processedTrn.joiningWindowEndMs && nowMs >= processedTrn.joiningWindowEndMs;
+
+    let registrations = [];
+    if (isDbConnected && mongoose.connection.readyState === 1) {
+      registrations = await Registration.find({
+        $or: [
+          { tournamentId: tournament.id },
+          { tournamentId: String(tournament.id) }
+        ]
+      }).sort({ createdAt: -1 });
+    } else {
+      registrations = memoryRegistrations.filter(r => r.tournamentId === tournament.id || String(r.tournamentId) === String(tournament.id));
+    }
+
+    // Process participant joining statuses dynamically
+    const participants = registrations.map(reg => {
+      const regObj = typeof reg.toObject === 'function' ? reg.toObject() : { ...reg };
+      
+      let computedStatus = regObj.joiningStatus || (regObj.joined ? 'JOINED' : 'NOT_JOINED');
+      
+      if (!regObj.joined && isWindowClosed) {
+        computedStatus = 'MISSED';
+      }
+
+      regObj.computedJoiningStatus = computedStatus;
+      return regObj;
+    });
+
+    // Apply Search Filter
+    const cleanSearch = String(search).toLowerCase().trim();
+    let filtered = participants;
+
+    if (cleanSearch) {
+      filtered = filtered.filter(p => {
+        const pName = (p.playerName || '').toLowerCase();
+        const gId = (p.gamingId || '').toLowerCase();
+        const tName = (p.teamName || '').toLowerCase();
+        const regId = (p.id || '').toLowerCase();
+        const email = (p.email || '').toLowerCase();
+        const membersMatch = (p.teamMembers || []).some(m =>
+          (m.name || '').toLowerCase().includes(cleanSearch) || (m.gamingId || '').toLowerCase().includes(cleanSearch)
+        );
+        return pName.includes(cleanSearch) || gId.includes(cleanSearch) || tName.includes(cleanSearch) || regId.includes(cleanSearch) || email.includes(cleanSearch) || membersMatch;
+      });
+    }
+
+    // Apply Status Filter
+    if (status !== 'all') {
+      const targetStatus = String(status).toUpperCase();
+      filtered = filtered.filter(p => {
+        if (targetStatus === 'JOINED') return p.computedJoiningStatus === 'JOINED';
+        if (targetStatus === 'NOT_JOINED') return p.computedJoiningStatus === 'NOT_JOINED';
+        if (targetStatus === 'PARTIALLY_JOINED') return p.computedJoiningStatus === 'PARTIALLY_JOINED';
+        if (targetStatus === 'MISSED') return p.computedJoiningStatus === 'MISSED';
+        return true;
+      });
+    }
+
+    const totalCapacity = Number(processedTrn.totalSlots || 0);
+    const registeredCount = Number(processedTrn.registeredSlots || 0);
+    const joinedCount = participants.filter(p => p.computedJoiningStatus === 'JOINED' || p.computedJoiningStatus === 'PARTIALLY_JOINED').length;
+
+    return res.json({
+      success: true,
+      tournamentId: tournament.id,
+      title: tournament.title,
+      game: tournament.game,
+      format: tournament.format || 'Standard',
+      entryType: tournament.entryType || 'Solo',
+      teamSize: tournament.teamSize || 1,
+      totalSlots: totalCapacity,
+      registeredSlots: registeredCount,
+      joinedCount: joinedCount,
+      remainingSlots: Math.max(0, totalCapacity - registeredCount),
+      remainingJoiningSlots: Math.max(0, registeredCount - joinedCount),
+      joiningStatus: processedTrn.joiningStatus,
+      joiningWindowStart: processedTrn.joiningWindowStart,
+      joiningWindowEnd: processedTrn.joiningWindowEnd,
+      remainingWindowMs: processedTrn.remainingWindowMs || 0,
+      serverTime: new Date().toISOString(),
+      participants: filtered
+    });
+
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
 
 // 3. ADMIN SAVE DRAFT OR PUBLISH TOP 10 RESULTS
 app.put('/api/admin/tournaments/:id/results', async (req, res) => {

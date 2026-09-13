@@ -43,6 +43,8 @@ const tournamentSchema = new mongoose.Schema({
   roomPublishedAt: { type: Date, default: null },
   joiningWindowStart: { type: Date, default: null },
   joiningWindowEnd: { type: Date, default: null },
+  joinedCount: { type: Number, default: 0 },
+  joiningStatus: { type: String, default: 'WAITING_FOR_ROOM' }, // 'WAITING_FOR_ROOM' | 'JOINING_OPEN' | 'JOINING_CLOSED' | 'LIVE' | 'COMPLETED'
   registrationClosed: { type: Boolean, default: false },
   joiningClosed: { type: Boolean, default: false },
   liveStartTime: { type: String, default: '' },

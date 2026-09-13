@@ -246,5 +246,30 @@ export async function adminLoginAPI({ username, password }) {
   }
 }
 
+export async function fetchAdminParticipantsAPI(tournamentId, search = '', status = 'all') {
+  try {
+    const encodedSearch = encodeURIComponent(search);
+    const encodedStatus = encodeURIComponent(status);
+    const res = await fetch(`${API_BASE_URL}/admin/tournaments/${tournamentId}/participants?search=${encodedSearch}&status=${encodedStatus}`);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (err) {
+    return null;
+  }
+}
+
+export async function adminRestartJoiningWindowAPI(tournamentId) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/admin/tournaments/${tournamentId}/restart-joining-window`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    return await res.json();
+  } catch (err) {
+    return { success: false, message: err.message };
+  }
+}
+
+
 
 

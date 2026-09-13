@@ -371,4 +371,79 @@ export async function adminUpdateRoomIdAPI(id, roomId, roomPassword = '', liveSt
   }
 }
 
+export async function createRazorpayOrderAPI(registrationData) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/payment/create-order`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(registrationData)
+    });
+    const data = await res.json();
+    if (!res.ok) return { success: false, message: data.message || 'Failed to create payment order' };
+    return data;
+  } catch (err) {
+    console.warn('Backend create payment order error:', err.message);
+    return { success: false, message: 'Server unreachable for payment order.' };
+  }
+}
+
+export async function verifyRazorpayPaymentAPI(paymentData) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/payment/verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(paymentData)
+    });
+    const data = await res.json();
+    if (!res.ok) return { success: false, message: data.message || 'Payment verification failed' };
+    return data;
+  } catch (err) {
+    console.warn('Backend verify payment error:', err.message);
+    return { success: false, message: 'Server unreachable for payment verification.' };
+  }
+}
+
+export async function joinTournamentMatchAPI(tournamentId, email, gamingId, memberIndex) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/tournaments/${tournamentId}/join`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, gamingId, memberIndex })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      return { success: false, message: data.message || 'Failed to join match.', joiningStatus: data.joiningStatus };
+    }
+    return { success: true, ...data };
+  } catch (err) {
+    return { success: false, message: 'Server connection error joining match: ' + err.message };
+  }
+}
+
+export async function fetchAdminParticipantsAPI(tournamentId, search = '', status = 'all') {
+  try {
+    const encodedSearch = encodeURIComponent(search);
+    const encodedStatus = encodeURIComponent(status);
+    const res = await fetch(`${API_BASE_URL}/admin/tournaments/${tournamentId}/participants?search=${encodedSearch}&status=${encodedStatus}`);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (err) {
+    return null;
+  }
+}
+
+export async function adminRestartJoiningWindowAPI(tournamentId) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/admin/tournaments/${tournamentId}/restart-joining-window`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    return await res.json();
+  } catch (err) {
+    return { success: false, message: err.message };
+  }
+}
+
+
+
 

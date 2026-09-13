@@ -23,6 +23,13 @@ const registrationSchema = new mongoose.Schema({
   txnId: { type: String, default: 'FREE_ENTRY' },
   paymentScreenshot: { type: String, default: '' },
   status: { type: String, default: 'Pending Verification' },
+  paymentStatus: { type: String, default: 'PENDING' }, // 'CREATED' | 'ATTEMPTED' | 'PAID' | 'FAILED' | 'CANCELLED'
+  joined: { type: Boolean, default: false },
+  joinedAt: { type: Date, default: null },
+  joiningStatus: { type: String, default: 'NOT_JOINED' }, // 'NOT_JOINED' | 'JOINED' | 'PARTIALLY_JOINED' | 'MISSED'
+  razorpayOrderId: { type: String, default: '', index: true },
+  razorpayPaymentId: { type: String, default: '' },
+  razorpaySignature: { type: String, default: '' },
   qrCodeUrl: { type: String, default: '' },
   prizeAmount: { type: Number, default: 0 },
   prizeRank: { type: String, default: '' },

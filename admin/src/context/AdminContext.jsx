@@ -16,7 +16,9 @@ import {
   fetchAuditLogsAPI,
   adminSendEmailAPI,
   adminDeleteAllDataAPI,
-  adminLoginAPI
+  adminLoginAPI,
+  fetchAdminParticipantsAPI,
+  adminRestartJoiningWindowAPI
 } from '../utils/api';
 
 const AdminContext = createContext();
@@ -254,6 +256,24 @@ export function AdminProvider({ children }) {
     }
   };
 
+  const fetchAdminParticipants = async (tournamentId, search = '', status = 'all') => {
+    return await fetchAdminParticipantsAPI(tournamentId, search, status);
+  };
+
+  const adminRestartJoiningWindow = async (tournamentId) => {
+    const res = await adminRestartJoiningWindowAPI(tournamentId);
+    if (res && res.success) {
+      if (res.tournament) {
+        setTournaments(prev => prev.map(t => (t.id === tournamentId || t._id === tournamentId || String(t.id) === String(tournamentId) || String(t._id) === String(tournamentId)) ? res.tournament : t));
+      }
+      showToast('30-minute joining window restarted!', 'success');
+      return { success: true, tournament: res.tournament };
+    } else {
+      showToast(res?.message || 'Failed to restart joining window.', 'error');
+      return { success: false, message: res?.message };
+    }
+  };
+
   return (
     <AdminContext.Provider
       value={{
@@ -280,7 +300,9 @@ export function AdminProvider({ children }) {
         adminSaveResults,
         adminMarkPrizePaid,
         adminSendEmail,
-        adminDeleteAllData
+        adminDeleteAllData,
+        fetchAdminParticipants,
+        adminRestartJoiningWindow
       }}
     >
       {children}

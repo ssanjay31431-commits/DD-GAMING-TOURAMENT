@@ -4,7 +4,7 @@ import { useApp } from '../context/AppContext';
 import { checkUsernameAvailabilityAPI, updateUserProfileAPI } from '../utils/api';
 
 export default function Profile({ initialTab = 'overview' }) {
-  const { userProfile, updateUserProfile, tournaments, getTournamentJoiningState, navigateTo, showToast } = useApp();
+  const { userProfile, updateUserProfile, tournaments, getTournamentJoiningState, joinTournamentMatch, navigateTo, showToast } = useApp();
   const [activeTab, setActiveTab] = useState(initialTab || 'overview');
   const [nowTick, setNowTick] = useState(Date.now());
   const fileInputRef = useRef(null);
@@ -682,16 +682,31 @@ export default function Profile({ initialTab = 'overview' }) {
                     }
 
                     if (joiningState.joiningStatus === 'JOINING_OPEN') {
+                      const isPlayerJoined = Boolean(reg.joined || (trn && trn.joiningStatus === 'JOINED'));
+
                       return (
                         <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-950 via-slate-900 to-cyan-950 border-2 border-emerald-500/60 space-y-3 shadow-xl">
                           <div className="flex items-center justify-between">
                             <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-extrabold text-[10px] uppercase tracking-wider flex items-center gap-1.5 border border-emerald-500/40 animate-pulse">
-                              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" /> 🟢 JOINING OPEN NOW
+                              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" /> 🟢 30-MIN JOINING WINDOW OPEN
                             </span>
                             <span className="text-cyan-300 font-mono text-xs font-bold bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/30">
                               Window Ends: {joiningState.formattedTimeUntilEnd}
                             </span>
                           </div>
+
+                          {isPlayerJoined && (
+                            <div className="p-2.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold flex items-center justify-between">
+                              <span className="flex items-center gap-1.5">
+                                <CheckCircle2 className="w-4 h-4 text-emerald-400" /> YOU JOINED THE MATCH 🟢
+                              </span>
+                              {reg.joinedAt && (
+                                <span className="text-[10px] text-emerald-300/80 font-mono">
+                                  Joined at {new Date(reg.joinedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                              )}
+                            </div>
+                          )}
 
                           <div className="grid grid-cols-2 gap-2 bg-slate-950/80 p-3 rounded-xl border border-emerald-500/30">
                             <div>
@@ -733,14 +748,17 @@ export default function Profile({ initialTab = 'overview' }) {
 
                           <button
                             type="button"
-                            onClick={() => {
+                            onClick={async () => {
+                              if (trn) {
+                                await joinTournamentMatch(trn.id || trn._id);
+                              }
                               if (displayRoomId) navigator.clipboard.writeText(displayRoomId);
-                              showToast('Entering Game Room...', 'info');
+                              showToast('Joined match! Navigating to live stream...', 'info');
                               navigateTo('live');
                             }}
                             className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-heading font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/25 cursor-pointer active:scale-98 transition-all"
                           >
-                            <Play className="w-4 h-4 fill-slate-950" /> ENTER GAME NOW
+                            <Play className="w-4 h-4 fill-slate-950" /> {isPlayerJoined ? 'ENTER GAME ROOM NOW' : 'JOIN MATCH NOW 🟢'}
                           </button>
                         </div>
                       );

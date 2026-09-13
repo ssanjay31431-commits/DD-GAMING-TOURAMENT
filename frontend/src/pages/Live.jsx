@@ -5,7 +5,7 @@ import { useApp } from '../context/AppContext';
 import { fetchLiveAccessAPI } from '../utils/api';
 
 export default function Live() {
-  const { tournaments, userProfile, registrations, openRegistrationModal, navigateTo } = useApp();
+  const { tournaments, userProfile, registrations, openRegistrationModal, getTournamentJoiningState, joinTournamentMatch, navigateTo, showToast } = useApp();
 
   const TARGET_YT_CHANNEL = 'https://www.youtube.com/@wheelchair_boy_yt';
   const TARGET_YT_LIVE_URL = 'https://www.youtube.com/@wheelchair_boy_yt/live';
@@ -27,6 +27,12 @@ export default function Live() {
 
   const [activeTabTrnId, setActiveTabTrnId] = useState('');
   const [accessStateMap, setAccessStateMap] = useState({});
+  const [nowTick, setNowTick] = useState(Date.now());
+
+  useEffect(() => {
+    const timer = setInterval(() => setNowTick(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     // Check live stream access for all registered tournaments
@@ -175,21 +181,89 @@ export default function Live() {
                       </span>
                     </div>
 
-                    {/* MATCH START DATE & TIME BOX */}
-                    <div className="p-4 rounded-2xl bg-slate-950 border border-emerald-500/30 space-y-2">
-                      <div className="flex items-center justify-between text-xs font-bold">
-                        <span className="text-emerald-400 flex items-center gap-1.5">
-                          <Calendar className="w-4 h-4 text-emerald-400" />
-                          MATCH SCHEDULED:
-                        </span>
-                        <span className="text-white font-mono font-black text-sm">
-                          {matchDateDisplay} @ {matchTimeDisplay}
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-slate-400 leading-relaxed">
-                        Match Room ID & Password will be published in My Tickets when joining window starts. Stream starts live on YouTube channel <strong>@wheelchair_boy_yt</strong> at match start time!
-                      </p>
-                    </div>
+                    {/* MATCH START DATE & TIME BOX + 30-MIN JOINING WIDGET */}
+                    {(() => {
+                      const joiningState = getTournamentJoiningState ? getTournamentJoiningState(trn) : { joiningStatus: 'WAITING_FOR_ROOM', isOpen: false, isMissed: false, formattedTimeUntilEnd: '30:00' };
+                      const format = trn.entryType || 'Solo';
+                      const isTeam = format === 'Duo' || format === 'Team';
+
+                      if (joiningState.joiningStatus === 'JOINING_OPEN') {
+                        return (
+                          <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-950 via-slate-950 to-cyan-950 border-2 border-emerald-500/60 space-y-3 shadow-xl">
+                            <div className="flex items-center justify-between">
+                              <span className="px-3 py-1 rounded-full text-xs font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 uppercase tracking-wider flex items-center gap-1.5 animate-pulse">
+                                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
+                                🟢 30-MIN JOINING WINDOW OPEN NOW
+                              </span>
+                              <span className="font-mono font-black text-emerald-400 text-base bg-emerald-500/10 px-3 py-1 rounded-xl border border-emerald-500/30">
+                                {joiningState.formattedTimeUntilEnd}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center justify-between text-xs text-purple-200 font-bold bg-purple-950/40 p-2.5 rounded-xl border border-purple-500/30">
+                              <span>Slot Availability:</span>
+                              <span className="font-mono font-black text-cyan-300">
+                                {trn.joinedCount || 0} / {trn.maxCapacity || trn.totalSlots || 0} {isTeam ? 'Teams' : 'Players'} Joined • {Math.max(0, (trn.maxCapacity || trn.totalSlots || 0) - (trn.joinedCount || 0))} Slots Remaining
+                              </span>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2 bg-slate-900/90 p-3 rounded-xl border border-emerald-500/30 text-xs">
+                              <div>
+                                <span className="text-slate-400 text-[10px] font-bold uppercase block">ROOM ID</span>
+                                <span className="font-mono font-black text-emerald-400 text-sm">{trn.roomId || 'Available'}</span>
+                              </div>
+                              <div>
+                                <span className="text-slate-400 text-[10px] font-bold uppercase block">ROOM PASSWORD</span>
+                                <span className="font-mono font-black text-cyan-300 text-sm">{trn.roomPassword || 'NO PASS'}</span>
+                              </div>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                await joinTournamentMatch(trn.id || trn._id);
+                                if (trn.roomId) navigator.clipboard.writeText(trn.roomId);
+                                showToast('Joined match! Room ID copied to clipboard.', 'success');
+                              }}
+                              className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-heading font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/30 cursor-pointer active:scale-98 transition-all"
+                            >
+                              <Play className="w-4 h-4 fill-slate-950" /> JOIN MATCH NOW 🟢
+                            </button>
+                          </div>
+                        );
+                      }
+
+                      if (joiningState.isMissed) {
+                        return (
+                          <div className="p-4 rounded-2xl bg-rose-950/80 border-2 border-rose-500/60 space-y-2 text-xs">
+                            <div className="flex items-center gap-2 text-rose-300 font-extrabold uppercase">
+                              <Clock className="w-4 h-4 text-rose-400 shrink-0" />
+                              <span>⏰ JOINING WINDOW CLOSED — YOU MISSED THE MATCH</span>
+                            </div>
+                            <p className="text-rose-200/90 leading-relaxed font-semibold">
+                              You missed the 30-minute joining window for this match. The game is live in progress. You can watch the live broadcast below. (No refunds for missed joining window.)
+                            </p>
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <div className="p-4 rounded-2xl bg-slate-950 border border-emerald-500/30 space-y-2">
+                          <div className="flex items-center justify-between text-xs font-bold">
+                            <span className="text-emerald-400 flex items-center gap-1.5">
+                              <Calendar className="w-4 h-4 text-emerald-400" />
+                              MATCH SCHEDULED:
+                            </span>
+                            <span className="text-white font-mono font-black text-sm">
+                              {matchDateDisplay} @ {matchTimeDisplay}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-400 leading-relaxed">
+                            Match Room ID & Password will be published in My Tickets when joining window starts. Stream starts live on YouTube channel <strong>@wheelchair_boy_yt</strong> at match start time!
+                          </p>
+                        </div>
+                      );
+                    })()}
 
                     {/* LIVE PLAYER OR DIRECT YOUTUBE LINK BANNER */}
                     {parsedEmbedUrl ? (

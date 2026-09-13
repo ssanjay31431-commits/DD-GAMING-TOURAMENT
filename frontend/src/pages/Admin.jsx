@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   ShieldAlert, Plus, CheckCircle2, XCircle, Trash2, Edit3, Users, DollarSign,
   Trophy, Sparkles, Filter, RefreshCw, Eye, QrCode, AlertTriangle, Layers,
-  Activity, Play, CheckSquare, Clock, History, Settings, Award, Crosshair, LogOut, Lock, AlertCircle, EyeOff, Menu, X
+  Activity, Play, CheckSquare, Clock, History, Settings, Award, Crosshair, LogOut, Lock, AlertCircle, EyeOff, Menu, X, ChevronDown, ChevronUp, Copy, Check, Search
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { getGameBanner } from '../utils/gameBanners';
@@ -22,6 +22,9 @@ export default function Admin() {
     adminDeleteTournament,
     adminLiveUpdateTournament,
     adminVerifyResults,
+    adminUpdateRoomId,
+    fetchAdminParticipants,
+    adminRestartJoiningWindow,
     isAdminAuth,
     adminLogin,
     adminLogout,
@@ -36,6 +39,17 @@ export default function Admin() {
   const [paymentFilter, setPaymentFilter] = useState('all');
   const [tournamentFilter, setTournamentFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Participants & Joining Window State
+  const [selectedParticipantTrnId, setSelectedParticipantTrnId] = useState('');
+  const [participantSearch, setParticipantSearch] = useState('');
+  const [participantStatusFilter, setParticipantStatusFilter] = useState('all');
+  const [participantsData, setParticipantsData] = useState(null);
+  const [isLoadingParticipants, setIsLoadingParticipants] = useState(false);
+  const [expandedTeamIds, setExpandedTeamIds] = useState({});
+  const [confirmRoomPublishModal, setConfirmRoomPublishModal] = useState(null);
+  const [roomIdInputs, setRoomIdInputs] = useState({});
+  const [nowTick, setNowTick] = useState(Date.now());
   const [viewQrModalReg, setViewQrModalReg] = useState(null);
   const [editingTrn, setEditingTrn] = useState(null);
   const [confirmDeleteTrn, setConfirmDeleteTrn] = useState(null);
@@ -73,6 +87,45 @@ export default function Admin() {
   const handleAdminLogout = () => {
     adminLogout();
   };
+
+  // 1-Second Timer Tick for live countdown displays
+  useEffect(() => {
+    const timer = setInterval(() => setNowTick(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Auto select default tournament for Participants tab
+  useEffect(() => {
+    if (tournaments && tournaments.length > 0 && !selectedParticipantTrnId) {
+      const activeOrFirst = tournaments.find(t => t.status === 'Live' || t.status === 'Registration Open') || tournaments[0];
+      setSelectedParticipantTrnId(activeOrFirst.id || activeOrFirst._id);
+    }
+  }, [tournaments]);
+
+  // Load / Poll Participants data
+  useEffect(() => {
+    if (!selectedParticipantTrnId) return;
+
+    let isMounted = true;
+    const loadParticipants = async () => {
+      const data = await fetchAdminParticipants(selectedParticipantTrnId, participantSearch, participantStatusFilter);
+      if (isMounted && data) {
+        setParticipantsData(data);
+      }
+    };
+
+    loadParticipants();
+
+    // Poll every 5s if activeTab is 'participants'
+    let interval = null;
+    if (activeTab === 'participants') {
+      interval = setInterval(loadParticipants, 5000);
+    }
+    return () => {
+      isMounted = false;
+      if (interval) clearInterval(interval);
+    };
+  }, [selectedParticipantTrnId, participantSearch, participantStatusFilter, activeTab]);
 
   if (!isAdminAuth) {
     return <AdminLogin onLoginSuccess={() => adminLogin({ username: 'ddgaming', password: 'ddgaming2026' })} />;
@@ -364,6 +417,7 @@ export default function Admin() {
           { id: 'overview', label: 'Overview', icon: Activity },
           { id: 'create', label: '+ Create Tournament', icon: Plus, highlight: true },
           { id: 'tournaments', label: `Tournaments (${tournaments.length})`, icon: Layers },
+          { id: 'participants', label: 'Participants & Joining', icon: Users, highlight: true },
           { id: 'payments', label: `Payments (${pendingCount})`, icon: DollarSign },
           { id: 'registrations', label: 'Registrations', icon: Users },
           { id: 'live', label: `Live (${liveCount})`, icon: Play },
@@ -380,9 +434,9 @@ export default function Admin() {
               {...touchProps(() => setActiveTab(tab.id))}
               className={`px-4 py-2.5 rounded-xl font-heading font-bold text-xs uppercase tracking-wider transition-all shrink-0 flex items-center gap-2 border touch-manipulation cursor-pointer min-h-[44px] ${
                 isActive
-                  ? 'bg-rose-600 border-rose-400 text-white shadow-lg shadow-rose-500/25'
+                  ? 'bg-purple-600 border-purple-400 text-white shadow-lg shadow-purple-500/30'
                   : tab.highlight
-                  ? 'bg-purple-950/80 border-purple-500/40 text-purple-300 hover:bg-purple-900'
+                  ? 'bg-purple-950/40 border-purple-500/30 text-purple-300 hover:bg-purple-900/50'
                   : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
               }`}
             >
@@ -466,6 +520,442 @@ export default function Admin() {
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* PARTICIPANTS & JOINING STATUS TAB */}
+      {activeTab === 'participants' && (
+        <div className="space-y-6">
+          {/* TOURNAMENT SELECTOR DROPDOWN & REFRESH BAR */}
+          <div className="p-6 rounded-3xl bg-[#0f0c1b] border border-[#251d45] flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-xl">
+            <div className="space-y-1 w-full md:w-auto">
+              <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
+                Select Tournament Arena
+              </label>
+              <select
+                value={selectedParticipantTrnId}
+                onChange={(e) => setSelectedParticipantTrnId(e.target.value)}
+                className="w-full md:w-80 px-4 py-2.5 rounded-xl bg-slate-900 border border-purple-500/40 text-white font-bold text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              >
+                {tournaments.map((t) => (
+                  <option key={t.id || t._id} value={t.id || t._id}>
+                    {t.gameIcon || '🎮'} {t.title} ({t.entryType || 'Solo'} • {t.status || 'Active'})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-center gap-3 w-full md:w-auto justify-end">
+              <button
+                type="button"
+                onClick={async () => {
+                  setIsLoadingParticipants(true);
+                  const data = await fetchAdminParticipants(selectedParticipantTrnId, participantSearch, participantStatusFilter);
+                  if (data) setParticipantsData(data);
+                  setIsLoadingParticipants(false);
+                }}
+                className="px-4 py-2.5 rounded-xl bg-purple-900/40 border border-purple-500/40 hover:bg-purple-800/60 text-purple-200 text-xs font-bold uppercase tracking-wider flex items-center gap-2 cursor-pointer transition-all"
+              >
+                <RefreshCw className={`w-4 h-4 ${isLoadingParticipants ? 'animate-spin' : ''}`} />
+                Refresh Live Data
+              </button>
+            </div>
+          </div>
+
+          {/* SUMMARY BANNER */}
+          {participantsData && participantsData.tournament && (() => {
+            const trn = participantsData.tournament;
+            const stats = participantsData.stats || {};
+            const format = trn.entryType || 'Solo';
+            const isTeamFormat = format === 'Duo' || format === 'Team';
+            
+            // Calculate remaining window countdown
+            const isWindowActive = trn.roomPublishedAt && trn.joiningWindowEnd && new Date(trn.joiningWindowEnd).getTime() > nowTick;
+            const remainingMs = isWindowActive ? Math.max(0, new Date(trn.joiningWindowEnd).getTime() - nowTick) : 0;
+            const remainingMins = Math.floor(remainingMs / 60000);
+            const remainingSecs = Math.floor((remainingMs % 60000) / 1000);
+            const timerStr = `${String(remainingMins).padStart(2, '0')}:${String(remainingSecs).padStart(2, '0')}`;
+
+            return (
+              <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-purple-950 via-slate-900 to-indigo-950 border border-purple-500/30 glass-panel shadow-2xl space-y-6">
+                <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 pb-6 border-b border-purple-500/20">
+                  <div className="space-y-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="px-3 py-1 rounded-full text-xs font-black bg-purple-500/20 text-purple-300 border border-purple-500/40 uppercase tracking-wider">
+                        {trn.gameIcon || '🎮'} {trn.game} • {format} ({trn.teamSize || 1} Player{trn.teamSize > 1 ? 's' : ''}/Team)
+                      </span>
+                      <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 uppercase">
+                        Status: {trn.status}
+                      </span>
+                    </div>
+                    <h2 className="font-heading font-black text-2xl sm:text-3xl text-white tracking-wide">
+                      {trn.title}
+                    </h2>
+                    <p className="text-xs text-purple-300 font-mono">
+                      Match Date: {trn.date} @ {trn.time}
+                    </p>
+                  </div>
+
+                  {/* 30-MINUTE JOINING WINDOW COUNTDOWN & CONTROLS */}
+                  <div className="p-4 rounded-2xl bg-slate-950/90 border border-purple-500/40 space-y-3 w-full lg:w-auto shrink-0 min-w-[280px]">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5 text-purple-400" /> JOINING WINDOW
+                      </span>
+                      {isWindowActive ? (
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 uppercase animate-pulse">
+                          🟢 ACTIVE NOW
+                        </span>
+                      ) : trn.roomPublishedAt ? (
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-rose-500/20 text-rose-300 border border-rose-500/40 uppercase">
+                          🔴 EXPIRED
+                        </span>
+                      ) : (
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/40 uppercase">
+                          ⏳ NOT STARTED
+                        </span>
+                      )}
+                    </div>
+
+                    {isWindowActive ? (
+                      <div className="text-center py-1 bg-slate-900 rounded-xl border border-emerald-500/30">
+                        <span className="font-mono font-black text-3xl text-emerald-400 tracking-wider">
+                          {timerStr}
+                        </span>
+                        <span className="block text-[10px] text-emerald-300/80 font-bold uppercase">Time Remaining to Join</span>
+                      </div>
+                    ) : trn.roomPublishedAt ? (
+                      <div className="text-center py-1 bg-slate-900 rounded-xl border border-rose-500/30">
+                        <span className="font-mono font-bold text-sm text-rose-400 block">30-Min Window Closed</span>
+                        <span className="text-[10px] text-slate-400">Published at {new Date(trn.roomPublishedAt).toLocaleTimeString()}</span>
+                      </div>
+                    ) : (
+                      <div className="text-center py-1 bg-slate-900 rounded-xl border border-slate-800">
+                        <span className="text-xs text-amber-300 font-bold block">Room ID Not Published Yet</span>
+                        <span className="text-[10px] text-slate-400">Publishing Room ID will start 30-min timer</span>
+                      </div>
+                    )}
+
+                    {/* RESTART 30-MIN JOINING WINDOW BUTTON */}
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (window.confirm(`Are you sure you want to RESTART the 30-minute joining window for "${trn.title}"?`)) {
+                          await adminRestartJoiningWindow(trn.id || trn._id);
+                          const freshData = await fetchAdminParticipants(selectedParticipantTrnId, participantSearch, participantStatusFilter);
+                          if (freshData) setParticipantsData(freshData);
+                        }
+                      }}
+                      className="w-full py-2 rounded-xl bg-purple-900/60 hover:bg-purple-800 text-purple-200 border border-purple-500/40 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer shadow transition-all"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5" />
+                      {trn.roomPublishedAt ? 'Restart 30-Min Joining Window' : 'Start 30-Min Joining Window'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* ROOM ID & PASSWORD EDIT SECTION */}
+                <div className="p-4 rounded-2xl bg-slate-950 border border-purple-500/30 grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+                  <div>
+                    <label className="block text-xs font-bold text-purple-300 uppercase mb-1">Room ID</label>
+                    <input
+                      type="text"
+                      value={roomIdInputs[trn.id || trn._id] !== undefined ? roomIdInputs[trn.id || trn._id] : (trn.roomId || '')}
+                      onChange={(e) => setRoomIdInputs(prev => ({ ...prev, [trn.id || trn._id]: e.target.value }))}
+                      placeholder="Enter Room ID"
+                      className="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white font-mono text-sm font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-cyan-300 uppercase mb-1">Room Password</label>
+                    <input
+                      type="text"
+                      value={trn.roomPassword || ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        adminUpdateTournament(trn.id || trn._id, { roomPassword: val });
+                      }}
+                      placeholder="Enter Room Password (Optional)"
+                      className="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white font-mono text-sm font-bold"
+                    />
+                  </div>
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const currentInput = roomIdInputs[trn.id || trn._id] !== undefined ? roomIdInputs[trn.id || trn._id] : (trn.roomId || '');
+                        if (!currentInput || !currentInput.trim()) {
+                          showToast('Please enter a Room ID.', 'error');
+                          return;
+                        }
+                        // If Room ID is not published yet, open confirmation modal
+                        if (!trn.roomPublishedAt) {
+                          setConfirmRoomPublishModal({ trn, roomId: currentInput.trim() });
+                        } else {
+                          // Update Room ID directly (preserving existing window as per Rule 12)
+                          adminUpdateRoomId(trn.id || trn._id, currentInput.trim());
+                        }
+                      }}
+                      className="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-heading font-black text-xs uppercase tracking-wider shadow-lg flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <Check className="w-4 h-4" /> Save / Publish Room ID
+                    </button>
+                  </div>
+                </div>
+
+                {/* METRICS & SLOTS STATS GRID */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-1">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">
+                      {isTeamFormat ? 'Total Team Capacity' : 'Total Player Slots'}
+                    </span>
+                    <p className="font-heading font-black text-2xl text-white">{stats.totalCapacity || trn.maxCapacity}</p>
+                    <span className="text-[10px] text-slate-400">Max configured</span>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-1">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">
+                      {isTeamFormat ? 'Confirmed Paid Teams' : 'Confirmed Registrations'}
+                    </span>
+                    <p className="font-heading font-black text-2xl text-cyan-400">{stats.registeredCount || 0}</p>
+                    <span className="text-[10px] text-cyan-300/80">Razorpay verified</span>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-1">
+                    <span className="text-[10px] font-bold text-emerald-400 uppercase">
+                      {isTeamFormat ? 'Fully Joined Teams 🟢' : 'Joined Players 🟢'}
+                    </span>
+                    <p className="font-heading font-black text-2xl text-emerald-400">{stats.joinedCount || 0}</p>
+                    {isTeamFormat && (
+                      <span className="text-[10px] text-amber-300 block">{stats.partiallyJoinedCount || 0} Partially Joined 🟡</span>
+                    )}
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-1">
+                    <span className="text-[10px] font-bold text-purple-400 uppercase">
+                      Remaining Joining Slots
+                    </span>
+                    <p className="font-heading font-black text-2xl text-purple-300">
+                      {stats.remainingSlots !== undefined ? stats.remainingSlots : Math.max(0, (trn.maxCapacity || 0) - (stats.joinedCount || 0))}
+                    </p>
+                    <span className="text-[10px] text-purple-400">Available capacity</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* FILTER BAR & SEARCH */}
+          <div className="p-4 rounded-2xl bg-[#0f0c1b] border border-[#251d45] flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mr-2 shrink-0">Filter Status:</span>
+              {[
+                { id: 'all', label: 'ALL PARTICIPANTS' },
+                { id: 'JOINED', label: '🟢 JOINED' },
+                { id: 'PARTIALLY JOINED', label: '🟡 PARTIALLY JOINED' },
+                { id: 'NOT JOINED', label: '⚪ NOT JOINED' },
+                { id: 'MISSED', label: '🔴 MISSED' }
+              ].map(f => (
+                <button
+                  key={f.id}
+                  type="button"
+                  onClick={() => setParticipantStatusFilter(f.id)}
+                  className={`px-3 py-1.5 rounded-full text-[11px] font-bold uppercase transition-all shrink-0 border ${
+                    participantStatusFilter === f.id
+                      ? 'bg-purple-600 border-purple-400 text-white shadow-lg'
+                      : 'bg-[#16112a] border-[#251d45] text-slate-400 hover:text-white'
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="relative w-full md:w-64">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+              <input
+                type="text"
+                value={participantSearch}
+                onChange={(e) => setParticipantSearch(e.target.value)}
+                placeholder="Search player, team, email..."
+                className="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs font-semibold focus:outline-none focus:border-purple-500"
+              />
+            </div>
+          </div>
+
+          {/* PARTICIPANTS LIST VIEW (FORMAT ADAPTIVE & MOBILE-FIRST ACCORDION CARDS) */}
+          {participantsData && participantsData.participants && (
+            <div className="space-y-4">
+              {participantsData.participants.length === 0 ? (
+                <div className="p-8 rounded-3xl bg-slate-900/60 border border-slate-800 text-center text-slate-400 text-xs">
+                  No participants found matching current search/filter.
+                </div>
+              ) : (
+                participantsData.participants.map((item, idx) => {
+                  const isTeam = Boolean(item.teamName || item.members);
+
+                  if (isTeam) {
+                    // DUO / SQUAD TEAM CARD
+                    const isExpanded = expandedTeamIds[item.registrationId || idx];
+                    const members = item.members || [];
+                    const joinedCount = members.filter(m => m.joined).length;
+
+                    return (
+                      <div key={item.registrationId || idx} className="rounded-2xl bg-slate-900 border border-purple-500/30 overflow-hidden shadow-lg">
+                        {/* Team Header Bar */}
+                        <div
+                          onClick={() => setExpandedTeamIds(prev => ({ ...prev, [item.registrationId || idx]: !prev[item.registrationId || idx] }))}
+                          className="p-4 bg-slate-950/80 hover:bg-slate-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-pointer border-b border-slate-800 transition-colors"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-purple-600/20 border border-purple-500/40 flex items-center justify-center text-purple-300 font-black text-sm">
+                              🛡️
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <h4 className="font-heading font-black text-white text-base">{item.teamName || 'Team'}</h4>
+                                <span className="text-xs font-mono text-purple-400 font-bold">({joinedCount}/{members.length} Joined)</span>
+                              </div>
+                              <span className="text-xs text-slate-400">Leader: <strong className="text-white">{item.leaderName || item.playerName}</strong> ({item.leaderEmail || item.email})</span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">
+                            <span className={`px-3 py-1 rounded-full text-[11px] font-black uppercase border ${
+                              item.joiningStatus === 'JOINED'
+                                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                                : item.joiningStatus === 'PARTIALLY JOINED'
+                                ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                                : item.joiningStatus === 'MISSED'
+                                ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                                : 'bg-slate-800 text-slate-300 border-slate-700'
+                            }`}>
+                              {item.joiningStatus === 'JOINED' ? '🟢 FULLY JOINED' : item.joiningStatus === 'PARTIALLY JOINED' ? '🟡 PARTIALLY JOINED' : item.joiningStatus === 'MISSED' ? '🔴 MISSED' : '⚪ NOT JOINED'}
+                            </span>
+                            <button type="button" className="p-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white">
+                              {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Expanded Team Members Breakdown */}
+                        {isExpanded && (
+                          <div className="p-4 space-y-3 bg-slate-900/50">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Team Roster Breakdown ({members.length} Members)</span>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              {members.map((m, mIdx) => (
+                                <div key={mIdx} className="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1 text-xs">
+                                  <div className="flex items-center justify-between">
+                                    <span className="font-bold text-purple-300 uppercase text-[10px]">
+                                      {mIdx === 0 ? '👑 Team Leader' : `Member ${mIdx + 1}`}
+                                    </span>
+                                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                      m.joined ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-slate-800 text-slate-400'
+                                    }`}>
+                                      {m.joined ? '🟢 JOINED' : '⚪ NOT JOINED'}
+                                    </span>
+                                  </div>
+                                  <p className="font-bold text-white text-sm">{m.playerName || 'Player'}</p>
+                                  <div className="text-slate-400 font-mono text-[11px] space-y-0.5">
+                                    <div>Gaming ID: <strong className="text-cyan-300">{m.gamingId || 'N/A'}</strong></div>
+                                    <div>Email: {m.email || 'N/A'}</div>
+                                    {m.joinedAt && <div className="text-[10px] text-emerald-400">Joined at: {new Date(m.joinedAt).toLocaleTimeString()}</div>}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  } else {
+                    // SOLO PARTICIPANT CARD / ROW
+                    return (
+                      <div key={item.registrationId || idx} className="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-purple-600/20 border border-purple-500/40 flex items-center justify-center text-purple-300 font-black text-sm">
+                            👤
+                          </div>
+                          <div>
+                            <h4 className="font-heading font-black text-white text-base">{item.playerName}</h4>
+                            <div className="text-xs text-slate-400 font-mono flex flex-wrap gap-x-3 gap-y-0.5">
+                              <span>Gaming ID: <strong className="text-purple-300">{item.gamingId}</strong></span>
+                              <span>Email: {item.email}</span>
+                              <span>Phone: {item.phone}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-800">
+                          <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded border border-emerald-500/30">
+                            Razorpay Confirmed
+                          </span>
+                          <span className={`px-3 py-1 rounded-full text-[11px] font-black uppercase border ${
+                            item.joiningStatus === 'JOINED' || item.joined
+                              ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                              : item.joiningStatus === 'MISSED'
+                              ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                              : 'bg-slate-800 text-slate-300 border-slate-700'
+                          }`}>
+                            {item.joiningStatus === 'JOINED' || item.joined ? '🟢 JOINED' : item.joiningStatus === 'MISSED' ? '🔴 MISSED' : '⚪ NOT JOINED'}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  }
+                })
+              )}
+            </div>
+          )}
+
+          {/* ROOM ID PUBLISH CONFIRMATION MODAL */}
+          {confirmRoomPublishModal && (
+            <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="p-6 rounded-3xl bg-slate-900 border border-purple-500/40 max-w-md w-full space-y-5 shadow-2xl">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-300">
+                    <AlertTriangle className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-heading font-black text-lg text-white">Publish Room ID & Start Timer</h3>
+                    <span className="text-xs text-purple-300">{confirmRoomPublishModal.trn?.title}</span>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-slate-300 space-y-2">
+                  <p>
+                    Publishing Room ID <strong className="text-emerald-400 font-mono font-black">{confirmRoomPublishModal.roomId}</strong> will automatically start the <strong>30-Minute Joining Window</strong> for registered players.
+                  </p>
+                  <p className="text-amber-300 font-semibold">
+                    Are you ready to start the joining timer now?
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setConfirmRoomPublishModal(null)}
+                    className="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs uppercase"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const trnId = confirmRoomPublishModal.trn.id || confirmRoomPublishModal.trn._id;
+                      await adminUpdateRoomId(trnId, confirmRoomPublishModal.roomId);
+                      setConfirmRoomPublishModal(null);
+                      const freshData = await fetchAdminParticipants(selectedParticipantTrnId, participantSearch, participantStatusFilter);
+                      if (freshData) setParticipantsData(freshData);
+                    }}
+                    className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-heading font-black text-xs uppercase shadow"
+                  >
+                    Publish & Start 30-Min Window
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -1003,7 +1493,7 @@ export default function Admin() {
                   <th className="py-4 px-6">Ticket ID</th>
                   <th className="py-4 px-6">Player / Team</th>
                   <th className="py-4 px-6">Tournament</th>
-                  <th className="py-4 px-6">Fee & UTR ID</th>
+                  <th className="py-4 px-6">Fee & Razorpay ID</th>
                   <th className="py-4 px-6">Status</th>
                   <th className="py-4 px-6 text-right">Actions</th>
                 </tr>
@@ -1021,7 +1511,7 @@ export default function Admin() {
                       <td className="py-4 px-6 font-semibold text-slate-200">{reg.tournamentTitle}</td>
                       <td className="py-4 px-6">
                         <span className="font-black text-emerald-400 block">₹{reg.entryFee}</span>
-                        <span className="text-xs text-slate-400 font-mono">UTR: {reg.txnId}</span>
+                        <span className="text-xs text-slate-400 font-mono">Razorpay: {reg.razorpayPaymentId || reg.txnId}</span>
                       </td>
                       <td className="py-4 px-6">
                         <span className={`px-3 py-1 rounded-full text-xs font-extrabold ${

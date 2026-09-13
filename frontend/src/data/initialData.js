@@ -265,11 +265,11 @@ export const INITIAL_WINNERS = [];
 export const INITIAL_FAQS = [
   {
     question: 'How do 8 Ball Pool 1v1 tournaments work?',
-    answer: 'Browse active tournaments, select an 8 Ball Pool contest (e.g. ₹100 entry, 32 fixed slots), and click "Join Tournament". Enter your 8 Ball Pool Unique ID, submit payment verification, and receive your confirmed registration slot.'
+    answer: 'Browse active tournaments, select an 8 Ball Pool contest (e.g. ₹100 entry, 32 fixed slots), and click "Join Tournament". Enter your In-Game ID, complete instant Razorpay payment checkout, and receive your confirmed registration pass.'
   },
   {
     question: 'When is my slot confirmed?',
-    answer: 'According to our operational rules, a player\'s slot is officially confirmed only after payment verification (or free-entry confirmation). Enter your 12-digit UPI / UTR Transaction ID to verify.'
+    answer: 'A player\'s slot is officially confirmed instantly upon server verification of your Razorpay payment (or free-entry confirmation).'
   },
   {
     question: 'What are the refund and cancellation policies?',

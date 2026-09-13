@@ -1,11 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, CheckCircle2, User, Phone, Mail, QrCode, ShieldCheck, ArrowRight, ArrowLeft, Copy, Sparkles, AlertCircle, Upload, Image as ImageIcon, Clock, Loader2 } from 'lucide-react';
+import { X, CheckCircle2, User, Phone, Mail, ShieldCheck, ArrowRight, ArrowLeft, Clock, Loader2, AlertCircle, RefreshCw, CreditCard, Lock } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useApp } from '../context/AppContext';
 
 export default function RegisterModal() {
-  const { selectedTournamentRegister, closeRegistrationModal, submitRegistration, userProfile, navigateTo } = useApp();
+  const {
+    selectedTournamentRegister,
+    closeRegistrationModal,
+    submitRegistration,
+    createRazorpayOrder,
+    verifyRazorpayPayment,
+    userProfile,
+    navigateTo
+  } = useApp();
 
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -20,12 +28,9 @@ export default function RegisterModal() {
       { name: '', gamingId: '' },
       { name: '', gamingId: '' }
     ],
-    rulesAccepted: false,
-    txnId: '',
-    paymentScreenshot: ''
+    rulesAccepted: false
   });
 
-  const [copiedUpi, setCopiedUpi] = useState(false);
   const [submittedRegResult, setSubmittedRegResult] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -53,78 +58,6 @@ export default function RegisterModal() {
   if (!selectedTournamentRegister) return null;
 
   const trn = selectedTournamentRegister;
-
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      if (file.size > 8 * 1024 * 1024) {
-        setErrorMsg('Screenshot file size should be less than 8MB.');
-        return;
-      }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData(prev => ({ ...prev, paymentScreenshot: reader.result }));
-        setErrorMsg('');
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleFinalSubmit = async (e) => {
-    if (e) e.preventDefault();
-    if (isSubmitting) return;
-
-    if (trn.entryFee > 0 && !formData.paymentScreenshot) {
-      setErrorMsg('Please upload your payment screenshot from GPay / PhonePe / Paytm to complete registration.');
-      return;
-    }
-    setErrorMsg('');
-    setIsSubmitting(true);
-
-    try {
-      const regResult = await submitRegistration({
-        tournament: trn,
-        fullName: formData.fullName,
-        gamingId: formData.gamingId,
-        phone: formData.phone,
-        email: formData.email,
-        txnId: `PAY-${Date.now()}`,
-        paymentScreenshot: formData.paymentScreenshot,
-        entryType: trn.entryType || (isTeamGame ? 'Team' : 'Solo'),
-        teamName: isTeamGame ? formData.teamName : undefined,
-        teamMembers: isTeamGame ? formData.teamMembers.slice(0, teamMemberCount - 1) : []
-      });
-
-      setSubmittedRegResult(regResult || {
-        id: `REG-DD-${Math.floor(1000 + Math.random() * 9000)}`,
-        playerName: formData.fullName,
-        gamingId: formData.gamingId,
-        tournamentTitle: trn.title,
-        status: trn.entryFee === 0 ? 'Confirmed' : 'Pending Verification'
-      });
-      setStep(4);
-
-      try {
-        confetti({
-          particleCount: 120,
-          spread: 70,
-          origin: { y: 0.6 }
-        });
-      } catch (err) {
-        console.log('Confetti error:', err);
-      }
-    } catch (err) {
-      setErrorMsg('An error occurred during submission. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const copyUpiToClipboard = () => {
-    navigator.clipboard.writeText('david468468@airtel');
-    setCopiedUpi(true);
-    setTimeout(() => setCopiedUpi(false), 2000);
-  };
 
   const entryTypeLower = (trn.entryType || '').toLowerCase();
   const modeLower = (trn.mode || '').toLowerCase();
@@ -184,12 +117,165 @@ export default function RegisterModal() {
     }
     setErrorMsg('');
     if (trn.entryFee === 0) {
-      handleFinalSubmit();
+      handleFreeRegistration();
     } else {
       setStep(3);
     }
   };
 
+  // FREE REGISTRATION (No payment required)
+  const handleFreeRegistration = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    setErrorMsg('');
+    try {
+      const regResult = await submitRegistration({
+        tournament: trn,
+        fullName: formData.fullName,
+        gamingId: formData.gamingId,
+        phone: formData.phone,
+        email: formData.email,
+        txnId: 'FREE_ENTRY',
+        entryType: trn.entryType || (isTeamGame ? 'Team' : 'Solo'),
+        teamName: isTeamGame ? formData.teamName : undefined,
+        teamMembers: isTeamGame ? formData.teamMembers.slice(0, teamMemberCount - 1) : []
+      });
+
+      setSubmittedRegResult(regResult || {
+        id: `REG-DD-${Math.floor(1000 + Math.random() * 9000)}`,
+        playerName: formData.fullName,
+        gamingId: formData.gamingId,
+        tournamentTitle: trn.title,
+        status: 'Confirmed',
+        paymentStatus: 'PAID'
+      });
+      setStep(4);
+      try {
+        confetti({ particleCount: 120, spread: 70, origin: { y: 0.6 } });
+      } catch (err) {}
+    } catch (err) {
+      setErrorMsg('An error occurred during submission. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // RAZORPAY PAYMENT CHECKOUT LAUNCHER
+  const handlePayWithRazorpay = async (e) => {
+    if (e) e.preventDefault();
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
+    setErrorMsg('');
+
+    try {
+      // 1. Request server to create Razorpay Order
+      const orderPayload = {
+        tournament: trn,
+        fullName: formData.fullName,
+        gamingId: formData.gamingId,
+        phone: formData.phone,
+        email: formData.email,
+        teamName: isTeamGame ? formData.teamName : '',
+        teamMembers: isTeamGame ? formData.teamMembers.slice(0, teamMemberCount - 1) : [],
+        entryType: trn.entryType || (isTeamGame ? 'Team' : 'Solo')
+      };
+
+      const orderRes = await createRazorpayOrder(orderPayload);
+
+      if (!orderRes || !orderRes.success || !orderRes.orderId) {
+        setErrorMsg(orderRes?.message || 'Failed to create Razorpay payment order. Please try again.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // 2. Configure Razorpay Checkout options
+      const options = {
+        key: orderRes.keyId || 'rzp_test_YOUR_KEY_ID',
+        amount: orderRes.amount, // in paise
+        currency: orderRes.currency || 'INR',
+        name: 'DD GAMING ESPORTS',
+        description: `${trn.title} (${orderRes.registrationId})`,
+        image: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=120&auto=format&fit=crop&q=80',
+        order_id: orderRes.orderId,
+        handler: async function (response) {
+          // Response contains: razorpay_payment_id, razorpay_order_id, razorpay_signature
+          setIsSubmitting(true);
+          setErrorMsg('');
+
+          try {
+            // 3. Send signature verification request to server
+            const verifyRes = await verifyRazorpayPayment({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              registrationId: orderRes.registrationId
+            });
+
+            if (verifyRes && verifyRes.success) {
+              const finalReg = verifyRes.registration || {
+                id: orderRes.registrationId,
+                playerName: formData.fullName,
+                gamingId: formData.gamingId,
+                tournamentTitle: trn.title,
+                entryFee: trn.entryFee,
+                status: 'Confirmed',
+                paymentStatus: 'PAID',
+                razorpayPaymentId: response.razorpay_payment_id
+              };
+              setSubmittedRegResult(finalReg);
+              setStep(4);
+              try {
+                confetti({ particleCount: 120, spread: 70, origin: { y: 0.6 } });
+              } catch (e) {}
+            } else {
+              setErrorMsg(verifyRes?.message || 'Payment verification failed. Please contact support if money was deducted.');
+            }
+          } catch (err) {
+            setErrorMsg('Payment verification failed. Please contact support if money was deducted.');
+          } finally {
+            setIsSubmitting(false);
+          }
+        },
+        prefill: {
+          name: formData.fullName,
+          email: formData.email,
+          contact: formData.phone
+        },
+        notes: {
+          registrationId: orderRes.registrationId,
+          tournamentId: trn.id
+        },
+        theme: {
+          color: '#9333ea'
+        },
+        modal: {
+          ondismiss: function () {
+            setIsSubmitting(false);
+            setErrorMsg('Payment cancelled. Click "Pay Now via Razorpay" to try again.');
+          }
+        }
+      };
+
+      // 4. Open Razorpay Checkout overlay modal
+      if (window.Razorpay) {
+        const rzp = new window.Razorpay(options);
+        rzp.on('payment.failed', function (response) {
+          console.warn('Razorpay payment failed event:', response.error);
+          setErrorMsg(`Payment Failed: ${response.error?.description || 'Your payment was not completed. Please try again.'}`);
+          setIsSubmitting(false);
+        });
+        rzp.open();
+      } else {
+        setErrorMsg('Razorpay payment gateway failed to load. Please refresh the page and try again.');
+        setIsSubmitting(false);
+      }
+    } catch (err) {
+      console.error('Razorpay process error:', err);
+      setErrorMsg('An unexpected error occurred while launching payment. Please try again.');
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <AnimatePresence>
@@ -246,15 +332,15 @@ export default function RegisterModal() {
             <div className="w-4 sm:w-8 h-px bg-slate-800 shrink-0" />
             <div className={`flex items-center gap-1 sm:gap-1.5 ${step >= 3 ? 'text-purple-400' : 'text-slate-500'}`}>
               <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] shrink-0 ${step >= 3 ? 'bg-purple-600 text-white' : 'bg-slate-800'}`}>3</span>
-              <span>Payment</span>
+              <span>Razorpay Payment</span>
             </div>
           </div>
 
-          {/* Modal Body Container with Smooth Scroll & Bottom Spacing */}
+          {/* Modal Body Container */}
           <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 pb-[calc(5rem+env(safe-area-inset-bottom,20px))] sm:pb-6">
             {errorMsg && (
-              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-semibold flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0" />
+              <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-semibold flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
                 <span>{errorMsg}</span>
               </div>
             )}
@@ -266,7 +352,7 @@ export default function RegisterModal() {
                   <span>Registration Opens Soon!</span>
                 </div>
                 <p className="text-[11px] text-slate-300 leading-relaxed">
-                  Registration for this tournament will automatically open on <strong>{trn.registrationStartDate || trn.date} at {trn.registrationStartTime || trn.time}</strong>. Slot booking will start automatically at that time!
+                  Registration for this tournament will automatically open on <strong>{trn.registrationStartDate || trn.date} at {trn.registrationStartTime || trn.time}</strong>.
                 </p>
               </div>
             )}
@@ -330,11 +416,10 @@ export default function RegisterModal() {
                   </div>
                 </div>
 
-                {/* DYNAMIC TEAM MEMBERS INPUTS FOR SQUAD / DUO (4 MEMBERS TOTAL) */}
                 {isTeamGame && (
                   <div className="space-y-3 pt-2 border-t border-slate-800">
                     <h5 className="font-heading font-bold text-xs text-purple-300 uppercase tracking-wider">
-                      {teamMemberCount === 2 ? 'Duo Teammate Details (1 Remaining Member)' : `Squad Members Roster (${teamMemberCount - 1} Remaining Members)`}
+                      {teamMemberCount === 2 ? 'Duo Teammate Details' : `Squad Members Roster (${teamMemberCount - 1} Members)`}
                     </h5>
 
                     {Array.from({ length: teamMemberCount - 1 }).map((_, idx) => {
@@ -380,7 +465,7 @@ export default function RegisterModal() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-slate-300 mb-1">
-                      WhatsApp Phone Number *
+                      Phone Number (WhatsApp) *
                     </label>
                     <div className="relative">
                       <Phone className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
@@ -396,12 +481,13 @@ export default function RegisterModal() {
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-300 mb-1">
-                      Email Address
+                      Email Address *
                     </label>
                     <div className="relative">
                       <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
                       <input
                         type="email"
+                        required
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                         placeholder="you@example.com"
@@ -420,7 +506,7 @@ export default function RegisterModal() {
                       : 'bg-purple-600 hover:bg-purple-500 text-white shadow-purple-500/25'
                   }`}
                 >
-                  {trn.status === 'Upcoming' ? `Registration Starts ${trn.registrationStartDate || trn.date} @ ${trn.registrationStartTime || trn.time}` : 'Continue to Confirmation'}
+                  {trn.status === 'Upcoming' ? `Starts ${trn.registrationStartDate || trn.date}` : 'Continue to Confirmation'}
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </form>
@@ -448,10 +534,18 @@ export default function RegisterModal() {
                       {trn.entryFee === 0 ? 'FREE ENTRY' : `₹${trn.entryFee}`}
                     </span>
                   </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-400">Player Name:</span>
+                    <span className="font-semibold text-white">{formData.fullName}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-400">Gaming ID:</span>
+                    <span className="font-mono font-bold text-purple-300">{formData.gamingId}</span>
+                  </div>
                 </div>
 
                 <div className="p-3.5 rounded-xl bg-purple-950/40 border border-purple-500/20 text-xs text-purple-200 leading-relaxed">
-                  <strong>Rules Summary:</strong> Matches are conducted according to official tournament rules for {trn.game || 'selected game'}. Both players/teams must record victory screenshots. Fair play is mandatory.
+                  <strong>Rules Summary:</strong> Standard esports contest rules apply. Fair play is mandatory. Room ID will be published inside your account profile 15–30 minutes before match start.
                 </div>
 
                 <label className="flex items-start gap-3 p-3 rounded-xl bg-slate-950 border border-slate-800 cursor-pointer">
@@ -478,216 +572,105 @@ export default function RegisterModal() {
                     type="submit"
                     className="flex-1 py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-heading font-extrabold text-sm tracking-wider uppercase flex items-center justify-center gap-2 shadow-lg shadow-purple-500/25 transition-all"
                   >
-                    {trn.entryFee === 0 ? 'Confirm Free Registration' : 'Proceed to Payment'}
+                    {trn.entryFee === 0 ? 'Confirm Free Registration' : 'Proceed to Razorpay Payment'}
                     <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>
               </form>
             )}
 
-            {/* STEP 3: Payment Verification */}
+            {/* STEP 3: Razorpay Payment Checkout */}
             {step === 3 && (
-              <form onSubmit={handleFinalSubmit} className="space-y-5">
+              <div className="space-y-5">
                 <h4 className="font-heading font-bold text-base text-white flex items-center justify-between">
-                  <span>Step 3: Payment & Screenshot Verification</span>
+                  <span>Step 3: Razorpay Payment Gateway</span>
                   <span className="text-emerald-400 font-black font-mono text-xl">₹{trn.entryFee}</span>
                 </h4>
 
-                <div className="p-4 rounded-2xl bg-slate-950 border border-purple-500/30 space-y-4 text-center">
-                  
-                  {/* Supported UPI Apps Badges */}
-                  <div className="flex flex-wrap items-center justify-center gap-2">
-                    <span className="px-2.5 py-1 rounded bg-rose-500/20 text-rose-300 font-bold text-[10px] uppercase border border-rose-500/30">
-                      Airtel
-                    </span>
-                    <span className="px-2.5 py-1 rounded bg-purple-500/20 text-purple-300 font-bold text-[10px] uppercase border border-purple-500/30">
-                      PhonePe
-                    </span>
-                    <span className="px-2.5 py-1 rounded bg-blue-500/20 text-blue-300 font-bold text-[10px] uppercase border border-blue-500/30">
-                      GPay
-                    </span>
-                    <span className="px-2.5 py-1 rounded bg-cyan-500/20 text-cyan-300 font-bold text-[10px] uppercase border border-cyan-500/30">
-                      Paytm
-                    </span>
-                    <span className="px-2.5 py-1 rounded bg-amber-500/20 text-amber-300 font-bold text-[10px] uppercase border border-amber-500/30">
-                      BHIM UPI
-                    </span>
-                  </div>
-
-                  {/* Payee Info & Dynamic Entry Fee */}
-                  <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
-                    <p className="text-[11px] text-slate-400 uppercase font-bold tracking-wider">Payee Account</p>
-                    <h5 className="font-heading font-black text-xl text-white">Sagariya David S</h5>
-                    
-                    <div className="flex items-center justify-center gap-2 pt-1">
-                      <span className="font-mono font-extrabold text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-lg text-sm border border-emerald-500/30">
-                        david468468@airtel
-                      </span>
-                      <button
-                        type="button"
-                        onClick={copyUpiToClipboard}
-                        className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
-                        title="Copy UPI ID"
-                      >
-                        <Copy className="w-4 h-4" />
-                      </button>
+                <div className="p-4 rounded-2xl bg-slate-950 border border-purple-500/40 space-y-4">
+                  <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 space-y-2 text-xs">
+                    <div className="flex items-center justify-between text-slate-400">
+                      <span>Tournament</span>
+                      <span className="font-bold text-white">{trn.title}</span>
                     </div>
-                    {copiedUpi && <p className="text-[11px] text-emerald-400 font-bold">Copied UPI ID to clipboard!</p>}
-
-                    {/* DYNAMIC AMOUNT BOX */}
-                    <div className="mt-3 p-3 rounded-xl bg-purple-950/60 border border-purple-500/40 flex items-center justify-between">
-                      <span className="text-xs text-purple-200 font-bold uppercase">Dynamic Entry Fee:</span>
-                      <span className="font-mono font-black text-2xl text-emerald-400">₹{trn.entryFee}</span>
+                    <div className="flex items-center justify-between text-slate-400">
+                      <span>Player Name</span>
+                      <span className="font-bold text-white">{formData.fullName}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-slate-400">
+                      <span>Gaming ID</span>
+                      <span className="font-mono font-bold text-purple-300">{formData.gamingId}</span>
+                    </div>
+                    <div className="flex items-center justify-between border-t border-slate-800 pt-2 text-sm">
+                      <span className="font-bold text-white">Total Amount</span>
+                      <span className="font-mono font-black text-emerald-400 text-lg">₹{trn.entryFee} INR</span>
                     </div>
                   </div>
 
-                  {/* OFFICIAL UPI QR CODE IMAGE */}
-                  <div className="p-3 rounded-2xl bg-white max-w-[260px] mx-auto shadow-2xl border-2 border-purple-500/40">
-                    <img
-                      src="/upi-qr-code.jpg"
-                      alt="Official UPI QR Code - Sagariya David S"
-                      className="w-full h-auto rounded-xl object-contain"
-                    />
-                    <p className="text-[11px] font-black text-slate-900 mt-2 uppercase tracking-wider">
-                      Scan with GPay / PhonePe / Paytm
-                    </p>
+                  <div className="flex items-center justify-center gap-2 p-2.5 rounded-xl bg-purple-950/40 border border-purple-500/30 text-purple-300 text-xs font-semibold">
+                    <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>Secure Payment Powered by Razorpay</span>
                   </div>
-                </div>
-
-                {/* UPLOAD PAYMENT SCREENSHOT INPUT (REPLACED UTR) */}
-                <div className="space-y-2">
-                  <label className="block text-xs font-bold text-slate-300">
-                    Upload Payment Screenshot * (GPay, PhonePe, Paytm, etc.)
-                  </label>
-
-                  {formData.paymentScreenshot ? (
-                    <div className="p-3 rounded-xl bg-slate-950 border border-emerald-500/40 flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-3 overflow-hidden">
-                        <img
-                          src={formData.paymentScreenshot}
-                          alt="Payment Screenshot Preview"
-                          className="w-14 h-14 object-cover rounded-lg border border-slate-700 shrink-0"
-                        />
-                        <div className="truncate text-xs">
-                          <p className="font-bold text-emerald-400 flex items-center gap-1">
-                            <CheckCircle2 className="w-3.5 h-3.5" /> Screenshot Selected
-                          </p>
-                          <p className="text-slate-400 truncate">Ready for instant admin verification</p>
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setFormData({ ...formData, paymentScreenshot: '' })}
-                        className="px-3 py-1.5 rounded-lg bg-rose-950 text-rose-300 hover:bg-rose-900 text-xs font-bold shrink-0 border border-rose-500/30"
-                      >
-                        Change
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="relative">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        required
-                        onChange={handleImageUpload}
-                        className="hidden"
-                        id="payment-screenshot-input"
-                      />
-                      <label
-                        htmlFor="payment-screenshot-input"
-                        className="flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed border-purple-500/40 bg-slate-950 hover:bg-purple-950/20 cursor-pointer transition-all text-center group"
-                      >
-                        <Upload className="w-8 h-8 text-purple-400 mb-2 group-hover:scale-110 transition-transform" />
-                        <span className="text-xs font-bold text-white uppercase tracking-wider">
-                          Click to Upload Payment Screenshot
-                        </span>
-                        <span className="text-[11px] text-slate-400 mt-1">
-                          Upload GPay, PhonePe, Paytm, or BHIM payment receipt
-                        </span>
-                      </label>
-                    </div>
-                  )}
                 </div>
 
                 <div className="flex items-center gap-3 pt-2">
                   <button
                     type="button"
                     onClick={() => setStep(2)}
-                    className="px-4 py-3 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs hover:bg-slate-700 flex items-center gap-1"
+                    disabled={isSubmitting}
+                    className="px-4 py-3 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs hover:bg-slate-700 flex items-center gap-1 disabled:opacity-50"
                   >
                     <ArrowLeft className="w-4 h-4" /> Back
                   </button>
                   <button
-                    type="submit"
+                    type="button"
+                    onClick={handlePayWithRazorpay}
                     disabled={isSubmitting}
-                    className="flex-1 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-heading font-extrabold text-sm tracking-wider uppercase flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition-all disabled:opacity-60 cursor-pointer disabled:cursor-not-allowed"
+                    className="flex-1 py-3.5 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-500 hover:to-indigo-500 text-white font-heading font-extrabold text-sm tracking-wider uppercase flex items-center justify-center gap-2 shadow-xl shadow-purple-600/30 transition-all disabled:opacity-60 cursor-pointer disabled:cursor-not-allowed"
                   >
                     {isSubmitting ? (
                       <>
-                        <Loader2 className="w-4 h-4 animate-spin text-white" />
-                        <span>Submitting Ticket...</span>
+                        <Loader2 className="w-5 h-5 animate-spin text-white" />
+                        <span>Launching Razorpay...</span>
                       </>
                     ) : (
                       <>
-                        <span>Submit & Register</span>
-                        <CheckCircle2 className="w-4 h-4" />
+                        <CreditCard className="w-5 h-5 text-emerald-400" />
+                        <span>Pay Now via Razorpay (₹{trn.entryFee})</span>
                       </>
                     )}
                   </button>
                 </div>
-              </form>
+              </div>
             )}
 
-            {/* STEP 4: Registration Success / Verification Pending Screen */}
+            {/* STEP 4: Registration & Payment Success Screen */}
             {step === 4 && submittedRegResult && (
               <div className="text-center py-4 space-y-6">
-                
-                {submittedRegResult.status === 'Pending Verification' ? (
-                  <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-amber-500/20 border-2 border-amber-400 text-amber-400 animate-pulse">
-                    <Clock className="w-10 h-10" />
-                  </div>
-                ) : (
-                  <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-emerald-500/20 border-2 border-emerald-400 text-emerald-400 animate-bounce">
-                    <CheckCircle2 className="w-10 h-10" />
-                  </div>
-                )}
+                <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-emerald-500/20 border-2 border-emerald-400 text-emerald-400 animate-bounce shadow-lg shadow-emerald-500/20">
+                  <CheckCircle2 className="w-10 h-10" />
+                </div>
 
                 <div>
                   <h3 className="font-heading font-black text-2xl sm:text-3xl text-white tracking-wide">
-                    {submittedRegResult.status === 'Pending Verification' ? 'VERIFICATION IN PROGRESS! ⏳' : 'SLOT CONFIRMED! 🎉'}
+                    PAYMENT SUCCESSFUL! 🎉
                   </h3>
-                  <p className="text-xs sm:text-sm text-purple-300 mt-1 max-w-md mx-auto leading-relaxed">
-                    {submittedRegResult.status === 'Pending Verification'
-                      ? 'Your payment screenshot has been uploaded. Please wait for admin verification. Once verified by our team, your slot confirmation will be completed.'
-                      : 'Your registration ticket has been generated and slot confirmed!'}
+                  <p className="font-bold text-xs sm:text-sm text-emerald-400 uppercase tracking-widest mt-1">
+                    TOURNAMENT REGISTRATION CONFIRMED
+                  </p>
+                  <p className="text-xs text-slate-300 mt-2 max-w-md mx-auto leading-relaxed">
+                    Your tournament pass has been generated and your slot is locked in!
                   </p>
                 </div>
 
-                {/* Pending Verification Callout Banner */}
-                {submittedRegResult.status === 'Pending Verification' && (
-                  <div className="p-4 rounded-xl bg-amber-950/40 border border-amber-500/40 text-left space-y-1 text-xs text-amber-200">
-                    <div className="flex items-center gap-2 font-bold text-amber-300">
-                      <Clock className="w-4 h-4 text-amber-400" />
-                      <span>Pending Admin Verification</span>
-                    </div>
-                    <p className="text-[11px] text-slate-300 leading-relaxed">
-                      Our admin team is currently reviewing your uploaded payment screenshot. You can track your ticket verification status anytime under <strong>"My Tickets"</strong> in your profile.
-                    </p>
-                  </div>
-                )}
-
-                {/* Ticket Card */}
-                <div className="p-5 rounded-2xl bg-slate-950 border border-purple-500/30 text-left space-y-3 relative overflow-hidden shadow-inner">
-                  <div className={`absolute top-0 right-0 px-3 py-1 border-b border-l text-[10px] font-bold uppercase rounded-bl-xl ${
-                    submittedRegResult.status === 'Pending Verification'
-                      ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
-                      : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                  }`}>
-                    {submittedRegResult.status}
+                {/* Ticket Details Card */}
+                <div className="p-5 rounded-2xl bg-slate-950 border border-purple-500/40 text-left space-y-3 relative overflow-hidden shadow-inner">
+                  <div className="absolute top-0 right-0 px-3 py-1 border-b border-l text-[10px] font-black uppercase rounded-bl-xl bg-emerald-500/20 text-emerald-300 border-emerald-500/40">
+                    PAID & CONFIRMED ✅
                   </div>
 
                   <div>
-                    <p className="text-[10px] font-bold text-slate-500 uppercase">Registration Ticket ID</p>
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Registration ID</p>
                     <p className="font-mono font-extrabold text-lg text-emerald-400">{submittedRegResult.id}</p>
                   </div>
 
@@ -702,16 +685,18 @@ export default function RegisterModal() {
                     </div>
                     <div>
                       <p className="text-slate-400">Tournament:</p>
-                      <p className="font-bold text-white">{submittedRegResult.tournamentTitle}</p>
+                      <p className="font-bold text-white truncate">{submittedRegResult.tournamentTitle}</p>
                     </div>
                     <div>
-                      <p className="text-slate-400">Payment Status:</p>
-                      <p className={`font-bold ${
-                        submittedRegResult.status === 'Pending Verification' ? 'text-amber-400' : 'text-emerald-400'
-                      }`}>
-                        {submittedRegResult.status} ⏳
-                      </p>
+                      <p className="text-slate-400">Entry Fee:</p>
+                      <p className="font-mono font-bold text-emerald-400">₹{submittedRegResult.entryFee || trn.entryFee || 0}</p>
                     </div>
+                    {submittedRegResult.razorpayPaymentId && (
+                      <div className="col-span-2 pt-1 border-t border-slate-900">
+                        <p className="text-slate-400">Razorpay Payment ID:</p>
+                        <p className="font-mono font-bold text-amber-300 text-[11px] truncate">{submittedRegResult.razorpayPaymentId}</p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -721,21 +706,20 @@ export default function RegisterModal() {
                       closeRegistrationModal();
                       navigateTo('profile');
                     }}
-                    className="w-full sm:w-1/2 py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-heading font-extrabold text-xs uppercase tracking-wider shadow-lg"
+                    className="w-full sm:w-1/2 py-3.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-heading font-extrabold text-xs uppercase tracking-wider shadow-lg transition-all"
                   >
-                    View My Tickets
+                    View My Ticket
                   </button>
                   <button
                     onClick={() => {
                       closeRegistrationModal();
-                      navigateTo('home');
+                      navigateTo('my-tournaments');
                     }}
-                    className="w-full sm:w-1/2 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase tracking-wider"
+                    className="w-full sm:w-1/2 py-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase tracking-wider transition-all"
                   >
-                    Back to Home
+                    My Tournaments
                   </button>
                 </div>
-
               </div>
             )}
 

@@ -39,7 +39,12 @@ import {
   uploadWinnerQRAPI,
   adminMarkPrizePaidAPI,
   fetchAuditLogsAPI,
-  adminDeleteAllDataAPI
+  adminDeleteAllDataAPI,
+  createRazorpayOrderAPI,
+  verifyRazorpayPaymentAPI,
+  joinTournamentMatchAPI,
+  fetchAdminParticipantsAPI,
+  adminRestartJoiningWindowAPI
 } from '../utils/api';
 
 export function parseMatchStartDateTime(dateStr, timeStr) {
@@ -717,6 +722,95 @@ export function AppProvider({ children }) {
     return regObj;
   };
 
+  const createRazorpayOrder = async (orderPayload) => {
+    return await createRazorpayOrderAPI({
+      ...orderPayload,
+      email: userProfile?.email || orderPayload.email
+    });
+  };
+
+  const verifyRazorpayPayment = async (verifyPayload) => {
+    const res = await verifyRazorpayPaymentAPI(verifyPayload);
+    if (res && res.success && res.registration) {
+      playSuccessChimeSound();
+      const updatedReg = res.registration;
+      setRegistrations(prev => {
+        const filtered = (prev || []).filter(r => r.id !== updatedReg.id);
+        return [updatedReg, ...filtered];
+      });
+      setUserProfile(prev => {
+        if (!prev) return prev;
+        const alreadyInUser = (prev.registeredTournaments || []).some(r => r.tournamentId === updatedReg.tournamentId);
+        if (!alreadyInUser) {
+          return {
+            ...prev,
+            totalTournamentsPlayed: (prev.totalTournamentsPlayed || 0) + 1,
+            registeredTournaments: [
+              {
+                tournamentId: updatedReg.tournamentId,
+                registrationId: updatedReg.id,
+                registeredAt: new Date().toLocaleDateString(),
+                status: 'Confirmed',
+                paymentTxnId: updatedReg.razorpayPaymentId || updatedReg.txnId
+              },
+              ...(prev.registeredTournaments || [])
+            ]
+          };
+        } else {
+          const updatedTournaments = (prev.registeredTournaments || []).map(r =>
+            r.tournamentId === updatedReg.tournamentId ? { ...r, status: 'Confirmed', paymentTxnId: updatedReg.razorpayPaymentId || updatedReg.txnId } : r
+          );
+          return { ...prev, registeredTournaments: updatedTournaments };
+        }
+      });
+    }
+    return res;
+  };
+
+  const joinTournamentMatch = async (tournamentId, memberIndex = undefined) => {
+    playClickSound();
+    const res = await joinTournamentMatchAPI(
+      tournamentId,
+      userProfile?.email || '',
+      userProfile?.gamingUsername || '',
+      memberIndex
+    );
+
+    if (res && res.success) {
+      playSuccessChimeSound();
+      showToast(res.message || '🎉 Successfully joined the match!', 'success');
+      if (res.registration) {
+        setRegistrations(prev =>
+          (prev || []).map(r => r.id === res.registration.id ? { ...r, ...res.registration } : r)
+        );
+      }
+    } else {
+      playErrorSound();
+      showToast(res?.message || 'Failed to join match.', 'error');
+    }
+    return res;
+  };
+
+  const fetchAdminParticipants = async (tournamentId, search = '', status = 'all') => {
+    return await fetchAdminParticipantsAPI(tournamentId, search, status);
+  };
+
+  const adminRestartJoiningWindow = async (tournamentId) => {
+    playClickSound();
+    const res = await adminRestartJoiningWindowAPI(tournamentId);
+    if (res && res.success) {
+      showToast(res.message || 'Joining window restarted for 30 minutes!', 'success');
+      if (res.tournament) {
+        setTournaments(prev =>
+          (prev || []).map(t => t.id === res.tournament.id ? res.tournament : t)
+        );
+      }
+    } else {
+      showToast(res?.message || 'Failed to restart joining window.', 'error');
+    }
+    return res;
+  };
+
   const updateUserProfile = async (updatedData) => {
     playClickSound();
     const payload = {
@@ -912,6 +1006,11 @@ export function AppProvider({ children }) {
         openRegistrationModal,
         closeRegistrationModal,
         submitRegistration,
+        createRazorpayOrder,
+        verifyRazorpayPayment,
+        joinTournamentMatch,
+        fetchAdminParticipants,
+        adminRestartJoiningWindow,
         updateUserProfile,
         closeWelcomeAnimation,
         showToast,
