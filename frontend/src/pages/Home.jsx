@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Trophy, Gamepad2, Swords, Sparkles, Users, Award, ChevronRight, Clock, ShieldCheck, Flame, HelpCircle, ChevronDown, CheckCircle2, Instagram, Youtube } from 'lucide-react';
+import { Trophy, Gamepad2, Swords, Sparkles, Users, Award, ChevronRight, Clock, ShieldCheck, Flame, HelpCircle, ChevronDown, CheckCircle2, Instagram, Youtube, Play } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { getGameBanner } from '../utils/gameBanners';
 import { touchProps } from '../utils/touchHelper';
