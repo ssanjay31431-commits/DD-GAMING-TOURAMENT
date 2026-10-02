@@ -50,7 +50,5 @@ const registrationSchema = new mongoose.Schema({
 registrationSchema.index({ tournamentId: 1, email: 1 });
 registrationSchema.index({ tournamentId: 1, gamingId: 1 });
 registrationSchema.index({ tournamentId: 1, status: 1 });
-registrationSchema.index({ userId: 1 });
-registrationSchema.index({ cashfreeOrderId: 1 });
 
 export default mongoose.model('Registration', registrationSchema);
