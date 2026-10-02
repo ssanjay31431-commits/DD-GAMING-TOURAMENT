@@ -230,12 +230,22 @@ export default function RegisterModal() {
         }
       };
 
-      // 2. Initialize Cashfree Checkout JS
+      // 2. Dynamically load Cashfree Checkout JS if missing
+      if (!window.Cashfree) {
+        await new Promise((resolve) => {
+          const script = document.createElement('script');
+          script.src = 'https://sdk.cashfree.com/js/v3/cashfree.js';
+          script.onload = resolve;
+          script.onerror = resolve;
+          document.body.appendChild(script);
+        });
+      }
+
       if (window.Cashfree) {
         const cashfreeMode = (orderRes.cfEnvironment || 'PRODUCTION').toUpperCase() === 'SANDBOX' ? 'sandbox' : 'production';
         const cashfree = window.Cashfree({ mode: cashfreeMode });
 
-        // Launch Cashfree Checkout (redirectTarget _self redirects directly to Cashfree checkout page)
+        // Launch Cashfree Checkout (redirectTarget _self redirects tab to Cashfree payment page)
         try {
           cashfree.checkout({
             paymentSessionId: paymentSessionId,
@@ -253,7 +263,7 @@ export default function RegisterModal() {
               if (msg.includes('whitelist') || msg.includes('not enabled') || msg.includes('Broken Link')) {
                 setErrorMsg('Domain Whitelisting Required: Please add "https://www.ddtournament.in" and "https://ddtournament.in" to Cashfree Merchant Dashboard under Developers > Whitelisting > Domain Whitelisting.');
               } else {
-                setErrorMsg(msg || 'Payment was cancelled or incomplete. Please try again.');
+                setErrorMsg(msg || 'Payment was cancelled or incomplete. Please complete Cashfree payment to confirm registration.');
               }
               setIsSubmitting(false);
             } else if (result.redirect) {
@@ -263,15 +273,17 @@ export default function RegisterModal() {
             }
           }).catch((err) => {
             console.warn('Cashfree checkout modal notice:', err);
-            verifyOrderOnServer();
+            setErrorMsg('Payment was not completed. Registration is pending Cashfree payment.');
+            setIsSubmitting(false);
           });
         }
       } else {
-        verifyOrderOnServer();
+        setErrorMsg('Unable to load Cashfree Payment Gateway. Please refresh the page and try again.');
+        setIsSubmitting(false);
       }
     } catch (err) {
       console.error('Cashfree process error:', err);
-      setErrorMsg('An unexpected error occurred while launching payment. Please try again.');
+      setErrorMsg('An unexpected error occurred while launching Cashfree payment. Please try again.');
       setIsSubmitting(false);
     }
   };
