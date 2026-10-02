@@ -389,7 +389,8 @@ export function AppProvider({ children }) {
     const targetIdStr = String(tournamentId);
     return (registrations || []).some(r =>
       (String(r.tournamentId) === targetIdStr || String(r.tournament?.id) === targetIdStr) &&
-      ((r.email && r.email.toLowerCase().trim() === userProfile.email.toLowerCase().trim()) || r.userId === userProfile.id)
+      ((r.email && r.email.toLowerCase().trim() === userProfile.email.toLowerCase().trim()) || r.userId === userProfile.id) &&
+      (r.status === 'Confirmed' || r.paymentStatus === 'PAID' || r.entryFee === 0)
     );
   };
 
