@@ -9,6 +9,8 @@ export default function RegisterModal() {
     selectedTournamentRegister,
     closeRegistrationModal,
     submitRegistration,
+    createCashfreeOrder,
+    verifyCashfreePayment,
     createRazorpayOrder,
     verifyRazorpayPayment,
     userProfile,

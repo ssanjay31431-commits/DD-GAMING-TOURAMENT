@@ -1697,7 +1697,7 @@ app.post('/api/payment/webhook', express.raw({ type: 'application/json' }), asyn
     const config = getCashfreeConfig();
     const signature = req.headers['x-webhook-signature'];
     const timestamp = req.headers['x-webhook-timestamp'];
-    const secret = process.env.CASHFREE_WEBHOOK_SECRET || config.clientSecret;
+    const secret = config.clientSecret;
 
     const rawBody = req.body ? (Buffer.isBuffer(req.body) ? req.body.toString('utf-8') : (typeof req.body === 'string' ? req.body : JSON.stringify(req.body))) : '';
 
