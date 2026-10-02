@@ -40,6 +40,8 @@ import {
   adminMarkPrizePaidAPI,
   fetchAuditLogsAPI,
   adminDeleteAllDataAPI,
+  createCashfreeOrderAPI,
+  verifyCashfreePaymentAPI,
   createRazorpayOrderAPI,
   verifyRazorpayPaymentAPI,
   joinTournamentMatchAPI,
