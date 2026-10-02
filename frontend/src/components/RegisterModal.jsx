@@ -235,30 +235,37 @@ export default function RegisterModal() {
         const cashfreeMode = (orderRes.cfEnvironment || 'PRODUCTION').toUpperCase() === 'SANDBOX' ? 'sandbox' : 'production';
         const cashfree = window.Cashfree({ mode: cashfreeMode });
 
-        const checkoutOptions = {
-          paymentSessionId: paymentSessionId,
-          redirectTarget: '_modal'
-        };
-
-        cashfree.checkout(checkoutOptions).then((result) => {
-          if (result.error) {
-            console.warn('Cashfree Checkout Notice:', result.error);
-            const msg = result.error.message || '';
-            if (msg.includes('whitelist') || msg.includes('not enabled') || msg.includes('Broken Link')) {
-              setErrorMsg('Domain Whitelisting Required: Please whitelist "https://dd-gaming-tourament.vercel.app" in your Cashfree Dashboard under Developers > Whitelisting.');
+        // Launch Cashfree Checkout (redirectTarget _self redirects directly to Cashfree checkout page)
+        try {
+          cashfree.checkout({
+            paymentSessionId: paymentSessionId,
+            redirectTarget: '_self'
+          });
+        } catch (checkoutErr) {
+          console.warn('Cashfree _self checkout fallback to _modal:', checkoutErr);
+          cashfree.checkout({
+            paymentSessionId: paymentSessionId,
+            redirectTarget: '_modal'
+          }).then((result) => {
+            if (result.error) {
+              console.warn('Cashfree Checkout Notice:', result.error);
+              const msg = result.error.message || '';
+              if (msg.includes('whitelist') || msg.includes('not enabled') || msg.includes('Broken Link')) {
+                setErrorMsg('Domain Whitelisting Required: Please whitelist "https://dd-gaming-tourament.vercel.app" in your Cashfree Dashboard under Developers > Whitelisting.');
+              } else {
+                setErrorMsg(msg || 'Payment was cancelled or incomplete. Please try again.');
+              }
+              setIsSubmitting(false);
+            } else if (result.redirect) {
+              console.log('Cashfree Redirecting...');
             } else {
-              setErrorMsg(msg || 'Payment was cancelled or incomplete. Please try again.');
+              verifyOrderOnServer();
             }
-            setIsSubmitting(false);
-          } else if (result.redirect) {
-            console.log('Cashfree Redirecting...');
-          } else {
+          }).catch((err) => {
+            console.warn('Cashfree checkout modal notice:', err);
             verifyOrderOnServer();
-          }
-        }).catch((err) => {
-          console.warn('Cashfree checkout modal notice:', err);
-          verifyOrderOnServer();
-        });
+          });
+        }
       } else {
         verifyOrderOnServer();
       }
