@@ -30,6 +30,12 @@ const registrationSchema = new mongoose.Schema({
   razorpayOrderId: { type: String, default: '', index: true },
   razorpayPaymentId: { type: String, default: '' },
   razorpaySignature: { type: String, default: '' },
+  cashfreeOrderId: { type: String, default: '', index: true },
+  cashfreePaymentId: { type: String, default: '' },
+  cashfreePaymentSessionId: { type: String, default: '' },
+  cashfreeSignature: { type: String, default: '' },
+  cashfreeOrderAmount: { type: Number, default: 0 },
+  cashfreeCurrency: { type: String, default: 'INR' },
   qrCodeUrl: { type: String, default: '' },
   prizeAmount: { type: Number, default: 0 },
   prizeRank: { type: String, default: '' },
@@ -45,5 +51,6 @@ registrationSchema.index({ tournamentId: 1, email: 1 });
 registrationSchema.index({ tournamentId: 1, gamingId: 1 });
 registrationSchema.index({ tournamentId: 1, status: 1 });
 registrationSchema.index({ userId: 1 });
+registrationSchema.index({ cashfreeOrderId: 1 });
 
 export default mongoose.model('Registration', registrationSchema);

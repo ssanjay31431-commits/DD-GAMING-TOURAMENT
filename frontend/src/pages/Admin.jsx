@@ -1493,7 +1493,7 @@ export default function Admin() {
                   <th className="py-4 px-6">Ticket ID</th>
                   <th className="py-4 px-6">Player / Team</th>
                   <th className="py-4 px-6">Tournament</th>
-                  <th className="py-4 px-6">Fee & Razorpay ID</th>
+                  <th className="py-4 px-6">Fee & Cashfree Ref</th>
                   <th className="py-4 px-6">Status</th>
                   <th className="py-4 px-6 text-right">Actions</th>
                 </tr>
@@ -1511,7 +1511,7 @@ export default function Admin() {
                       <td className="py-4 px-6 font-semibold text-slate-200">{reg.tournamentTitle}</td>
                       <td className="py-4 px-6">
                         <span className="font-black text-emerald-400 block">₹{reg.entryFee}</span>
-                        <span className="text-xs text-slate-400 font-mono">Razorpay: {reg.razorpayPaymentId || reg.txnId}</span>
+                        <span className="text-xs text-slate-400 font-mono">Ref: {reg.cashfreePaymentId || reg.cashfreeOrderId || reg.razorpayPaymentId || reg.txnId}</span>
                       </td>
                       <td className="py-4 px-6">
                         <span className={`px-3 py-1 rounded-full text-xs font-extrabold ${

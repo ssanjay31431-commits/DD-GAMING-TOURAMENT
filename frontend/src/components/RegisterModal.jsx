@@ -160,8 +160,8 @@ export default function RegisterModal() {
     }
   };
 
-  // RAZORPAY PAYMENT CHECKOUT LAUNCHER
-  const handlePayWithRazorpay = async (e) => {
+  // CASHFREE PAYMENT CHECKOUT LAUNCHER
+  const handlePayWithCashfree = async (e) => {
     if (e) e.preventDefault();
     if (isSubmitting) return;
 
@@ -169,7 +169,7 @@ export default function RegisterModal() {
     setErrorMsg('');
 
     try {
-      // 1. Request server to create Razorpay Order
+      // 1. Request server to create Cashfree Order
       const orderPayload = {
         tournament: trn,
         fullName: formData.fullName,
@@ -181,97 +181,82 @@ export default function RegisterModal() {
         entryType: trn.entryType || (isTeamGame ? 'Team' : 'Solo')
       };
 
-      const orderRes = await createRazorpayOrder(orderPayload);
+      const orderRes = await (createCashfreeOrder || createRazorpayOrder)(orderPayload);
 
-      if (!orderRes || !orderRes.success || !orderRes.orderId) {
-        setErrorMsg(orderRes?.message || 'Failed to create Razorpay payment order. Please try again.');
+      if (!orderRes || !orderRes.success || !orderRes.paymentSessionId) {
+        setErrorMsg(orderRes?.message || 'Failed to create Cashfree payment order. Please try again.');
         setIsSubmitting(false);
         return;
       }
 
-      // 2. Configure Razorpay Checkout options
-      const options = {
-        key: orderRes.keyId || 'rzp_test_YOUR_KEY_ID',
-        amount: orderRes.amount, // in paise
-        currency: orderRes.currency || 'INR',
-        name: 'DD GAMING ESPORTS',
-        description: `${trn.title} (${orderRes.registrationId})`,
-        image: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=120&auto=format&fit=crop&q=80',
-        order_id: orderRes.orderId,
-        handler: async function (response) {
-          // Response contains: razorpay_payment_id, razorpay_order_id, razorpay_signature
-          setIsSubmitting(true);
-          setErrorMsg('');
+      const paymentSessionId = orderRes.paymentSessionId;
+      const orderId = orderRes.orderId;
+      const registrationId = orderRes.registrationId;
 
-          try {
-            // 3. Send signature verification request to server
-            const verifyRes = await verifyRazorpayPayment({
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
-              registrationId: orderRes.registrationId
-            });
+      const verifyOrderOnServer = async () => {
+        setIsSubmitting(true);
+        setErrorMsg('');
+        try {
+          const verifyRes = await (verifyCashfreePayment || verifyRazorpayPayment)({
+            orderId: orderId,
+            registrationId: registrationId
+          });
 
-            if (verifyRes && verifyRes.success) {
-              const finalReg = verifyRes.registration || {
-                id: orderRes.registrationId,
-                playerName: formData.fullName,
-                gamingId: formData.gamingId,
-                tournamentTitle: trn.title,
-                entryFee: trn.entryFee,
-                status: 'Confirmed',
-                paymentStatus: 'PAID',
-                razorpayPaymentId: response.razorpay_payment_id
-              };
-              setSubmittedRegResult(finalReg);
-              setStep(4);
-              try {
-                confetti({ particleCount: 120, spread: 70, origin: { y: 0.6 } });
-              } catch (e) {}
-            } else {
-              setErrorMsg(verifyRes?.message || 'Payment verification failed. Please contact support if money was deducted.');
-            }
-          } catch (err) {
-            setErrorMsg('Payment verification failed. Please contact support if money was deducted.');
-          } finally {
-            setIsSubmitting(false);
+          if (verifyRes && verifyRes.success) {
+            const finalReg = verifyRes.registration || {
+              id: registrationId,
+              playerName: formData.fullName,
+              gamingId: formData.gamingId,
+              tournamentTitle: trn.title,
+              entryFee: trn.entryFee,
+              status: 'Confirmed',
+              paymentStatus: 'PAID',
+              cashfreeOrderId: orderId
+            };
+            setSubmittedRegResult(finalReg);
+            setStep(4);
+            try {
+              confetti({ particleCount: 120, spread: 70, origin: { y: 0.6 } });
+            } catch (e) {}
+          } else {
+            setErrorMsg(verifyRes?.message || 'Payment verification failed. Please contact support if money was deducted.');
           }
-        },
-        prefill: {
-          name: formData.fullName,
-          email: formData.email,
-          contact: formData.phone
-        },
-        notes: {
-          registrationId: orderRes.registrationId,
-          tournamentId: trn.id
-        },
-        theme: {
-          color: '#9333ea'
-        },
-        modal: {
-          ondismiss: function () {
-            setIsSubmitting(false);
-            setErrorMsg('Payment cancelled. Click "Pay Now via Razorpay" to try again.');
-          }
+        } catch (err) {
+          setErrorMsg('Payment verification failed. Please contact support if money was deducted.');
+        } finally {
+          setIsSubmitting(false);
         }
       };
 
-      // 4. Open Razorpay Checkout overlay modal
-      if (window.Razorpay) {
-        const rzp = new window.Razorpay(options);
-        rzp.on('payment.failed', function (response) {
-          console.warn('Razorpay payment failed event:', response.error);
-          setErrorMsg(`Payment Failed: ${response.error?.description || 'Your payment was not completed. Please try again.'}`);
-          setIsSubmitting(false);
+      // 2. Initialize Cashfree Checkout JS
+      if (window.Cashfree) {
+        const cashfreeMode = (orderRes.cfEnvironment || 'PRODUCTION').toUpperCase() === 'SANDBOX' ? 'sandbox' : 'production';
+        const cashfree = window.Cashfree({ mode: cashfreeMode });
+
+        const checkoutOptions = {
+          paymentSessionId: paymentSessionId,
+          redirectTarget: '_modal'
+        };
+
+        cashfree.checkout(checkoutOptions).then((result) => {
+          if (result.error) {
+            console.warn('Cashfree Checkout Notice:', result.error);
+            setErrorMsg(result.error.message || 'Payment was cancelled or incomplete.');
+            setIsSubmitting(false);
+          } else if (result.redirect) {
+            console.log('Cashfree Redirecting...');
+          } else {
+            verifyOrderOnServer();
+          }
+        }).catch((err) => {
+          console.warn('Cashfree checkout modal notice:', err);
+          verifyOrderOnServer();
         });
-        rzp.open();
       } else {
-        setErrorMsg('Razorpay payment gateway failed to load. Please refresh the page and try again.');
-        setIsSubmitting(false);
+        verifyOrderOnServer();
       }
     } catch (err) {
-      console.error('Razorpay process error:', err);
+      console.error('Cashfree process error:', err);
       setErrorMsg('An unexpected error occurred while launching payment. Please try again.');
       setIsSubmitting(false);
     }
@@ -332,7 +317,7 @@ export default function RegisterModal() {
             <div className="w-4 sm:w-8 h-px bg-slate-800 shrink-0" />
             <div className={`flex items-center gap-1 sm:gap-1.5 ${step >= 3 ? 'text-purple-400' : 'text-slate-500'}`}>
               <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] shrink-0 ${step >= 3 ? 'bg-purple-600 text-white' : 'bg-slate-800'}`}>3</span>
-              <span>Razorpay Payment</span>
+              <span>Cashfree Payment</span>
             </div>
           </div>
 
@@ -572,18 +557,18 @@ export default function RegisterModal() {
                     type="submit"
                     className="flex-1 py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-heading font-extrabold text-sm tracking-wider uppercase flex items-center justify-center gap-2 shadow-lg shadow-purple-500/25 transition-all"
                   >
-                    {trn.entryFee === 0 ? 'Confirm Free Registration' : 'Proceed to Razorpay Payment'}
+                    {trn.entryFee === 0 ? 'Confirm Free Registration' : 'Proceed to Cashfree Payment'}
                     <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>
               </form>
             )}
 
-            {/* STEP 3: Razorpay Payment Checkout */}
+            {/* STEP 3: Cashfree Payment Checkout */}
             {step === 3 && (
               <div className="space-y-5">
                 <h4 className="font-heading font-bold text-base text-white flex items-center justify-between">
-                  <span>Step 3: Razorpay Payment Gateway</span>
+                  <span>Step 3: Cashfree Payment Gateway</span>
                   <span className="text-emerald-400 font-black font-mono text-xl">₹{trn.entryFee}</span>
                 </h4>
 
@@ -609,7 +594,7 @@ export default function RegisterModal() {
 
                   <div className="flex items-center justify-center gap-2 p-2.5 rounded-xl bg-purple-950/40 border border-purple-500/30 text-purple-300 text-xs font-semibold">
                     <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
-                    <span>Secure Payment Powered by Razorpay</span>
+                    <span>Secure Payment Powered by Cashfree Payments</span>
                   </div>
                 </div>
 
@@ -624,19 +609,19 @@ export default function RegisterModal() {
                   </button>
                   <button
                     type="button"
-                    onClick={handlePayWithRazorpay}
+                    onClick={handlePayWithCashfree}
                     disabled={isSubmitting}
                     className="flex-1 py-3.5 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-500 hover:to-indigo-500 text-white font-heading font-extrabold text-sm tracking-wider uppercase flex items-center justify-center gap-2 shadow-xl shadow-purple-600/30 transition-all disabled:opacity-60 cursor-pointer disabled:cursor-not-allowed"
                   >
                     {isSubmitting ? (
                       <>
                         <Loader2 className="w-5 h-5 animate-spin text-white" />
-                        <span>Launching Razorpay...</span>
+                        <span>Launching Cashfree...</span>
                       </>
                     ) : (
                       <>
                         <CreditCard className="w-5 h-5 text-emerald-400" />
-                        <span>Pay Now via Razorpay (₹{trn.entryFee})</span>
+                        <span>Pay Now via Cashfree (₹{trn.entryFee})</span>
                       </>
                     )}
                   </button>
@@ -691,10 +676,10 @@ export default function RegisterModal() {
                       <p className="text-slate-400">Entry Fee:</p>
                       <p className="font-mono font-bold text-emerald-400">₹{submittedRegResult.entryFee || trn.entryFee || 0}</p>
                     </div>
-                    {submittedRegResult.razorpayPaymentId && (
+                    {(submittedRegResult.cashfreePaymentId || submittedRegResult.cashfreeOrderId || submittedRegResult.razorpayPaymentId) && (
                       <div className="col-span-2 pt-1 border-t border-slate-900">
-                        <p className="text-slate-400">Razorpay Payment ID:</p>
-                        <p className="font-mono font-bold text-amber-300 text-[11px] truncate">{submittedRegResult.razorpayPaymentId}</p>
+                        <p className="text-slate-400">Cashfree Order / Payment ID:</p>
+                        <p className="font-mono font-bold text-amber-300 text-[11px] truncate">{submittedRegResult.cashfreePaymentId || submittedRegResult.cashfreeOrderId || submittedRegResult.razorpayPaymentId}</p>
                       </div>
                     )}
                   </div>

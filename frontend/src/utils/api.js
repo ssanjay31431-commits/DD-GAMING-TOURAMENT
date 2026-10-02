@@ -371,7 +371,7 @@ export async function adminUpdateRoomIdAPI(id, roomId, roomPassword = '', liveSt
   }
 }
 
-export async function createRazorpayOrderAPI(registrationData) {
+export async function createCashfreeOrderAPI(registrationData) {
   try {
     const res = await fetch(`${API_BASE_URL}/payment/create-order`, {
       method: 'POST',
@@ -387,7 +387,7 @@ export async function createRazorpayOrderAPI(registrationData) {
   }
 }
 
-export async function verifyRazorpayPaymentAPI(paymentData) {
+export async function verifyCashfreePaymentAPI(paymentData) {
   try {
     const res = await fetch(`${API_BASE_URL}/payment/verify`, {
       method: 'POST',
@@ -395,13 +395,16 @@ export async function verifyRazorpayPaymentAPI(paymentData) {
       body: JSON.stringify(paymentData)
     });
     const data = await res.json();
-    if (!res.ok) return { success: false, message: data.message || 'Payment verification failed' };
+    if (!res.ok) return { success: false, message: data.message || 'Payment verification failed', paymentStatus: data.paymentStatus };
     return data;
   } catch (err) {
     console.warn('Backend verify payment error:', err.message);
     return { success: false, message: 'Server unreachable for payment verification.' };
   }
 }
+
+export const createRazorpayOrderAPI = createCashfreeOrderAPI;
+export const verifyRazorpayPaymentAPI = verifyCashfreePaymentAPI;
 
 export async function joinTournamentMatchAPI(tournamentId, email, gamingId, memberIndex) {
   try {

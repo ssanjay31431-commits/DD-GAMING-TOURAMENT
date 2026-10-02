@@ -1270,16 +1270,19 @@ app.post('/api/registrations', rateLimiter({ windowMs: 60 * 1000, maxRequests: 2
 });
 
 // ==============================================================================
-// RAZORPAY PAYMENT GATEWAY ENDPOINTS (SERVER-SIDE ORDER CREATION & SIGNATURE VERIFICATION)
+// CASHFREE PAYMENT GATEWAY ENDPOINTS (SERVER-SIDE ORDER CREATION & VERIFICATION)
 // ==============================================================================
 
-const getRazorpayInstance = () => {
-  const key_id = process.env.RAZORPAY_KEY_ID || 'rzp_test_YOUR_KEY_ID';
-  const key_secret = process.env.RAZORPAY_KEY_SECRET || 'YOUR_KEY_SECRET';
-  return new Razorpay({ key_id, key_secret });
+const getCashfreeConfig = () => {
+  const clientId = process.env.CASHFREE_CLIENT_ID || '';
+  const clientSecret = process.env.CASHFREE_CLIENT_SECRET || '';
+  const env = (process.env.CASHFREE_ENV || 'PRODUCTION').toUpperCase();
+  const apiVersion = process.env.CASHFREE_API_VERSION || '2023-08-01';
+  const baseUrl = env === 'SANDBOX' ? 'https://sandbox.cashfree.com/pg' : 'https://api.cashfree.com/pg';
+  return { clientId, clientSecret, env, apiVersion, baseUrl };
 };
 
-// 1. CREATE RAZORPAY ORDER
+// 1. CREATE CASHFREE PAYMENT ORDER
 app.post('/api/payment/create-order', rateLimiter({ windowMs: 60 * 1000, maxRequests: 30 }), async (req, res) => {
   try {
     const { tournament, fullName, gamingId, phone, email, teamName, teamMembers, entryType } = req.body || {};
@@ -1290,13 +1293,8 @@ app.post('/api/payment/create-order', rateLimiter({ windowMs: 60 * 1000, maxRequ
 
     const normalizedEmail = email.toLowerCase().trim();
     const cleanGamingId = gamingId.trim();
-    const entryFee = Number(tournament.entryFee || 0);
 
-    if (entryFee <= 0) {
-      return res.status(400).json({ success: false, message: 'This tournament is free. No Razorpay payment order required.' });
-    }
-
-    // 0. Verify tournament status
+    // 0. Verify tournament status and entry fee strictly from database
     let targetTrn = null;
     if (isDbConnected && mongoose.connection.readyState === 1) {
       targetTrn = await Tournament.findOne({ id: tournament.id });
@@ -1304,19 +1302,28 @@ app.post('/api/payment/create-order', rateLimiter({ windowMs: 60 * 1000, maxRequ
       targetTrn = INITIAL_TOURNAMENTS.find(t => t.id === tournament.id || String(t.id) === String(tournament.id));
     }
 
-    if (targetTrn) {
-      if (targetTrn.roomPublishedAt || targetTrn.registrationClosed || ['JOINING_OPEN', 'Live', 'Registration Closed', 'Completed'].includes(targetTrn.status)) {
-        return res.status(400).json({
-          success: false,
-          message: `Registration for "${targetTrn.title}" is closed.`
-        });
-      }
-      if (targetTrn.registeredSlots >= targetTrn.totalSlots) {
-        return res.status(400).json({
-          success: false,
-          message: 'Tournament registration slots are completely full!'
-        });
-      }
+    if (!targetTrn) {
+      return res.status(404).json({ success: false, message: 'Tournament not found.' });
+    }
+
+    const entryFee = Number(targetTrn.entryFee || 0);
+
+    if (entryFee <= 0) {
+      return res.status(400).json({ success: false, message: 'This tournament is free. No Cashfree payment order required.' });
+    }
+
+    if (targetTrn.roomPublishedAt || targetTrn.registrationClosed || ['JOINING_OPEN', 'Live', 'Registration Closed', 'Completed'].includes(targetTrn.status)) {
+      return res.status(400).json({
+        success: false,
+        message: `Registration for "${targetTrn.title}" is closed.`
+      });
+    }
+
+    if (targetTrn.registeredSlots >= targetTrn.totalSlots) {
+      return res.status(400).json({
+        success: false,
+        message: 'Tournament registration slots are completely full!'
+      });
     }
 
     // Check for existing registration document
@@ -1342,30 +1349,65 @@ app.post('/api/payment/create-order', rateLimiter({ windowMs: 60 * 1000, maxRequ
     }
 
     const regId = existingReg ? existingReg.id : `REG-DD-${Math.floor(1000 + Math.random() * 9000)}`;
+    const orderId = `ORDER_DD_${Date.now()}_${Math.floor(1000 + Math.random() * 9000)}`;
+    const config = getCashfreeConfig();
 
-    // Convert amount in Rupees to Paise (₹399 -> 39900 paise)
-    const amountInPaise = Math.round(entryFee * 100);
+    const frontendBaseUrl = process.env.FRONTEND_URL || 'https://dd-gaming-tourament.vercel.app';
+    const backendBaseUrl = process.env.BACKEND_URL || 'https://dd-gaming-tourament.onrender.com';
+    const returnUrl = `${frontendBaseUrl.replace(/\/+$/, '')}/?order_id={order_id}&reg_id=${regId}`;
+    const notifyUrl = `${backendBaseUrl.replace(/\/+$/, '')}/api/payment/webhook`;
 
-    const razorpay = getRazorpayInstance();
-    const orderOptions = {
-      amount: amountInPaise,
-      currency: 'INR',
-      receipt: regId,
-      notes: {
-        registrationId: regId,
-        tournamentId: tournament.id,
-        playerName: fullName,
-        email: normalizedEmail
-      }
+    const user = isDbConnected && mongoose.connection.readyState === 1 ? await User.findOne({ email: normalizedEmail }) : null;
+    const cleanPhone = phone ? phone.replace(/[^0-9]/g, '').slice(-10) : '9999999999';
+
+    const cfOrderPayload = {
+      order_id: orderId,
+      order_amount: entryFee,
+      order_currency: 'INR',
+      customer_details: {
+        customer_id: user ? user._id.toString() : `CUST_${cleanGamingId.replace(/[^a-zA-Z0-9_-]/g, '_')}_${Date.now()}`,
+        customer_name: fullName,
+        customer_email: normalizedEmail,
+        customer_phone: cleanPhone.length === 10 ? cleanPhone : '9999999999'
+      },
+      order_meta: {
+        return_url: returnUrl,
+        notify_url: notifyUrl
+      },
+      order_note: `DD Gaming Tournament Pass: ${targetTrn.title}`
     };
 
-    const razorpayOrder = await razorpay.orders.create(orderOptions);
+    console.log(`📡 [Cashfree] Creating Order ${orderId} for ₹${entryFee} (${config.env} mode)...`);
 
-    // Store or update Registration document with razorpayOrderId & PENDING paymentStatus
+    const cfResponse = await fetch(`${config.baseUrl}/orders`, {
+      method: 'POST',
+      headers: {
+        'x-client-id': config.clientId,
+        'x-client-secret': config.clientSecret,
+        'x-api-version': config.apiVersion,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(cfOrderPayload)
+    });
+
+    const cfData = await cfResponse.json();
+
+    if (!cfResponse.ok || !cfData.payment_session_id) {
+      console.error('❌ Cashfree Order Creation Error:', cfData);
+      return res.status(400).json({
+        success: false,
+        message: cfData.message || cfData.reason || 'Failed to create Cashfree payment order.'
+      });
+    }
+
+    console.log(`✅ [Cashfree] Session created: ${cfData.payment_session_id}`);
+
+    // Store or update Registration document with cashfreeOrderId & PENDING paymentStatus
     if (isDbConnected && mongoose.connection.readyState === 1) {
-      const user = await User.findOne({ email: normalizedEmail });
       if (existingReg) {
-        existingReg.razorpayOrderId = razorpayOrder.id;
+        existingReg.cashfreeOrderId = orderId;
+        existingReg.cashfreePaymentSessionId = cfData.payment_session_id;
+        existingReg.cashfreeOrderAmount = entryFee;
         existingReg.paymentStatus = 'CREATED';
         existingReg.playerName = fullName;
         existingReg.gamingId = cleanGamingId;
@@ -1374,53 +1416,57 @@ app.post('/api/payment/create-order', rateLimiter({ windowMs: 60 * 1000, maxRequ
       } else {
         const newReg = new Registration({
           id: regId,
-          tournamentId: tournament.id,
-          tournamentTitle: tournament.title,
-          game: tournament.game || 'Multi-Game',
-          gameIcon: tournament.gameIcon || '🎮',
-          gameCode: tournament.gameCode || '',
-          date: tournament.date || '',
-          time: tournament.time || '',
+          tournamentId: targetTrn.id,
+          tournamentTitle: targetTrn.title,
+          game: targetTrn.game || 'Multi-Game',
+          gameIcon: targetTrn.gameIcon || '🎮',
+          gameCode: targetTrn.gameCode || '',
+          date: targetTrn.date || '',
+          time: targetTrn.time || '',
           playerName: fullName,
           gamingId: cleanGamingId,
           phone: phone || '',
           email: normalizedEmail,
           userId: user ? user._id.toString() : '',
           entryFee: entryFee,
-          entryType: entryType || tournament.entryType || 'Solo',
+          entryType: entryType || targetTrn.entryType || 'Solo',
           teamName: teamName || '',
           teamMembers: teamMembers || [],
-          txnId: 'PENDING_RAZORPAY',
+          txnId: 'PENDING_CASHFREE',
           paymentScreenshot: '',
           status: 'Payment Pending',
           paymentStatus: 'CREATED',
-          razorpayOrderId: razorpayOrder.id
+          cashfreeOrderId: orderId,
+          cashfreePaymentSessionId: cfData.payment_session_id,
+          cashfreeOrderAmount: entryFee
         });
         await newReg.save();
       }
     } else {
       if (existingReg) {
-        existingReg.razorpayOrderId = razorpayOrder.id;
+        existingReg.cashfreeOrderId = orderId;
+        existingReg.cashfreePaymentSessionId = cfData.payment_session_id;
         existingReg.paymentStatus = 'CREATED';
       } else {
         const fallbackReg = {
           id: regId,
-          tournamentId: tournament.id,
-          tournamentTitle: tournament.title,
-          game: tournament.game || 'Multi-Game',
-          gameIcon: tournament.gameIcon || '🎮',
-          gameCode: tournament.gameCode || '',
-          date: tournament.date || '',
-          time: tournament.time || '',
+          tournamentId: targetTrn.id,
+          tournamentTitle: targetTrn.title,
+          game: targetTrn.game || 'Multi-Game',
+          gameIcon: targetTrn.gameIcon || '🎮',
+          gameCode: targetTrn.gameCode || '',
+          date: targetTrn.date || '',
+          time: targetTrn.time || '',
           playerName: fullName,
           gamingId: cleanGamingId,
           phone: phone || '',
           email: normalizedEmail,
           entryFee: entryFee,
-          txnId: 'PENDING_RAZORPAY',
+          txnId: 'PENDING_CASHFREE',
           status: 'Payment Pending',
           paymentStatus: 'CREATED',
-          razorpayOrderId: razorpayOrder.id,
+          cashfreeOrderId: orderId,
+          cashfreePaymentSessionId: cfData.payment_session_id,
           createdAt: new Date().toLocaleString()
         };
         memoryRegistrations.unshift(fallbackReg);
@@ -1429,79 +1475,137 @@ app.post('/api/payment/create-order', rateLimiter({ windowMs: 60 * 1000, maxRequ
 
     return res.status(200).json({
       success: true,
-      orderId: razorpayOrder.id,
-      amount: razorpayOrder.amount,
-      currency: razorpayOrder.currency || 'INR',
-      keyId: process.env.RAZORPAY_KEY_ID || 'rzp_test_YOUR_KEY_ID',
+      orderId: orderId,
+      paymentSessionId: cfData.payment_session_id,
+      cfEnvironment: config.env,
+      amount: entryFee,
+      currency: 'INR',
       registrationId: regId,
-      tournamentTitle: tournament.title
+      tournamentTitle: targetTrn.title
     });
 
   } catch (err) {
-    console.error('❌ Razorpay order creation error:', err.message || err);
+    console.error('❌ Cashfree order creation exception:', err.message || err);
     return res.status(500).json({
       success: false,
-      message: 'Failed to create payment order with Razorpay: ' + (err.message || 'Server error')
+      message: 'Failed to create payment order with Cashfree: ' + (err.message || 'Server error')
     });
   }
 });
 
-// 2. VERIFY RAZORPAY PAYMENT SIGNATURE (SERVER-SIDE SECURE VERIFICATION)
+// 2. VERIFY CASHFREE PAYMENT (DIRECT SERVER-SIDE API VERIFICATION WITH CASHFREE PG)
 app.post('/api/payment/verify', rateLimiter({ windowMs: 60 * 1000, maxRequests: 20 }), async (req, res) => {
   try {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, registrationId } = req.body || {};
+    const { orderId, registrationId } = req.body || {};
+    const targetOrderId = orderId || req.body.cashfree_order_id;
 
-    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !registrationId) {
+    if (!targetOrderId && !registrationId) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid payment verification payload. Missing required Razorpay parameters.'
+        message: 'Invalid payment verification request. Order ID or Registration ID is required.'
       });
     }
 
-    const keySecret = process.env.RAZORPAY_KEY_SECRET || 'YOUR_KEY_SECRET';
-    const hmac = crypto.createHmac('sha256', keySecret);
-    hmac.update(`${razorpay_order_id}|${razorpay_payment_id}`);
-    const expectedSignature = hmac.digest('hex');
+    const config = getCashfreeConfig();
 
-    const isSignatureValid = expectedSignature === razorpay_signature;
+    // 1. Fetch registration from DB or memory
+    let reg = null;
+    if (isDbConnected && mongoose.connection.readyState === 1) {
+      reg = await Registration.findOne({
+        $or: [
+          { cashfreeOrderId: targetOrderId },
+          { id: registrationId }
+        ]
+      });
+    } else {
+      reg = memoryRegistrations.find(r => r.cashfreeOrderId === targetOrderId || r.id === registrationId);
+    }
 
-    if (!isSignatureValid) {
-      console.warn(`⚠️ [Razorpay Security Warning] Payment signature mismatch for Order: ${razorpay_order_id}, Registration: ${registrationId}`);
-      
-      // Update DB registration status to Payment Failed
+    if (!reg) {
+      return res.status(404).json({ success: false, message: 'Registration record not found.' });
+    }
+
+    const searchOrderId = targetOrderId || reg.cashfreeOrderId;
+    if (!searchOrderId) {
+      return res.status(400).json({ success: false, message: 'No Cashfree Order ID associated with this registration.' });
+    }
+
+    // 2. Direct server-to-server verification with Cashfree API
+    console.log(`🔍 [Cashfree] Verifying order ${searchOrderId} with Cashfree API...`);
+
+    const cfOrderRes = await fetch(`${config.baseUrl}/orders/${searchOrderId}`, {
+      method: 'GET',
+      headers: {
+        'x-client-id': config.clientId,
+        'x-client-secret': config.clientSecret,
+        'x-api-version': config.apiVersion
+      }
+    });
+
+    const cfOrderData = await cfOrderRes.json();
+
+    if (!cfOrderRes.ok) {
+      console.warn(`⚠️ [Cashfree] Failed to fetch order status from API:`, cfOrderData);
+      return res.status(400).json({
+        success: false,
+        message: cfOrderData.message || 'Unable to verify order status with Cashfree.'
+      });
+    }
+
+    const cfStatus = (cfOrderData.order_status || '').toUpperCase();
+    console.log(`📊 [Cashfree] Order Status for ${searchOrderId}: ${cfStatus}`);
+
+    // Fetch payments list for transaction ID
+    let cashfreePaymentId = '';
+    try {
+      const cfPaymentsRes = await fetch(`${config.baseUrl}/orders/${searchOrderId}/payments`, {
+        method: 'GET',
+        headers: {
+          'x-client-id': config.clientId,
+          'x-client-secret': config.clientSecret,
+          'x-api-version': config.apiVersion
+        }
+      });
+      if (cfPaymentsRes.ok) {
+        const paymentsList = await cfPaymentsRes.json();
+        if (Array.isArray(paymentsList) && paymentsList.length > 0) {
+          const successfulPayment = paymentsList.find(p => (p.payment_status || '').toUpperCase() === 'SUCCESS');
+          if (successfulPayment) {
+            cashfreePaymentId = String(successfulPayment.cf_payment_id || successfulPayment.payment_id || '');
+          } else if (paymentsList[0]) {
+            cashfreePaymentId = String(paymentsList[0].cf_payment_id || paymentsList[0].payment_id || '');
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Notice: Failed to fetch payment details list:', e.message);
+    }
+
+    const isPaid = cfStatus === 'PAID' || cfStatus === 'SUCCESS';
+
+    if (!isPaid) {
       if (isDbConnected && mongoose.connection.readyState === 1) {
-        await Registration.findOneAndUpdate(
-          { $or: [{ id: registrationId }, { razorpayOrderId: razorpay_order_id }] },
-          { paymentStatus: 'FAILED', status: 'Payment Failed' }
-        );
+        reg.paymentStatus = cfStatus === 'EXPIRED' || cfStatus === 'CANCELLED' ? 'CANCELLED' : 'FAILED';
+        reg.status = 'Payment Failed';
+        await reg.save();
       }
       return res.status(400).json({
         success: false,
-        message: 'Payment verification failed. Signature mismatch. Please contact support if money was deducted.'
+        message: `Payment verification failed. Cashfree order status: ${cfStatus}`,
+        paymentStatus: reg.paymentStatus
       });
     }
 
-    // Payment Verified Successfully! Update Registration and Confirm Slot
-    let updatedReg = null;
+    // Payment Verified Successfully! Update Registration and Confirm Slot Idempotently
+    const wasAlreadyPaid = reg.status === 'Confirmed' || reg.paymentStatus === 'PAID';
 
     if (isDbConnected && mongoose.connection.readyState === 1) {
-      const reg = await Registration.findOne({
-        $or: [{ id: registrationId }, { razorpayOrderId: razorpay_order_id }]
-      });
-
-      if (!reg) {
-        return res.status(404).json({ success: false, message: 'Registration record not found for payment verification.' });
-      }
-
-      // Avoid duplicate slot incrementation if already paid
-      const wasAlreadyPaid = reg.status === 'Confirmed' || reg.paymentStatus === 'PAID';
-
       reg.status = 'Confirmed';
       reg.paymentStatus = 'PAID';
-      reg.razorpayOrderId = razorpay_order_id;
-      reg.razorpayPaymentId = razorpay_payment_id;
-      reg.razorpaySignature = razorpay_signature;
-      reg.txnId = razorpay_payment_id;
+      reg.cashfreeOrderId = searchOrderId;
+      if (cashfreePaymentId) reg.cashfreePaymentId = cashfreePaymentId;
+      reg.txnId = cashfreePaymentId || searchOrderId;
+      reg.paidAt = new Date().toISOString();
       await reg.save();
 
       if (!wasAlreadyPaid) {
@@ -1543,49 +1647,43 @@ app.post('/api/payment/verify', rateLimiter({ windowMs: 60 * 1000, maxRequests: 
               registrationId: reg.id,
               registeredAt: new Date().toLocaleDateString(),
               status: 'Confirmed',
-              paymentTxnId: razorpay_payment_id
+              paymentTxnId: cashfreePaymentId || searchOrderId
             });
             await user.save();
           } else {
             const userReg = user.registeredTournaments.find(r => r.tournamentId === reg.tournamentId);
             if (userReg) {
               userReg.status = 'Confirmed';
-              userReg.paymentTxnId = razorpay_payment_id;
+              userReg.paymentTxnId = cashfreePaymentId || searchOrderId;
               await user.save();
             }
           }
         }
 
-        // Asynchronously trigger confirmation email via Brevo
+        // Trigger confirmation email via Brevo
         let targetTrn = await Tournament.findOne({ id: reg.tournamentId }).catch(() => null);
         if (!targetTrn) targetTrn = INITIAL_TOURNAMENTS.find(t => t.id === reg.tournamentId);
         sendSlotConfirmationEmail(reg, targetTrn).catch(e => console.error('Brevo confirmation email notice:', e.message));
       }
-
-      updatedReg = reg;
     } else {
-      const memReg = memoryRegistrations.find(r => r.id === registrationId || r.razorpayOrderId === razorpay_order_id);
-      if (memReg) {
-        memReg.status = 'Confirmed';
-        memReg.paymentStatus = 'PAID';
-        memReg.razorpayOrderId = razorpay_order_id;
-        memReg.razorpayPaymentId = razorpay_payment_id;
-        memReg.razorpaySignature = razorpay_signature;
-        memReg.txnId = razorpay_payment_id;
-        updatedReg = memReg;
-      }
+      reg.status = 'Confirmed';
+      reg.paymentStatus = 'PAID';
+      reg.cashfreeOrderId = searchOrderId;
+      if (cashfreePaymentId) reg.cashfreePaymentId = cashfreePaymentId;
+      reg.txnId = cashfreePaymentId || searchOrderId;
+      reg.paidAt = new Date().toISOString();
     }
 
-    console.log(`✅ [Razorpay Payment Verified] Reg ID: ${registrationId}, Payment ID: ${razorpay_payment_id}`);
+    console.log(`✅ [Cashfree Payment Verified] Reg ID: ${reg.id}, Order ID: ${searchOrderId}, Payment ID: ${cashfreePaymentId}`);
 
     return res.status(200).json({
       success: true,
       message: 'Payment verified and slot officially confirmed!',
-      registration: updatedReg
+      registration: reg
     });
 
   } catch (err) {
-    console.error('❌ Razorpay payment verification error:', err.message || err);
+    console.error('❌ Cashfree payment verification exception:', err.message || err);
     return res.status(500).json({
       success: false,
       message: 'Server error verifying payment: ' + (err.message || 'Internal error')
@@ -1593,44 +1691,60 @@ app.post('/api/payment/verify', rateLimiter({ windowMs: 60 * 1000, maxRequests: 
   }
 });
 
-// 3. SECURE RAZORPAY WEBHOOK HANDLER (IDEMPOTENT & DUPLICATE-SAFE)
+// 3. SECURE CASHFREE WEBHOOK HANDLER (HMAC SIGNATURE VERIFICATION & IDEMPOTENT PROCESSING)
 app.post('/api/payment/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   try {
-    const signature = req.headers['x-razorpay-signature'];
-    const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || process.env.RAZORPAY_KEY_SECRET;
+    const config = getCashfreeConfig();
+    const signature = req.headers['x-webhook-signature'];
+    const timestamp = req.headers['x-webhook-timestamp'];
+    const secret = process.env.CASHFREE_WEBHOOK_SECRET || config.clientSecret;
 
-    if (webhookSecret && signature) {
-      const body = typeof req.body === 'string' || Buffer.isBuffer(req.body) ? req.body.toString() : JSON.stringify(req.body);
-      const expectedSignature = crypto.createHmac('sha256', webhookSecret).update(body).digest('hex');
+    const rawBody = req.body ? (Buffer.isBuffer(req.body) ? req.body.toString('utf-8') : (typeof req.body === 'string' ? req.body : JSON.stringify(req.body))) : '';
+
+    if (secret && signature && timestamp) {
+      const payloadToSign = timestamp + rawBody;
+      const expectedSignature = crypto.createHmac('sha256', secret).update(payloadToSign).digest('base64');
+      
       if (expectedSignature !== signature) {
-        console.warn('⚠️ Webhook signature mismatch');
+        console.warn('⚠️ [Cashfree Webhook] Signature mismatch');
         return res.status(400).json({ status: 'invalid_signature' });
       }
     }
 
-    const payload = typeof req.body === 'string' || Buffer.isBuffer(req.body) ? JSON.parse(req.body.toString()) : req.body;
-    const event = payload?.event;
+    const payload = typeof rawBody === 'string' ? JSON.parse(rawBody) : rawBody;
+    const type = payload?.type || payload?.event;
+    const data = payload?.data;
 
-    if (event === 'order.paid' || event === 'payment.captured') {
-      const entity = payload?.payload?.payment?.entity || payload?.payload?.order?.entity;
-      const orderId = entity?.order_id || entity?.id;
-      const paymentId = entity?.id;
+    console.log(`📥 [Cashfree Webhook Received] Event Type: ${type}`);
+
+    if (type === 'PAYMENT_SUCCESS_WEBHOOK' || type === 'ORDER_PAID' || payload?.event === 'order.paid') {
+      const orderId = data?.order?.order_id || payload?.order_id || data?.order_id;
+      const paymentId = String(data?.payment?.cf_payment_id || data?.payment?.payment_id || '');
 
       if (orderId && isDbConnected && mongoose.connection.readyState === 1) {
-        const reg = await Registration.findOne({ razorpayOrderId: orderId });
+        const reg = await Registration.findOne({ cashfreeOrderId: orderId });
         if (reg && reg.status !== 'Confirmed') {
           reg.status = 'Confirmed';
           reg.paymentStatus = 'PAID';
-          if (paymentId) reg.razorpayPaymentId = paymentId;
+          if (paymentId) reg.cashfreePaymentId = paymentId;
+          reg.txnId = paymentId || orderId;
+          reg.paidAt = new Date().toISOString();
           await reg.save();
-          console.log(`✅ Webhook updated registration ${reg.id} to Confirmed.`);
+
+          // Increment slot count atomically
+          await Tournament.findOneAndUpdate(
+            { id: reg.tournamentId, registeredSlots: { $lt: 1000 } },
+            { $inc: { registeredSlots: 1 } }
+          ).catch(() => {});
+
+          console.log(`✅ Webhook updated registration ${reg.id} (${orderId}) to Confirmed.`);
         }
       }
     }
 
     return res.status(200).json({ status: 'ok' });
   } catch (err) {
-    console.warn('Webhook processing warning:', err.message);
+    console.warn('Cashfree webhook processing notice:', err.message);
     return res.status(200).json({ status: 'error_handled' });
   }
 });

@@ -1649,19 +1649,22 @@ export default function AdminDashboard() {
 
                   {/* Payment Details Box */}
                   <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase block">Razorpay Payment Information</span>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase block">Cashfree Payment Information</span>
                     <div className="space-y-1 text-xs font-mono">
                       <p className="text-emerald-400 font-bold flex items-center gap-1">
-                        <CheckCircle2 className="w-3.5 h-3.5" /> Razorpay Verified Payment
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Cashfree Verified Online Payment
                       </p>
-                      {reg.razorpayPaymentId && (
-                        <p className="text-slate-300 text-[11px]"><span className="text-slate-500">Payment ID:</span> {reg.razorpayPaymentId}</p>
+                      {(reg.cashfreePaymentId || reg.razorpayPaymentId) && (
+                        <p className="text-slate-300 text-[11px]"><span className="text-slate-500">Payment Ref ID:</span> {reg.cashfreePaymentId || reg.razorpayPaymentId}</p>
                       )}
-                      {reg.razorpayOrderId && (
-                        <p className="text-slate-300 text-[11px]"><span className="text-slate-500">Order ID:</span> {reg.razorpayOrderId}</p>
+                      {(reg.cashfreeOrderId || reg.razorpayOrderId) && (
+                        <p className="text-slate-300 text-[11px]"><span className="text-slate-500">Cashfree Order ID:</span> {reg.cashfreeOrderId || reg.razorpayOrderId}</p>
                       )}
-                      {!reg.razorpayPaymentId && reg.txnId && (
-                        <p className="text-slate-300 text-[11px]"><span className="text-slate-500">Txn ID:</span> {reg.txnId}</p>
+                      {reg.txnId && reg.txnId !== 'FREE_ENTRY' && (
+                        <p className="text-slate-300 text-[11px]"><span className="text-slate-500">Txn / Ref:</span> {reg.txnId}</p>
+                      )}
+                      {reg.paymentStatus && (
+                        <p className="text-slate-300 text-[11px]"><span className="text-slate-500">Gateway Status:</span> <span className="text-emerald-400 font-bold">{reg.paymentStatus}</span></p>
                       )}
                     </div>
                   </div>

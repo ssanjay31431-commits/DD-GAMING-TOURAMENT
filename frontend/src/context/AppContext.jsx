@@ -722,15 +722,15 @@ export function AppProvider({ children }) {
     return regObj;
   };
 
-  const createRazorpayOrder = async (orderPayload) => {
-    return await createRazorpayOrderAPI({
+  const createCashfreeOrder = async (orderPayload) => {
+    return await createCashfreeOrderAPI({
       ...orderPayload,
       email: userProfile?.email || orderPayload.email
     });
   };
 
-  const verifyRazorpayPayment = async (verifyPayload) => {
-    const res = await verifyRazorpayPaymentAPI(verifyPayload);
+  const verifyCashfreePayment = async (verifyPayload) => {
+    const res = await verifyCashfreePaymentAPI(verifyPayload);
     if (res && res.success && res.registration) {
       playSuccessChimeSound();
       const updatedReg = res.registration;
@@ -751,14 +751,14 @@ export function AppProvider({ children }) {
                 registrationId: updatedReg.id,
                 registeredAt: new Date().toLocaleDateString(),
                 status: 'Confirmed',
-                paymentTxnId: updatedReg.razorpayPaymentId || updatedReg.txnId
+                paymentTxnId: updatedReg.cashfreePaymentId || updatedReg.cashfreeOrderId || updatedReg.txnId
               },
               ...(prev.registeredTournaments || [])
             ]
           };
         } else {
           const updatedTournaments = (prev.registeredTournaments || []).map(r =>
-            r.tournamentId === updatedReg.tournamentId ? { ...r, status: 'Confirmed', paymentTxnId: updatedReg.razorpayPaymentId || updatedReg.txnId } : r
+            r.tournamentId === updatedReg.tournamentId ? { ...r, status: 'Confirmed', paymentTxnId: updatedReg.cashfreePaymentId || updatedReg.cashfreeOrderId || updatedReg.txnId } : r
           );
           return { ...prev, registeredTournaments: updatedTournaments };
         }
@@ -766,6 +766,9 @@ export function AppProvider({ children }) {
     }
     return res;
   };
+
+  const createRazorpayOrder = createCashfreeOrder;
+  const verifyRazorpayPayment = verifyCashfreePayment;
 
   const joinTournamentMatch = async (tournamentId, memberIndex = undefined) => {
     playClickSound();
@@ -1006,6 +1009,8 @@ export function AppProvider({ children }) {
         openRegistrationModal,
         closeRegistrationModal,
         submitRegistration,
+        createCashfreeOrder,
+        verifyCashfreePayment,
         createRazorpayOrder,
         verifyRazorpayPayment,
         joinTournamentMatch,
