@@ -331,9 +331,22 @@ export default function RegisterModal() {
           {/* Modal Body Container */}
           <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 pb-[calc(5rem+env(safe-area-inset-bottom,20px))] sm:pb-6">
             {errorMsg && (
-              <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-semibold flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
-                <span>{errorMsg}</span>
+              <div className="p-4 rounded-xl bg-rose-950/80 border border-rose-500/40 text-rose-200 text-xs font-medium space-y-2 shadow-lg">
+                <div className="flex items-center gap-2 font-bold text-rose-300">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+                  <span>Cashfree Gateway Notice</span>
+                </div>
+                <p className="leading-relaxed">{errorMsg}</p>
+                {(errorMsg.includes('whitelist') || errorMsg.includes('Whitelisting') || errorMsg.includes('Broken Link')) && (
+                  <div className="pt-2 border-t border-rose-500/30 text-[11px] text-amber-200 space-y-1">
+                    <p className="font-bold text-amber-300">💡 How to fix in 30 seconds on Cashfree Dashboard:</p>
+                    <ol className="list-decimal pl-4 space-y-0.5 text-slate-300">
+                      <li>Log in to <a href="https://merchant.cashfree.com" target="_blank" rel="noreferrer" className="underline text-amber-400 font-bold">merchant.cashfree.com</a></li>
+                      <li>Go to <strong>Developers &rarr; Whitelisting</strong></li>
+                      <li>Add domain: <code className="bg-slate-900 px-1.5 py-0.5 rounded text-amber-300 font-mono">https://dd-gaming-tourament.vercel.app</code></li>
+                    </ol>
+                  </div>
+                )}
               </div>
             )}
 
