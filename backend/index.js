@@ -1359,9 +1359,16 @@ app.post('/api/payment/create-order', rateLimiter({ windowMs: 60 * 1000, maxRequ
       } catch (e) {}
     }
 
-    const frontendBaseUrl = (reqOrigin || process.env.FRONTEND_URL || 'https://www.ddtournament.in').replace(/\/+$/, '');
+    let rawFrontendUrl = reqOrigin || process.env.FRONTEND_URL || 'https://ddtournament.in';
+    let cleanFrontendUrl = rawFrontendUrl.replace(/\/+$/, '');
+    
+    // Normalize www.ddtournament.in to ddtournament.in because Cashfree Whitelisting registered "ddtournament.in"
+    if (cleanFrontendUrl.includes('www.ddtournament.in')) {
+      cleanFrontendUrl = cleanFrontendUrl.replace('www.ddtournament.in', 'ddtournament.in');
+    }
+
     const backendBaseUrl = (process.env.BACKEND_URL || 'https://dd-gaming-tourament.onrender.com').replace(/\/+$/, '');
-    const returnUrl = `${frontendBaseUrl}/?order_id={order_id}&reg_id=${regId}`;
+    const returnUrl = `${cleanFrontendUrl}/?order_id={order_id}&reg_id=${regId}`;
     const notifyUrl = `${backendBaseUrl}/api/payment/webhook`;
 
     const user = isDbConnected && mongoose.connection.readyState === 1 ? await User.findOne({ email: normalizedEmail }) : null;

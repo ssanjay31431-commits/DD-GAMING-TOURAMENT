@@ -1,3 +1,8 @@
+// Canonical Domain Normalization (Ensures Cashfree SDK runs under approved whitelisted domain ddtournament.in)
+if (window.location.hostname === 'www.ddtournament.in') {
+  window.location.replace('https://ddtournament.in' + window.location.pathname + window.location.search + window.location.hash);
+}
+
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { GoogleOAuthProvider } from '@react-oauth/google'
