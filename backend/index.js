@@ -1352,10 +1352,17 @@ app.post('/api/payment/create-order', rateLimiter({ windowMs: 60 * 1000, maxRequ
     const orderId = `ORDER_DD_${Date.now()}_${Math.floor(1000 + Math.random() * 9000)}`;
     const config = getCashfreeConfig();
 
-    const frontendBaseUrl = process.env.FRONTEND_URL || 'https://dd-gaming-tourament.vercel.app';
-    const backendBaseUrl = process.env.BACKEND_URL || 'https://dd-gaming-tourament.onrender.com';
-    const returnUrl = `${frontendBaseUrl.replace(/\/+$/, '')}/?order_id={order_id}&reg_id=${regId}`;
-    const notifyUrl = `${backendBaseUrl.replace(/\/+$/, '')}/api/payment/webhook`;
+    let reqOrigin = req.headers.origin;
+    if (!reqOrigin && req.headers.referer) {
+      try {
+        reqOrigin = new URL(req.headers.referer).origin;
+      } catch (e) {}
+    }
+
+    const frontendBaseUrl = (reqOrigin || process.env.FRONTEND_URL || 'https://www.ddtournament.in').replace(/\/+$/, '');
+    const backendBaseUrl = (process.env.BACKEND_URL || 'https://dd-gaming-tourament.onrender.com').replace(/\/+$/, '');
+    const returnUrl = `${frontendBaseUrl}/?order_id={order_id}&reg_id=${regId}`;
+    const notifyUrl = `${backendBaseUrl}/api/payment/webhook`;
 
     const user = isDbConnected && mongoose.connection.readyState === 1 ? await User.findOne({ email: normalizedEmail }) : null;
     const cleanPhone = phone ? phone.replace(/[^0-9]/g, '').slice(-10) : '9999999999';

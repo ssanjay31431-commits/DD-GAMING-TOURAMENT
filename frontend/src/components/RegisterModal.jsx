@@ -251,7 +251,7 @@ export default function RegisterModal() {
               console.warn('Cashfree Checkout Notice:', result.error);
               const msg = result.error.message || '';
               if (msg.includes('whitelist') || msg.includes('not enabled') || msg.includes('Broken Link')) {
-                setErrorMsg('Domain Whitelisting Required: Please whitelist "https://dd-gaming-tourament.vercel.app" in your Cashfree Dashboard under Developers > Whitelisting.');
+                setErrorMsg('Domain Whitelisting Required: Please add "https://www.ddtournament.in" and "https://ddtournament.in" to Cashfree Merchant Dashboard under Developers > Whitelisting > Domain Whitelisting.');
               } else {
                 setErrorMsg(msg || 'Payment was cancelled or incomplete. Please try again.');
               }
