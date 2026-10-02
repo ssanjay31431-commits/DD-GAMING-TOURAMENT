@@ -279,6 +279,28 @@ export function AppProvider({ children }) {
   // Notifications State & Polling
   const [notifications, setNotifications] = useState([]);
 
+  // Cashfree Return Auto-Verification Hook
+  useEffect(() => {
+    async function checkUrlPaymentReturn() {
+      const params = new URLSearchParams(window.location.search);
+      const orderId = params.get('order_id') || params.get('cf_order_id');
+      const regId = params.get('reg_id');
+
+      if (orderId) {
+        console.log(`📡 [Cashfree Return] Found Order ID ${orderId} in URL. Verifying with server...`);
+        const verifyRes = await verifyCashfreePaymentAPI({ orderId, registrationId: regId });
+        if (verifyRes && verifyRes.success) {
+          playSuccessChimeSound();
+          showToast(`🎉 PAYMENT VERIFIED! Slot confirmed for ${verifyRes.registration?.tournamentTitle || 'Tournament'}!`, 'success');
+          const cleanUrl = window.location.origin + window.location.pathname;
+          window.history.replaceState({}, document.title, cleanUrl);
+          navigateTo('my-tournaments');
+        }
+      }
+    }
+    checkUrlPaymentReturn();
+  }, []);
+
   useEffect(() => {
     async function loadNotifications() {
       if (isLoggedIn && userProfile?.email) {
