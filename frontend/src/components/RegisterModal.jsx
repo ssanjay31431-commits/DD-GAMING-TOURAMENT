@@ -243,7 +243,12 @@ export default function RegisterModal() {
         cashfree.checkout(checkoutOptions).then((result) => {
           if (result.error) {
             console.warn('Cashfree Checkout Notice:', result.error);
-            setErrorMsg(result.error.message || 'Payment was cancelled or incomplete.');
+            const msg = result.error.message || '';
+            if (msg.includes('whitelist') || msg.includes('not enabled') || msg.includes('Broken Link')) {
+              setErrorMsg('Domain Whitelisting Required: Please whitelist "https://dd-gaming-tourament.vercel.app" in your Cashfree Dashboard under Developers > Whitelisting.');
+            } else {
+              setErrorMsg(msg || 'Payment was cancelled or incomplete. Please try again.');
+            }
             setIsSubmitting(false);
           } else if (result.redirect) {
             console.log('Cashfree Redirecting...');
